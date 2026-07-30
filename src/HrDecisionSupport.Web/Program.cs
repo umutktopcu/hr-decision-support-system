@@ -1,6 +1,11 @@
+using HrDecisionSupport.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddDbContext<HrDecisionSupportDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSql")));
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
