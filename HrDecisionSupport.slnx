@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/HrDecisionSupport.Application/HrDecisionSupport.Application.csproj" />
+    <Project Path="src/HrDecisionSupport.Domain/HrDecisionSupport.Domain.csproj" />
+    <Project Path="src/HrDecisionSupport.Infrastructure/HrDecisionSupport.Infrastructure.csproj" />
+    <Project Path="src/HrDecisionSupport.Web/HrDecisionSupport.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HrDecisionSupport.Tests/HrDecisionSupport.Tests.csproj" />
+  </Folder>
+</Solution>
