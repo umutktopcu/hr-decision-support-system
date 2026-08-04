@@ -20,6 +20,13 @@ public interface IHrDecisionSupportDbContext
     DbSet<PersonCertificate> PersonCertificates { get; }
     DbSet<Language> Languages { get; }
     DbSet<PersonLanguage> PersonLanguages { get; }
+    DbSet<EmploymentHistory> EmploymentHistories { get; }
+    DbSet<Project> Projects { get; }
+    DbSet<PersonProject> PersonProjects { get; }
+    DbSet<Sector> Sectors { get; }
+    DbSet<PersonSectorExperience> PersonSectorExperiences { get; }
+    DbSet<WorkMode> WorkModes { get; }
+    DbSet<PersonWorkModeExperience> PersonWorkModeExperiences { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

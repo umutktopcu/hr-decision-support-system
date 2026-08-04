@@ -68,4 +68,13 @@ internal static class TestDatabase
         {
             Id = Guid.NewGuid(), Code = $"LNG-{Guid.NewGuid():N}"[..20], Name = name
         };
+
+    internal static Project Project(string name = "Project") =>
+        new() { Id = Guid.NewGuid(), Name = name, Description = "Catalog project" };
+
+    internal static Sector Sector(string name = "Technology") =>
+        new() { Id = Guid.NewGuid(), Code = $"SEC-{Guid.NewGuid():N}"[..20], Name = name };
+
+    internal static WorkMode WorkMode(string name = "Remote") =>
+        new() { Id = Guid.NewGuid(), Code = $"WM-{Guid.NewGuid():N}"[..20], Name = name };
 }

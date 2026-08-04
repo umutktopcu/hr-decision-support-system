@@ -10,7 +10,11 @@ using HrDecisionSupport.Application.Employees.Dtos;
 using HrDecisionSupport.Application.Profiles.Certificates;
 using HrDecisionSupport.Application.Profiles.Competencies;
 using HrDecisionSupport.Application.Profiles.Education;
+using HrDecisionSupport.Application.Profiles.EmploymentHistory;
 using HrDecisionSupport.Application.Profiles.Languages;
+using HrDecisionSupport.Application.Profiles.Projects;
+using HrDecisionSupport.Application.Profiles.Sectors;
+using HrDecisionSupport.Application.Profiles.WorkModes;
 using HrDecisionSupport.Domain.Entities;
 using HrDecisionSupport.Infrastructure;
 using HrDecisionSupport.Infrastructure.Persistence;
@@ -289,7 +293,14 @@ public class ApplicationFoundationTests
             [nameof(IHrDecisionSupportDbContext.Certificates)] = typeof(Certificate),
             [nameof(IHrDecisionSupportDbContext.PersonCertificates)] = typeof(PersonCertificate),
             [nameof(IHrDecisionSupportDbContext.Languages)] = typeof(Language),
-            [nameof(IHrDecisionSupportDbContext.PersonLanguages)] = typeof(PersonLanguage)
+            [nameof(IHrDecisionSupportDbContext.PersonLanguages)] = typeof(PersonLanguage),
+            [nameof(IHrDecisionSupportDbContext.EmploymentHistories)] = typeof(EmploymentHistory),
+            [nameof(IHrDecisionSupportDbContext.Projects)] = typeof(Project),
+            [nameof(IHrDecisionSupportDbContext.PersonProjects)] = typeof(PersonProject),
+            [nameof(IHrDecisionSupportDbContext.Sectors)] = typeof(Sector),
+            [nameof(IHrDecisionSupportDbContext.PersonSectorExperiences)] = typeof(PersonSectorExperience),
+            [nameof(IHrDecisionSupportDbContext.WorkModes)] = typeof(WorkMode),
+            [nameof(IHrDecisionSupportDbContext.PersonWorkModeExperiences)] = typeof(PersonWorkModeExperience)
         };
 
         foreach (var (propertyName, entityType) in expectedSets)
@@ -357,6 +368,10 @@ public class ApplicationFoundationTests
     [InlineData(typeof(IEducationRecordService))]
     [InlineData(typeof(IPersonCertificateService))]
     [InlineData(typeof(IPersonLanguageService))]
+    [InlineData(typeof(IEmploymentHistoryService))]
+    [InlineData(typeof(IPersonProjectService))]
+    [InlineData(typeof(IPersonSectorExperienceService))]
+    [InlineData(typeof(IPersonWorkModeExperienceService))]
     public void ProfileServiceContracts_ExposeCrudWithCancellationTokensAndResults(Type serviceType)
     {
         var methods = serviceType.GetMethods();
@@ -375,6 +390,10 @@ public class ApplicationFoundationTests
     [InlineData(typeof(EducationRecordDto))]
     [InlineData(typeof(PersonCertificateDto))]
     [InlineData(typeof(PersonLanguageDto))]
+    [InlineData(typeof(EmploymentHistoryDto))]
+    [InlineData(typeof(PersonProjectDto))]
+    [InlineData(typeof(PersonSectorExperienceDto))]
+    [InlineData(typeof(PersonWorkModeExperienceDto))]
     public void ProfileDtos_DoNotExposeEntitiesOrNavigationProperties(Type dtoType)
     {
         Assert.All(dtoType.GetProperties(), property =>

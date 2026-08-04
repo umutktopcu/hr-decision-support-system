@@ -41,6 +41,64 @@ internal static class UseCaseErrors
     internal static readonly Error PositionInactive =
         Error.Failure("position_inactive", "The position is inactive.");
 
+    internal static readonly Error EmployeeAssignmentNotFound =
+        Error.NotFound("employee_assignment_not_found", "The employee assignment was not found.");
+
+    internal static readonly Error CurrentEmployeeAssignmentNotFound =
+        Error.NotFound(
+            "current_employee_assignment_not_found",
+            "The current employee assignment was not found.");
+
+    internal static readonly Error EmployeeAssignmentOverlap =
+        Error.Conflict(
+            "employee_assignment_overlap",
+            "The employee assignment overlaps another assignment.");
+
+    internal static readonly Error EmployeeAssignmentOpenConflict =
+        Error.Conflict(
+            "employee_assignment_open_conflict",
+            "The employee already has an open assignment.");
+
+    internal static readonly Error EmployeeAssignmentStateConflict =
+        Error.Conflict(
+            "employee_assignment_state_conflict",
+            "The employee has more than one open assignment.");
+
+    internal static readonly Error EmployeeAssignmentAlreadyClosed =
+        Error.Conflict(
+            "employee_assignment_already_closed",
+            "The employee assignment is already closed.");
+
+    internal static readonly Error EmployeeAssignmentNoChange =
+        Error.Conflict(
+            "employee_assignment_no_change",
+            "The new department and position match the current assignment.");
+
+    internal static readonly Error EmployeeAssignmentBeforeHireDate =
+        Error.Failure(
+            "employee_assignment_before_hire_date",
+            "The employee assignment cannot start before the employee hire date.");
+
+    internal static readonly Error EmployeeAssignmentAfterTerminationDate =
+        Error.Failure(
+            "employee_assignment_after_termination_date",
+            "The employee assignment cannot extend beyond the employee termination date.");
+
+    internal static readonly Error EmployeeAssignmentEmployeeStateConflict =
+        Error.Conflict(
+            "employee_assignment_employee_state_conflict",
+            "The employee status and termination date are inconsistent.");
+
+    internal static readonly Error EmployeeAssignmentChangeDateInvalid =
+        Error.Failure(
+            "employee_assignment_change_date_invalid",
+            "The new assignment must start after the current assignment.");
+
+    internal static readonly Error EmployeeAssignmentEndBeforeStart =
+        Error.Failure(
+            "employee_assignment_end_before_start",
+            "The employee assignment cannot end before it starts.");
+
     internal static readonly Error PersonNotFound =
         Error.NotFound("person_not_found", "The person was not found.");
 
@@ -75,4 +133,39 @@ internal static class UseCaseErrors
 
     internal static readonly Error PersonLanguageConflict =
         Error.Conflict("person_language_conflict", "The person already has this language.");
+
+    internal static readonly Error EmploymentHistoryNotFound =
+        Error.NotFound("employment_history_not_found", "The employment history was not found.");
+
+    internal static readonly Error ProjectNotFound =
+        Error.NotFound("project_not_found", "The project was not found.");
+
+    internal static readonly Error PersonProjectNotFound =
+        Error.NotFound("person_project_not_found", "The person project was not found.");
+
+    internal static readonly Error SectorNotFound =
+        Error.NotFound("sector_not_found", "The sector was not found.");
+
+    internal static readonly Error PersonSectorExperienceNotFound =
+        Error.NotFound(
+            "person_sector_experience_not_found",
+            "The person sector experience was not found.");
+
+    internal static readonly Error PersonSectorExperienceConflict =
+        Error.Conflict(
+            "person_sector_experience_conflict",
+            "The person already has experience for this sector.");
+
+    internal static readonly Error WorkModeNotFound =
+        Error.NotFound("work_mode_not_found", "The work mode was not found.");
+
+    internal static readonly Error PersonWorkModeExperienceNotFound =
+        Error.NotFound(
+            "person_work_mode_experience_not_found",
+            "The person work mode experience was not found.");
+
+    internal static readonly Error PersonWorkModeExperienceConflict =
+        Error.Conflict(
+            "person_work_mode_experience_conflict",
+            "The person already has experience for this work mode.");
 }
