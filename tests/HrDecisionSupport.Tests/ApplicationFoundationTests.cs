@@ -349,7 +349,7 @@ public class ApplicationFoundationTests
                 new HashSet<string>
                 {
                     "EmployeeCode", "AnonymousCode", "FirstName", "LastName", "Email",
-                    "PhoneNumber", "HireDate", "EmploymentStatus", "InitialDepartmentId",
+                    "PhoneNumber", "HireDate", "TerminationDate", "EmploymentStatus", "InitialDepartmentId",
                     "InitialPositionId", "InitialAssignmentStartDate"
                 }
             },
