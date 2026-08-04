@@ -40,4 +40,39 @@ internal static class UseCaseErrors
 
     internal static readonly Error PositionInactive =
         Error.Failure("position_inactive", "The position is inactive.");
+
+    internal static readonly Error PersonNotFound =
+        Error.NotFound("person_not_found", "The person was not found.");
+
+    internal static readonly Error CompetencyNotFound =
+        Error.NotFound("competency_not_found", "The competency was not found.");
+
+    internal static readonly Error CompetencyInactive =
+        Error.Failure("competency_inactive", "The competency is inactive.");
+
+    internal static readonly Error PersonCompetencyNotFound =
+        Error.NotFound("person_competency_not_found", "The person competency was not found.");
+
+    internal static readonly Error PersonCompetencyConflict =
+        Error.Conflict(
+            "person_competency_conflict",
+            "The person already has this competency.");
+
+    internal static readonly Error EducationRecordNotFound =
+        Error.NotFound("education_record_not_found", "The education record was not found.");
+
+    internal static readonly Error CertificateNotFound =
+        Error.NotFound("certificate_not_found", "The certificate was not found.");
+
+    internal static readonly Error PersonCertificateNotFound =
+        Error.NotFound("person_certificate_not_found", "The person certificate was not found.");
+
+    internal static readonly Error LanguageNotFound =
+        Error.NotFound("language_not_found", "The language was not found.");
+
+    internal static readonly Error PersonLanguageNotFound =
+        Error.NotFound("person_language_not_found", "The person language was not found.");
+
+    internal static readonly Error PersonLanguageConflict =
+        Error.Conflict("person_language_conflict", "The person already has this language.");
 }

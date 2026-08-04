@@ -7,6 +7,10 @@ using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Application.Common.Validation;
 using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Application.Employees.Dtos;
+using HrDecisionSupport.Application.Profiles.Certificates;
+using HrDecisionSupport.Application.Profiles.Competencies;
+using HrDecisionSupport.Application.Profiles.Education;
+using HrDecisionSupport.Application.Profiles.Languages;
 using HrDecisionSupport.Domain.Entities;
 using HrDecisionSupport.Infrastructure;
 using HrDecisionSupport.Infrastructure.Persistence;
@@ -278,7 +282,14 @@ public class ApplicationFoundationTests
             [nameof(IHrDecisionSupportDbContext.Positions)] = typeof(Position),
             [nameof(IHrDecisionSupportDbContext.JobRequisitions)] = typeof(JobRequisition),
             [nameof(IHrDecisionSupportDbContext.CandidateEvaluationCases)] =
-                typeof(CandidateEvaluationCase)
+                typeof(CandidateEvaluationCase),
+            [nameof(IHrDecisionSupportDbContext.Competencies)] = typeof(Competency),
+            [nameof(IHrDecisionSupportDbContext.PersonCompetencies)] = typeof(PersonCompetency),
+            [nameof(IHrDecisionSupportDbContext.EducationRecords)] = typeof(EducationRecord),
+            [nameof(IHrDecisionSupportDbContext.Certificates)] = typeof(Certificate),
+            [nameof(IHrDecisionSupportDbContext.PersonCertificates)] = typeof(PersonCertificate),
+            [nameof(IHrDecisionSupportDbContext.Languages)] = typeof(Language),
+            [nameof(IHrDecisionSupportDbContext.PersonLanguages)] = typeof(PersonLanguage)
         };
 
         foreach (var (propertyName, entityType) in expectedSets)
@@ -339,6 +350,38 @@ public class ApplicationFoundationTests
                 Assert.Equal(typeof(CancellationToken), cancellationToken.ParameterType);
                 Assert.True(IsTaskOfResult(method.ReturnType));
             });
+    }
+
+    [Theory]
+    [InlineData(typeof(IPersonCompetencyService))]
+    [InlineData(typeof(IEducationRecordService))]
+    [InlineData(typeof(IPersonCertificateService))]
+    [InlineData(typeof(IPersonLanguageService))]
+    public void ProfileServiceContracts_ExposeCrudWithCancellationTokensAndResults(Type serviceType)
+    {
+        var methods = serviceType.GetMethods();
+        Assert.Equal(
+            ["CreateAsync", "DeleteAsync", "GetByIdAsync", "ListByPersonAsync", "UpdateAsync"],
+            methods.Select(method => method.Name).Order().ToArray());
+        Assert.All(methods, method =>
+        {
+            Assert.Equal(typeof(CancellationToken), method.GetParameters().Last().ParameterType);
+            Assert.True(IsTaskOfResult(method.ReturnType));
+        });
+    }
+
+    [Theory]
+    [InlineData(typeof(PersonCompetencyDto))]
+    [InlineData(typeof(EducationRecordDto))]
+    [InlineData(typeof(PersonCertificateDto))]
+    [InlineData(typeof(PersonLanguageDto))]
+    public void ProfileDtos_DoNotExposeEntitiesOrNavigationProperties(Type dtoType)
+    {
+        Assert.All(dtoType.GetProperties(), property =>
+        {
+            Assert.False(typeof(Person).IsAssignableFrom(property.PropertyType));
+            Assert.False(property.PropertyType.Namespace == typeof(Person).Namespace);
+        });
     }
 
     public static TheoryData<Type, IReadOnlySet<string>> EmployeeRequestTypesAndAllowedProperties =>
