@@ -12,7 +12,10 @@ using HrDecisionSupport.Application.Profiles.Languages;
 using HrDecisionSupport.Application.Profiles.Projects;
 using HrDecisionSupport.Application.Profiles.Sectors;
 using HrDecisionSupport.Application.Profiles.WorkModes;
+using HrDecisionSupport.Application.Requisitions;
+using HrDecisionSupport.Application.Requisitions.Requirements;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace HrDecisionSupport.Application;
 
@@ -21,6 +24,8 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddSingleton<TimeProvider>(TimeProvider.System);
 
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IEmployeeAssignmentService, EmployeeAssignmentService>();
@@ -33,6 +38,8 @@ public static class DependencyInjection
         services.AddScoped<IPersonProjectService, PersonProjectService>();
         services.AddScoped<IPersonSectorExperienceService, PersonSectorExperienceService>();
         services.AddScoped<IPersonWorkModeExperienceService, PersonWorkModeExperienceService>();
+        services.AddScoped<IJobRequisitionService, JobRequisitionService>();
+        services.AddScoped<IJobRequisitionRequirementService, JobRequisitionRequirementService>();
 
         services.AddScoped<CreateEmployeeRequestValidator>();
         services.AddScoped<IValidator<CreateEmployeeRequest>>(serviceProvider =>
@@ -67,6 +74,11 @@ public static class DependencyInjection
         AddValidator<UpdateEmployeeAssignmentRequest, UpdateEmployeeAssignmentRequestValidator>(services);
         AddValidator<ChangeCurrentEmployeeAssignmentRequest, ChangeCurrentEmployeeAssignmentRequestValidator>(services);
         AddValidator<CloseEmployeeAssignmentRequest, CloseEmployeeAssignmentRequestValidator>(services);
+        AddValidator<CreateJobRequisitionRequest, CreateJobRequisitionRequestValidator>(services);
+        AddValidator<UpdateJobRequisitionRequest, UpdateJobRequisitionRequestValidator>(services);
+        AddValidator<ChangeJobRequisitionStatusRequest, ChangeJobRequisitionStatusRequestValidator>(services);
+        AddValidator<CreateJobRequisitionRequirementRequest, CreateJobRequisitionRequirementRequestValidator>(services);
+        AddValidator<UpdateJobRequisitionRequirementRequest, UpdateJobRequisitionRequirementRequestValidator>(services);
 
         return services;
     }

@@ -41,6 +41,39 @@ internal static class UseCaseErrors
     internal static readonly Error PositionInactive =
         Error.Failure("position_inactive", "The position is inactive.");
 
+    internal static readonly Error JobRequisitionNotFound =
+        Error.NotFound("job_requisition_not_found", "The job requisition was not found.");
+
+    internal static readonly Error JobRequisitionRequirementNotFound =
+        Error.NotFound(
+            "job_requisition_requirement_not_found",
+            "The job requisition requirement was not found.");
+
+    internal static readonly Error JobRequisitionStatusNoChange =
+        Error.Conflict(
+            "job_requisition_status_no_change",
+            "The job requisition already has the requested status.");
+
+    internal static readonly Error JobRequisitionStatusTransitionInvalid =
+        Error.Conflict(
+            "job_requisition_status_transition_invalid",
+            "The requested job requisition status transition is not allowed.");
+
+    internal static readonly Error JobRequisitionLocked =
+        Error.Conflict(
+            "job_requisition_locked",
+            "The job requisition is locked against the requested change.");
+
+    internal static readonly Error JobRequisitionConflict =
+        Error.Conflict(
+            "job_requisition_conflict",
+            "The requisition code is already in use.");
+
+    internal static readonly Error JobRequisitionRequirementConflict =
+        Error.Conflict(
+            "job_requisition_requirement_conflict",
+            "The job requisition already has a requirement for this competency.");
+
     internal static readonly Error EmployeeAssignmentNotFound =
         Error.NotFound("employee_assignment_not_found", "The employee assignment was not found.");
 

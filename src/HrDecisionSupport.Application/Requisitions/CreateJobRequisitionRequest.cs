@@ -1,0 +1,10 @@
+namespace HrDecisionSupport.Application.Requisitions;
+
+public sealed record CreateJobRequisitionRequest(
+    string RequisitionCode,
+    string Title,
+    Guid DepartmentId,
+    Guid PositionId,
+    string? Description,
+    int OpeningsCount,
+    DateOnly OpenedAt);
