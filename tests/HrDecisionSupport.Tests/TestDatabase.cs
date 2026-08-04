@@ -94,6 +94,32 @@ internal static class TestDatabase
             Notes = "Relevant experience"
         };
 
+    internal static Candidate Candidate(Person person, string? code = null) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            PersonId = person.Id,
+            CandidateCode = code ?? $"CAN-{Guid.NewGuid():N}"[..20],
+            CandidateSource = CandidateSource.Other
+        };
+
+    internal static CandidateEvaluationCase CandidateEvaluationCase(
+        Candidate candidate,
+        JobRequisition requisition,
+        CandidateEvaluationStatus status = CandidateEvaluationStatus.New,
+        DateTime? receivedAtUtc = null) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            CandidateId = candidate.Id,
+            JobRequisitionId = requisition.Id,
+            ExternalReference = "EXT-1",
+            ReceivedAtUtc = receivedAtUtc ?? DateTime.UtcNow,
+            Status = status,
+            Notes = "Evaluation notes",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
     internal static Certificate Certificate(string name = "Cloud Certificate", string? issuer = "Issuer") =>
         new()
         {

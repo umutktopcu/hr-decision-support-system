@@ -1,5 +1,6 @@
 using HrDecisionSupport.Application.Candidates;
 using HrDecisionSupport.Application.Candidates.Dtos;
+using HrDecisionSupport.Application.CandidateEvaluations;
 using HrDecisionSupport.Application.Common.Validation;
 using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Application.Employees.Dtos;
@@ -40,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<IPersonWorkModeExperienceService, PersonWorkModeExperienceService>();
         services.AddScoped<IJobRequisitionService, JobRequisitionService>();
         services.AddScoped<IJobRequisitionRequirementService, JobRequisitionRequirementService>();
+        services.AddScoped<ICandidateEvaluationCaseService, CandidateEvaluationCaseService>();
 
         services.AddScoped<CreateEmployeeRequestValidator>();
         services.AddScoped<IValidator<CreateEmployeeRequest>>(serviceProvider =>
@@ -79,6 +81,9 @@ public static class DependencyInjection
         AddValidator<ChangeJobRequisitionStatusRequest, ChangeJobRequisitionStatusRequestValidator>(services);
         AddValidator<CreateJobRequisitionRequirementRequest, CreateJobRequisitionRequirementRequestValidator>(services);
         AddValidator<UpdateJobRequisitionRequirementRequest, UpdateJobRequisitionRequirementRequestValidator>(services);
+        AddValidator<CreateCandidateEvaluationCaseRequest, CreateCandidateEvaluationCaseRequestValidator>(services);
+        AddValidator<UpdateCandidateEvaluationCaseRequest, UpdateCandidateEvaluationCaseRequestValidator>(services);
+        AddValidator<ChangeCandidateEvaluationCaseStatusRequest, ChangeCandidateEvaluationCaseStatusRequestValidator>(services);
 
         return services;
     }
