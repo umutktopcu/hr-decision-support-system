@@ -57,6 +57,69 @@ internal static class TestDatabase
             CompetencyCategory = CompetencyCategory.Skill, IsActive = isActive
         };
 
+    internal static JobRequisition JobRequisition(
+        Department department,
+        Position position,
+        string? code = null,
+        JobRequisitionStatus status = JobRequisitionStatus.Draft,
+        DateOnly? openedAt = null,
+        DateOnly? closedAt = null) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            RequisitionCode = code ?? $"REQ-{Guid.NewGuid():N}"[..20],
+            Title = "Software Engineer",
+            DepartmentId = department.Id,
+            PositionId = position.Id,
+            Description = "Build products",
+            OpeningsCount = 2,
+            JobRequisitionStatus = status,
+            OpenedAt = openedAt ?? new DateOnly(2026, 1, 1),
+            ClosedAt = closedAt,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+    internal static JobRequisitionRequirement JobRequisitionRequirement(
+        JobRequisition requisition,
+        Competency competency,
+        bool isRequired = true) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            JobRequisitionId = requisition.Id,
+            CompetencyId = competency.Id,
+            MinimumExperienceMonths = 12,
+            MinimumProficiencyLevel = ProficiencyLevel.Intermediate,
+            IsRequired = isRequired,
+            Notes = "Relevant experience"
+        };
+
+    internal static Candidate Candidate(Person person, string? code = null) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            PersonId = person.Id,
+            CandidateCode = code ?? $"CAN-{Guid.NewGuid():N}"[..20],
+            CandidateSource = CandidateSource.Other
+        };
+
+    internal static CandidateEvaluationCase CandidateEvaluationCase(
+        Candidate candidate,
+        JobRequisition requisition,
+        CandidateEvaluationStatus status = CandidateEvaluationStatus.New,
+        DateTime? receivedAtUtc = null) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            CandidateId = candidate.Id,
+            JobRequisitionId = requisition.Id,
+            ExternalReference = "EXT-1",
+            ReceivedAtUtc = receivedAtUtc ?? DateTime.UtcNow,
+            Status = status,
+            Notes = "Evaluation notes",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
     internal static Certificate Certificate(string name = "Cloud Certificate", string? issuer = "Issuer") =>
         new()
         {

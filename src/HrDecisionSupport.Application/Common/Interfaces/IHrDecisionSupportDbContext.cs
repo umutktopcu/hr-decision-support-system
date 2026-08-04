@@ -12,6 +12,7 @@ public interface IHrDecisionSupportDbContext
     DbSet<Department> Departments { get; }
     DbSet<Position> Positions { get; }
     DbSet<JobRequisition> JobRequisitions { get; }
+    DbSet<JobRequisitionRequirement> JobRequisitionRequirements { get; }
     DbSet<CandidateEvaluationCase> CandidateEvaluationCases { get; }
     DbSet<Competency> Competencies { get; }
     DbSet<PersonCompetency> PersonCompetencies { get; }

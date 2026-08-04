@@ -41,6 +41,69 @@ internal static class UseCaseErrors
     internal static readonly Error PositionInactive =
         Error.Failure("position_inactive", "The position is inactive.");
 
+    internal static readonly Error JobRequisitionNotFound =
+        Error.NotFound("job_requisition_not_found", "The job requisition was not found.");
+
+    internal static readonly Error JobRequisitionRequirementNotFound =
+        Error.NotFound(
+            "job_requisition_requirement_not_found",
+            "The job requisition requirement was not found.");
+
+    internal static readonly Error JobRequisitionStatusNoChange =
+        Error.Conflict(
+            "job_requisition_status_no_change",
+            "The job requisition already has the requested status.");
+
+    internal static readonly Error JobRequisitionStatusTransitionInvalid =
+        Error.Conflict(
+            "job_requisition_status_transition_invalid",
+            "The requested job requisition status transition is not allowed.");
+
+    internal static readonly Error JobRequisitionLocked =
+        Error.Conflict(
+            "job_requisition_locked",
+            "The job requisition is locked against the requested change.");
+
+    internal static readonly Error JobRequisitionConflict =
+        Error.Conflict(
+            "job_requisition_conflict",
+            "The requisition code is already in use.");
+
+    internal static readonly Error JobRequisitionRequirementConflict =
+        Error.Conflict(
+            "job_requisition_requirement_conflict",
+            "The job requisition already has a requirement for this competency.");
+
+    internal static readonly Error CandidateEvaluationCaseNotFound =
+        Error.NotFound(
+            "candidate_evaluation_case_not_found",
+            "The candidate evaluation case was not found.");
+
+    internal static readonly Error CandidateEvaluationCaseConflict =
+        Error.Conflict(
+            "candidate_evaluation_case_conflict",
+            "The candidate already has an evaluation case for this job requisition.");
+
+    internal static readonly Error CandidateEvaluationCaseLocked =
+        Error.Conflict(
+            "candidate_evaluation_case_locked",
+            "The candidate evaluation case is locked against the requested change.");
+
+    internal static readonly Error CandidateEvaluationCaseStatusNoChange =
+        Error.Conflict(
+            "candidate_evaluation_case_status_no_change",
+            "The candidate evaluation case already has the requested status.");
+
+    internal static readonly Error CandidateEvaluationCaseStatusTransitionInvalid =
+        Error.Conflict(
+            "candidate_evaluation_case_status_transition_invalid",
+            "The requested candidate evaluation case status transition is not allowed.");
+
+    internal static readonly Error CandidateEvaluationCaseRequisitionNotAvailable =
+        Error.Conflict(
+            "candidate_evaluation_case_requisition_not_available",
+            "The job requisition is not available for a new candidate evaluation case.");
+
     internal static readonly Error EmployeeAssignmentNotFound =
         Error.NotFound("employee_assignment_not_found", "The employee assignment was not found.");
 

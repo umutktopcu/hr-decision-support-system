@@ -285,6 +285,8 @@ public class ApplicationFoundationTests
             [nameof(IHrDecisionSupportDbContext.Departments)] = typeof(Department),
             [nameof(IHrDecisionSupportDbContext.Positions)] = typeof(Position),
             [nameof(IHrDecisionSupportDbContext.JobRequisitions)] = typeof(JobRequisition),
+            [nameof(IHrDecisionSupportDbContext.JobRequisitionRequirements)] =
+                typeof(JobRequisitionRequirement),
             [nameof(IHrDecisionSupportDbContext.CandidateEvaluationCases)] =
                 typeof(CandidateEvaluationCase),
             [nameof(IHrDecisionSupportDbContext.Competencies)] = typeof(Competency),
