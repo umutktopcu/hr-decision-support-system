@@ -75,4 +75,39 @@ internal static class UseCaseErrors
 
     internal static readonly Error PersonLanguageConflict =
         Error.Conflict("person_language_conflict", "The person already has this language.");
+
+    internal static readonly Error EmploymentHistoryNotFound =
+        Error.NotFound("employment_history_not_found", "The employment history was not found.");
+
+    internal static readonly Error ProjectNotFound =
+        Error.NotFound("project_not_found", "The project was not found.");
+
+    internal static readonly Error PersonProjectNotFound =
+        Error.NotFound("person_project_not_found", "The person project was not found.");
+
+    internal static readonly Error SectorNotFound =
+        Error.NotFound("sector_not_found", "The sector was not found.");
+
+    internal static readonly Error PersonSectorExperienceNotFound =
+        Error.NotFound(
+            "person_sector_experience_not_found",
+            "The person sector experience was not found.");
+
+    internal static readonly Error PersonSectorExperienceConflict =
+        Error.Conflict(
+            "person_sector_experience_conflict",
+            "The person already has experience for this sector.");
+
+    internal static readonly Error WorkModeNotFound =
+        Error.NotFound("work_mode_not_found", "The work mode was not found.");
+
+    internal static readonly Error PersonWorkModeExperienceNotFound =
+        Error.NotFound(
+            "person_work_mode_experience_not_found",
+            "The person work mode experience was not found.");
+
+    internal static readonly Error PersonWorkModeExperienceConflict =
+        Error.Conflict(
+            "person_work_mode_experience_conflict",
+            "The person already has experience for this work mode.");
 }

@@ -8,7 +8,11 @@ using HrDecisionSupport.Application.Employees.Dtos;
 using HrDecisionSupport.Application.Profiles.Certificates;
 using HrDecisionSupport.Application.Profiles.Competencies;
 using HrDecisionSupport.Application.Profiles.Education;
+using HrDecisionSupport.Application.Profiles.EmploymentHistory;
 using HrDecisionSupport.Application.Profiles.Languages;
+using HrDecisionSupport.Application.Profiles.Projects;
+using HrDecisionSupport.Application.Profiles.Sectors;
+using HrDecisionSupport.Application.Profiles.WorkModes;
 using HrDecisionSupport.Infrastructure;
 using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +45,10 @@ public class DependencyInjectionTests
         Assert.IsType<EducationRecordService>(scope.ServiceProvider.GetRequiredService<IEducationRecordService>());
         Assert.IsType<PersonCertificateService>(scope.ServiceProvider.GetRequiredService<IPersonCertificateService>());
         Assert.IsType<PersonLanguageService>(scope.ServiceProvider.GetRequiredService<IPersonLanguageService>());
+        Assert.IsType<EmploymentHistoryService>(scope.ServiceProvider.GetRequiredService<IEmploymentHistoryService>());
+        Assert.IsType<PersonProjectService>(scope.ServiceProvider.GetRequiredService<IPersonProjectService>());
+        Assert.IsType<PersonSectorExperienceService>(scope.ServiceProvider.GetRequiredService<IPersonSectorExperienceService>());
+        Assert.IsType<PersonWorkModeExperienceService>(scope.ServiceProvider.GetRequiredService<IPersonWorkModeExperienceService>());
         AssertValidator<CreatePersonCompetencyRequest, CreatePersonCompetencyRequestValidator>(scope.ServiceProvider);
         AssertValidator<UpdatePersonCompetencyRequest, UpdatePersonCompetencyRequestValidator>(scope.ServiceProvider);
         AssertValidator<CreateEducationRecordRequest, CreateEducationRecordRequestValidator>(scope.ServiceProvider);
@@ -49,6 +57,14 @@ public class DependencyInjectionTests
         AssertValidator<UpdatePersonCertificateRequest, UpdatePersonCertificateRequestValidator>(scope.ServiceProvider);
         AssertValidator<CreatePersonLanguageRequest, CreatePersonLanguageRequestValidator>(scope.ServiceProvider);
         AssertValidator<UpdatePersonLanguageRequest, UpdatePersonLanguageRequestValidator>(scope.ServiceProvider);
+        AssertValidator<CreateEmploymentHistoryRequest, CreateEmploymentHistoryRequestValidator>(scope.ServiceProvider);
+        AssertValidator<UpdateEmploymentHistoryRequest, UpdateEmploymentHistoryRequestValidator>(scope.ServiceProvider);
+        AssertValidator<CreatePersonProjectRequest, CreatePersonProjectRequestValidator>(scope.ServiceProvider);
+        AssertValidator<UpdatePersonProjectRequest, UpdatePersonProjectRequestValidator>(scope.ServiceProvider);
+        AssertValidator<CreatePersonSectorExperienceRequest, CreatePersonSectorExperienceRequestValidator>(scope.ServiceProvider);
+        AssertValidator<UpdatePersonSectorExperienceRequest, UpdatePersonSectorExperienceRequestValidator>(scope.ServiceProvider);
+        AssertValidator<CreatePersonWorkModeExperienceRequest, CreatePersonWorkModeExperienceRequestValidator>(scope.ServiceProvider);
+        AssertValidator<UpdatePersonWorkModeExperienceRequest, UpdatePersonWorkModeExperienceRequestValidator>(scope.ServiceProvider);
     }
 
     [Theory]
@@ -56,6 +72,10 @@ public class DependencyInjectionTests
     [InlineData(typeof(IEducationRecordService))]
     [InlineData(typeof(IPersonCertificateService))]
     [InlineData(typeof(IPersonLanguageService))]
+    [InlineData(typeof(IEmploymentHistoryService))]
+    [InlineData(typeof(IPersonProjectService))]
+    [InlineData(typeof(IPersonSectorExperienceService))]
+    [InlineData(typeof(IPersonWorkModeExperienceService))]
     public void ProfileServices_AreScoped(Type serviceType)
     {
         var services = CreateServices();

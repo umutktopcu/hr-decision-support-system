@@ -6,7 +6,11 @@ using HrDecisionSupport.Application.Employees.Dtos;
 using HrDecisionSupport.Application.Profiles.Certificates;
 using HrDecisionSupport.Application.Profiles.Competencies;
 using HrDecisionSupport.Application.Profiles.Education;
+using HrDecisionSupport.Application.Profiles.EmploymentHistory;
 using HrDecisionSupport.Application.Profiles.Languages;
+using HrDecisionSupport.Application.Profiles.Projects;
+using HrDecisionSupport.Application.Profiles.Sectors;
+using HrDecisionSupport.Application.Profiles.WorkModes;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HrDecisionSupport.Application;
@@ -23,6 +27,10 @@ public static class DependencyInjection
         services.AddScoped<IEducationRecordService, EducationRecordService>();
         services.AddScoped<IPersonCertificateService, PersonCertificateService>();
         services.AddScoped<IPersonLanguageService, PersonLanguageService>();
+        services.AddScoped<IEmploymentHistoryService, EmploymentHistoryService>();
+        services.AddScoped<IPersonProjectService, PersonProjectService>();
+        services.AddScoped<IPersonSectorExperienceService, PersonSectorExperienceService>();
+        services.AddScoped<IPersonWorkModeExperienceService, PersonWorkModeExperienceService>();
 
         services.AddScoped<CreateEmployeeRequestValidator>();
         services.AddScoped<IValidator<CreateEmployeeRequest>>(serviceProvider =>
@@ -45,6 +53,14 @@ public static class DependencyInjection
         AddValidator<UpdatePersonCertificateRequest, UpdatePersonCertificateRequestValidator>(services);
         AddValidator<CreatePersonLanguageRequest, CreatePersonLanguageRequestValidator>(services);
         AddValidator<UpdatePersonLanguageRequest, UpdatePersonLanguageRequestValidator>(services);
+        AddValidator<CreateEmploymentHistoryRequest, CreateEmploymentHistoryRequestValidator>(services);
+        AddValidator<UpdateEmploymentHistoryRequest, UpdateEmploymentHistoryRequestValidator>(services);
+        AddValidator<CreatePersonProjectRequest, CreatePersonProjectRequestValidator>(services);
+        AddValidator<UpdatePersonProjectRequest, UpdatePersonProjectRequestValidator>(services);
+        AddValidator<CreatePersonSectorExperienceRequest, CreatePersonSectorExperienceRequestValidator>(services);
+        AddValidator<UpdatePersonSectorExperienceRequest, UpdatePersonSectorExperienceRequestValidator>(services);
+        AddValidator<CreatePersonWorkModeExperienceRequest, CreatePersonWorkModeExperienceRequestValidator>(services);
+        AddValidator<UpdatePersonWorkModeExperienceRequest, UpdatePersonWorkModeExperienceRequestValidator>(services);
 
         return services;
     }
