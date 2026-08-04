@@ -48,6 +48,7 @@ public sealed record CreateEmployeeRequest(
     string? Email,
     string? PhoneNumber,
     DateOnly HireDate,
+    DateOnly? TerminationDate,
     EmploymentStatus EmploymentStatus,
     Guid InitialDepartmentId,
     Guid InitialPositionId,
