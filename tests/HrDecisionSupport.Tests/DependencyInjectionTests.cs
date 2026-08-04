@@ -5,6 +5,10 @@ using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Application.Common.Validation;
 using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Application.Employees.Dtos;
+using HrDecisionSupport.Application.Profiles.Certificates;
+using HrDecisionSupport.Application.Profiles.Competencies;
+using HrDecisionSupport.Application.Profiles.Education;
+using HrDecisionSupport.Application.Profiles.Languages;
 using HrDecisionSupport.Infrastructure;
 using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +37,39 @@ public class DependencyInjectionTests
             .GetRequiredService<IValidator<CreateCandidateRequest>>());
         Assert.IsType<UpdateCandidateRequestValidator>(scope.ServiceProvider
             .GetRequiredService<IValidator<UpdateCandidateRequest>>());
+        Assert.IsType<PersonCompetencyService>(scope.ServiceProvider.GetRequiredService<IPersonCompetencyService>());
+        Assert.IsType<EducationRecordService>(scope.ServiceProvider.GetRequiredService<IEducationRecordService>());
+        Assert.IsType<PersonCertificateService>(scope.ServiceProvider.GetRequiredService<IPersonCertificateService>());
+        Assert.IsType<PersonLanguageService>(scope.ServiceProvider.GetRequiredService<IPersonLanguageService>());
+        AssertValidator<CreatePersonCompetencyRequest, CreatePersonCompetencyRequestValidator>(scope.ServiceProvider);
+        AssertValidator<UpdatePersonCompetencyRequest, UpdatePersonCompetencyRequestValidator>(scope.ServiceProvider);
+        AssertValidator<CreateEducationRecordRequest, CreateEducationRecordRequestValidator>(scope.ServiceProvider);
+        AssertValidator<UpdateEducationRecordRequest, UpdateEducationRecordRequestValidator>(scope.ServiceProvider);
+        AssertValidator<CreatePersonCertificateRequest, CreatePersonCertificateRequestValidator>(scope.ServiceProvider);
+        AssertValidator<UpdatePersonCertificateRequest, UpdatePersonCertificateRequestValidator>(scope.ServiceProvider);
+        AssertValidator<CreatePersonLanguageRequest, CreatePersonLanguageRequestValidator>(scope.ServiceProvider);
+        AssertValidator<UpdatePersonLanguageRequest, UpdatePersonLanguageRequestValidator>(scope.ServiceProvider);
+    }
+
+    [Theory]
+    [InlineData(typeof(IPersonCompetencyService))]
+    [InlineData(typeof(IEducationRecordService))]
+    [InlineData(typeof(IPersonCertificateService))]
+    [InlineData(typeof(IPersonLanguageService))]
+    public void ProfileServices_AreScoped(Type serviceType)
+    {
+        var services = CreateServices();
+        using var provider = services.BuildServiceProvider();
+        using var firstScope = provider.CreateScope();
+        using var secondScope = provider.CreateScope();
+
+        var first = firstScope.ServiceProvider.GetRequiredService(serviceType);
+        var sameScope = firstScope.ServiceProvider.GetRequiredService(serviceType);
+        var differentScope = secondScope.ServiceProvider.GetRequiredService(serviceType);
+
+        Assert.NotNull(first);
+        Assert.Same(first, sameScope);
+        Assert.NotSame(first, differentScope);
     }
 
     [Fact]
@@ -77,5 +114,13 @@ public class DependencyInjectionTests
         services.AddInfrastructure(options =>
             options.UseInMemoryDatabase($"di-{Guid.NewGuid():N}"));
         return services;
+    }
+
+    private static void AssertValidator<TRequest, TValidator>(IServiceProvider provider)
+        where TValidator : class, IValidator<TRequest>
+    {
+        var concrete = Assert.IsType<TValidator>(provider.GetRequiredService<TValidator>());
+        var abstraction = Assert.IsType<TValidator>(provider.GetRequiredService<IValidator<TRequest>>());
+        Assert.Same(concrete, abstraction);
     }
 }

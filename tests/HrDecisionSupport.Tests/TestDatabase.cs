@@ -1,5 +1,6 @@
 using HrDecisionSupport.Domain.Entities;
 using HrDecisionSupport.Infrastructure.Persistence;
+using HrDecisionSupport.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HrDecisionSupport.Tests;
@@ -47,5 +48,24 @@ internal static class TestDatabase
             Code = $"POS-{Guid.NewGuid():N}"[..20],
             Name = "Software Engineer",
             IsActive = isActive
+        };
+
+    internal static Competency Competency(string name = "C#", bool isActive = true) =>
+        new()
+        {
+            Id = Guid.NewGuid(), Code = $"CMP-{Guid.NewGuid():N}"[..20], Name = name,
+            CompetencyCategory = CompetencyCategory.Skill, IsActive = isActive
+        };
+
+    internal static Certificate Certificate(string name = "Cloud Certificate", string? issuer = "Issuer") =>
+        new()
+        {
+            Id = Guid.NewGuid(), Code = $"CRT-{Guid.NewGuid():N}"[..20], Name = name, Issuer = issuer
+        };
+
+    internal static Language Language(string name = "English") =>
+        new()
+        {
+            Id = Guid.NewGuid(), Code = $"LNG-{Guid.NewGuid():N}"[..20], Name = name
         };
 }

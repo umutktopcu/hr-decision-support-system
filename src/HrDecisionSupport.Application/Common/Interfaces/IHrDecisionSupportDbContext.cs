@@ -13,6 +13,13 @@ public interface IHrDecisionSupportDbContext
     DbSet<Position> Positions { get; }
     DbSet<JobRequisition> JobRequisitions { get; }
     DbSet<CandidateEvaluationCase> CandidateEvaluationCases { get; }
+    DbSet<Competency> Competencies { get; }
+    DbSet<PersonCompetency> PersonCompetencies { get; }
+    DbSet<EducationRecord> EducationRecords { get; }
+    DbSet<Certificate> Certificates { get; }
+    DbSet<PersonCertificate> PersonCertificates { get; }
+    DbSet<Language> Languages { get; }
+    DbSet<PersonLanguage> PersonLanguages { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
