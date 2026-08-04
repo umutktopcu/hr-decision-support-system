@@ -3,6 +3,7 @@ using HrDecisionSupport.Application.Candidates.Dtos;
 using HrDecisionSupport.Application.Common.Validation;
 using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Application.Employees.Dtos;
+using HrDecisionSupport.Application.Employees.Assignments;
 using HrDecisionSupport.Application.Profiles.Certificates;
 using HrDecisionSupport.Application.Profiles.Competencies;
 using HrDecisionSupport.Application.Profiles.Education;
@@ -22,6 +23,7 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<IEmployeeService, EmployeeService>();
+        services.AddScoped<IEmployeeAssignmentService, EmployeeAssignmentService>();
         services.AddScoped<ICandidateService, CandidateService>();
         services.AddScoped<IPersonCompetencyService, PersonCompetencyService>();
         services.AddScoped<IEducationRecordService, EducationRecordService>();
@@ -61,6 +63,10 @@ public static class DependencyInjection
         AddValidator<UpdatePersonSectorExperienceRequest, UpdatePersonSectorExperienceRequestValidator>(services);
         AddValidator<CreatePersonWorkModeExperienceRequest, CreatePersonWorkModeExperienceRequestValidator>(services);
         AddValidator<UpdatePersonWorkModeExperienceRequest, UpdatePersonWorkModeExperienceRequestValidator>(services);
+        AddValidator<CreateEmployeeAssignmentRequest, CreateEmployeeAssignmentRequestValidator>(services);
+        AddValidator<UpdateEmployeeAssignmentRequest, UpdateEmployeeAssignmentRequestValidator>(services);
+        AddValidator<ChangeCurrentEmployeeAssignmentRequest, ChangeCurrentEmployeeAssignmentRequestValidator>(services);
+        AddValidator<CloseEmployeeAssignmentRequest, CloseEmployeeAssignmentRequestValidator>(services);
 
         return services;
     }

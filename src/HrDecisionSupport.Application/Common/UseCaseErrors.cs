@@ -41,6 +41,64 @@ internal static class UseCaseErrors
     internal static readonly Error PositionInactive =
         Error.Failure("position_inactive", "The position is inactive.");
 
+    internal static readonly Error EmployeeAssignmentNotFound =
+        Error.NotFound("employee_assignment_not_found", "The employee assignment was not found.");
+
+    internal static readonly Error CurrentEmployeeAssignmentNotFound =
+        Error.NotFound(
+            "current_employee_assignment_not_found",
+            "The current employee assignment was not found.");
+
+    internal static readonly Error EmployeeAssignmentOverlap =
+        Error.Conflict(
+            "employee_assignment_overlap",
+            "The employee assignment overlaps another assignment.");
+
+    internal static readonly Error EmployeeAssignmentOpenConflict =
+        Error.Conflict(
+            "employee_assignment_open_conflict",
+            "The employee already has an open assignment.");
+
+    internal static readonly Error EmployeeAssignmentStateConflict =
+        Error.Conflict(
+            "employee_assignment_state_conflict",
+            "The employee has more than one open assignment.");
+
+    internal static readonly Error EmployeeAssignmentAlreadyClosed =
+        Error.Conflict(
+            "employee_assignment_already_closed",
+            "The employee assignment is already closed.");
+
+    internal static readonly Error EmployeeAssignmentNoChange =
+        Error.Conflict(
+            "employee_assignment_no_change",
+            "The new department and position match the current assignment.");
+
+    internal static readonly Error EmployeeAssignmentBeforeHireDate =
+        Error.Failure(
+            "employee_assignment_before_hire_date",
+            "The employee assignment cannot start before the employee hire date.");
+
+    internal static readonly Error EmployeeAssignmentAfterTerminationDate =
+        Error.Failure(
+            "employee_assignment_after_termination_date",
+            "The employee assignment cannot extend beyond the employee termination date.");
+
+    internal static readonly Error EmployeeAssignmentEmployeeStateConflict =
+        Error.Conflict(
+            "employee_assignment_employee_state_conflict",
+            "The employee status and termination date are inconsistent.");
+
+    internal static readonly Error EmployeeAssignmentChangeDateInvalid =
+        Error.Failure(
+            "employee_assignment_change_date_invalid",
+            "The new assignment must start after the current assignment.");
+
+    internal static readonly Error EmployeeAssignmentEndBeforeStart =
+        Error.Failure(
+            "employee_assignment_end_before_start",
+            "The employee assignment cannot end before it starts.");
+
     internal static readonly Error PersonNotFound =
         Error.NotFound("person_not_found", "The person was not found.");
 
