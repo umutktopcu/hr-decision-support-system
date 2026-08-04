@@ -1,9 +1,10 @@
+using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace HrDecisionSupport.Infrastructure.Persistence;
 
-public class HrDecisionSupportDbContext : DbContext
+public class HrDecisionSupportDbContext : DbContext, IHrDecisionSupportDbContext
 {
     public HrDecisionSupportDbContext(DbContextOptions<HrDecisionSupportDbContext> options)
         : base(options)
