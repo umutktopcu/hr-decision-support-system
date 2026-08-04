@@ -1,6 +1,6 @@
 # HR Decision Support System — Tam Proje Yol Haritası v3
 
-> Sistem tek şirket için tasarlanır. Company tablosu yoktur. Yol haritası çalışan/CV, ilan, başvuru, Excel/ERP, frontend ve analiz entegrasyonunun tamamını kapsar.
+> Sistem tek şirket için tasarlanır. Company tablosu yoktur. Yol haritası çalışan/CV, internal işe alım talebi, aday değerlendirme, Excel/ERP, frontend ve analiz entegrasyonunun tamamını kapsar.
 
 ## Temel Kararlar
 
@@ -25,13 +25,13 @@
 
 ### Tamamlanma Kriterleri
 
-- [ ] Solution build başarılıdır.
-- [ ] develop branch ve başlangıç commit’i mevcuttur.
-- [ ] Working tree temizdir.
+- [x] Solution build başarılıdır.
+- [x] develop branch ve başlangıç commit’i mevcuttur.
+- [x] Working tree temizdir.
 
 ## Milestone 1 — PostgreSQL Persistence Foundation
 
-**Durum:** SIRADAKİ
+**Durum:** TAMAMLANDI
 
 **Amaç:** PostgreSQL ve Entity Framework Core bağlantı altyapısını kurmak.
 
@@ -49,15 +49,15 @@
 
 ### Tamamlanma Kriterleri
 
-- [ ] DbContext ve UseNpgsql hazırdır.
-- [ ] Database bağlantı bilgisi User Secrets içindedir.
-- [ ] Build başarılıdır.
+- [x] DbContext ve UseNpgsql hazırdır.
+- [x] Database bağlantı bilgisi User Secrets içindedir.
+- [x] Build başarılıdır.
 
 ## Milestone 2 — Tam Domain ve Database Tasarımı
 
-**Durum:** PLANLANDI
+**Durum:** TAMAMLANDI
 
-**Amaç:** Excel’deki çalışan/CV alanları ile aday, ilan ve başvuru süreçlerini destekleyen tam ilişkisel modeli C# tarafında tasarlamak. Bu aşamada henüz PostgreSQL tabloları oluşturulmaz.
+**Amaç:** Excel’deki çalışan/CV alanları ile aday, internal işe alım talebi ve aday değerlendirme süreçlerini destekleyen tam ilişkisel modeli C# tarafında tasarlamak. Bu aşamada henüz PostgreSQL tabloları oluşturulmaz.
 
 ### Yapılacaklar
 
@@ -74,22 +74,22 @@
 11. Language ve PersonLanguage tablolarını oluşturmak; dil seviyesi ve ana dil bilgisini saklamak.
 12. WorkMode ve PersonWorkModeExperience tablolarını oluşturmak.
 13. CandidateDocument tablosuyla CV dosyası metadata’sını saklamak.
-14. JobPosting, JobPostingRequirement ve Application tablolarını oluşturmak.
-15. ApplicationStatusHistory ile başvurunun süreç geçmişini saklamak.
+14. JobRequisition, JobRequisitionRequirement ve CandidateEvaluationCase tablolarını oluşturmak.
+15. CandidateEvaluationCase ile HR tarafından açılan internal değerlendirme dosyasını ve durumunu saklamak.
 16. Enum, foreign key, unique constraint, index ve delete davranışlarını tanımlamak.
 17. PostgreSQL tablo/kolon adlarını snake_case yapılandırmak.
 18. DbSet ve EntityTypeConfiguration sınıflarını tamamlamak.
 
 ### Tamamlanma Kriterleri
 
-- [ ] Excel’deki profil alanlarının tamamı uygun tablolara eşlenmiştir.
-- [ ] Tek şirket tasarımı uygulanmıştır; Company bağımlılığı yoktur.
-- [ ] İlan ve başvuru akışı desteklenmektedir.
-- [ ] Build ve testler başarılıdır.
+- [x] Excel’deki profil alanlarının tamamı uygun tablolara eşlenmiştir.
+- [x] Tek şirket tasarımı uygulanmıştır; Company bağımlılığı yoktur.
+- [x] Internal işe alım talebi ve aday değerlendirme akışı desteklenmektedir.
+- [x] Build ve testler başarılıdır.
 
 ## Milestone 3 — Initial Migration ve Database Oluşturma
 
-**Durum:** PLANLANDI
+**Durum:** TAMAMLANDI
 
 **Amaç:** Milestone 2’deki C# entity modelini ilk defa gerçek PostgreSQL tablolarına dönüştürmek.
 
@@ -106,14 +106,14 @@
 
 ### Tamamlanma Kriterleri
 
-- [ ] InitialCore migration oluşturulmuştur.
-- [ ] Bütün tablolar PostgreSQL’de görünmektedir.
-- [ ] İlişkiler ve constraint’ler doğrudur.
-- [ ] __EFMigrationsHistory mevcuttur.
+- [x] InitialCore migration oluşturulmuştur.
+- [x] Bütün tablolar PostgreSQL’de görünmektedir.
+- [x] İlişkiler ve constraint’ler doğrudur.
+- [x] __EFMigrationsHistory mevcuttur.
 
 ## Milestone 4 — Seed Data ve Kontrollü Örnek Profil
 
-**Durum:** PLANLANDI
+**Durum:** ERTELENDİ / OPSİYONEL
 
 **Amaç:** Boş database’i küçük, tutarlı ve ilişkileri tamamlanmış örnek verilerle doldurmak.
 
@@ -122,10 +122,10 @@
 1. Örnek departman ve pozisyon kayıtları eklemek.
 2. Skill/technology, sektör, dil, sertifika ve work mode sözlüklerini seed etmek.
 3. 3–5 örnek çalışan ve aday profili oluşturmak.
-4. Örnek iş ilanı ve ilan gereksinimleri oluşturmak.
-5. Örnek başvurular oluşturmak.
+4. Örnek internal işe alım talebi ve JobRequisitionRequirement kayıtları oluşturmak.
+5. Örnek CandidateEvaluationCase kayıtları oluşturmak.
 6. Seed işleminin tekrar çalıştırıldığında duplicate üretmesini engellemek.
-7. İlişkili sorgularla kişi, profil, ilan ve başvuru bağlantılarını doğrulamak.
+7. İlişkili sorgularla kişi, profil, internal işe alım talebi ve aday değerlendirme bağlantılarını doğrulamak.
 8. 300 kişilik Excel’i bu aşamada import etmemek; Excel import milestone’unu beklemek.
 
 ### Tamamlanma Kriterleri
@@ -136,27 +136,44 @@
 
 ## Milestone 5 — Application Layer ve Temel Servisler
 
-**Durum:** PLANLANDI
+**Durum:** TAMAMLANDI
 
 **Amaç:** Web katmanından bağımsız use-case, DTO ve validation katmanını kurmak; Controller’ların DbContext’e doğrudan bağlanmasını engellemek.
 
-### Yapılacaklar
+### Tamamlananlar
 
-1. Employee, Candidate, Profile, JobPosting ve Application use-case’lerini oluşturmak.
-2. Listeleme, detay, oluşturma ve güncelleme DTO’larını yazmak.
-3. Profil alt alanları için servisler oluşturmak: competency, education, certificate, language, project, sector experience.
-4. Entity–DTO dönüşümlerini yapmak.
-5. Validation ve hata sonuçlarını standartlaştırmak.
-6. Async metotlar ve CancellationToken kullanmak.
-7. Controller’ların yalnızca application servislerini çağıracağı sözleşmeyi hazırlamak.
-8. Unit testler yazmak.
+#### 5.1 Application Foundation — TAMAMLANDI
+
+1. Application Layer foundation, use-case sözleşmeleri ve DTO yapısı oluşturuldu.
+2. Package-free validation ile validation ve hata sonuçları standartlaştırıldı.
+3. Application servisleri scoped dependency injection ile kaydedildi.
+4. Audit timestamp’leri TimeProvider tabanlı hâle getirildi.
+5. Async metotlar ve CancellationToken kullanıldı.
+
+#### 5.2 Employee/Candidate Use Cases — TAMAMLANDI
+
+1. Employee ve Candidate use-case’leri tamamlandı.
+2. Listeleme, detay, oluşturma ve güncelleme DTO’ları ile Entity–DTO dönüşümleri hazırlandı.
+
+#### 5.3 Profile, History and Assignment Use Cases — TAMAMLANDI
+
+1. Structured profile use-case’leri tamamlandı.
+2. EmploymentHistory, PersonProject, PersonSectorExperience ve PersonWorkModeExperience use-case’leri tamamlandı.
+3. EmployeeAssignment use-case’leri tamamlandı.
+
+#### 5.4 Requisition and Candidate Evaluation Use Cases — TAMAMLANDI
+
+1. JobRequisition ve JobRequisitionRequirement use-case’leri tamamlandı.
+2. CandidateEvaluationCase use-case’leri tamamlandı.
+3. JobRequisition internal işe alım talebi, CandidateEvaluationCase ise HR tarafından açılan internal değerlendirme dosyası olarak modellendi; sistem public aday başvuru sistemi değildir.
 
 ### Tamamlanma Kriterleri
 
-- [ ] Controller’lar DbContext kullanmamaktadır.
-- [ ] DTO ve servisler hazırdır.
-- [ ] Validation mevcuttur.
-- [ ] Testler başarılıdır.
+- [x] Application Layer foundation ve use-case’ler hazırdır.
+- [x] DTO, Entity–DTO dönüşümleri ve servis kayıtları hazırdır.
+- [x] Package-free validation mevcuttur.
+- [x] Scoped dependency injection ve TimeProvider tabanlı audit timestamp’leri kullanılmaktadır.
+- [x] Toplam 548 test başarılıdır.
 
 ## Milestone 6 — Çalışan ve CV Profil Yönetimi Frontend’i
 
@@ -358,6 +375,10 @@
 
 ## Mevcut Durum
 
-- Milestone 0 tamamlandı.
-- Milestone 1 sıradaki.
-- Milestone 2 tek şirket varsayımıyla, Company tablosu olmadan uygulanacaktır.
+- Milestone 0 — TAMAMLANDI
+- Milestone 1 — TAMAMLANDI
+- Milestone 2 — TAMAMLANDI (tek şirket varsayımıyla, Company tablosu olmadan)
+- Milestone 3 — TAMAMLANDI
+- Milestone 4 — ERTELENDİ / OPSİYONEL (sentetik/reference/demo veri üretimi uygulanmadı)
+- Milestone 5 — TAMAMLANDI
+- Sıradaki aktif aşama Milestone 6’dır.
