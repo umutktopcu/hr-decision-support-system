@@ -1,0 +1,191 @@
+﻿@{
+    ViewData["Title"] = "Aday Detayı";
+}
+
+<!-- Üst Bilgi Başlığı -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Ayşe Yılmaz</h2>
+        <div class="text-muted">
+            Başvurulan Pozisyon: <strong>Kıdemli Yazılım Geliştirici</strong>
+            <span class="badge bg-success ms-3" style="font-size: 0.9em;">%92 Uyum Skoru</span>
+        </div>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary me-2">Listeye Dön</a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+            Profili Düzenle
+        </button>
+    </div>
+</div>
+
+<div class="card section-card shadow-sm">
+    <!-- Sekme (Tab) Başlıkları -->
+    <div class="card-header bg-white pt-3 pb-0 border-bottom-0">
+        <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="genel-tab" data-bs-toggle="tab" data-bs-target="#genel" type="button" role="tab">Genel</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="is-gecmisi-tab" data-bs-toggle="tab" data-bs-target="#is-gecmisi" type="button" role="tab">İş Geçmişi</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="beceriler-tab" data-bs-toggle="tab" data-bs-target="#beceriler" type="button" role="tab">Beceriler</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="projeler-tab" data-bs-toggle="tab" data-bs-target="#projeler" type="button" role="tab">Projeler</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="sektorler-tab" data-bs-toggle="tab" data-bs-target="#sektorler" type="button" role="tab">Sektörler</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="egitim-tab" data-bs-toggle="tab" data-bs-target="#egitim" type="button" role="tab">Eğitim</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="sertifikalar-tab" data-bs-toggle="tab" data-bs-target="#sertifikalar" type="button" role="tab">Sertifikalar</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="diller-tab" data-bs-toggle="tab" data-bs-target="#diller" type="button" role="tab">Diller</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="calisma-sekli-tab" data-bs-toggle="tab" data-bs-target="#calisma-sekli" type="button" role="tab">Çalışma Şekli</button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Sekme (Tab) İçerikleri -->
+    <div class="card-body mt-3">
+        <div class="tab-content" id="profileTabsContent">
+
+            <!-- Genel Sekmesi -->
+            <div class="tab-pane fade show active" id="genel" role="tabpanel">
+                <h5 class="mb-4">Kişisel ve İletişim Bilgileri</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">E-posta</label>
+                        <p class="fw-bold">ayse.yilmaz@example.com</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Telefon</label>
+                        <p class="fw-bold">+90 555 123 45 67</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Lokasyon</label>
+                        <p class="fw-bold">İstanbul, Türkiye</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="text-muted small">Toplam Deneyim</label>
+                        <p class="fw-bold">6 Yıl, 2 Ay</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- İş Geçmişi Sekmesi -->
+            <div class="tab-pane fade" id="is-gecmisi" role="tabpanel">
+                <h5 class="mb-4">Deneyimler</h5>
+                <div class="mb-4 border-bottom pb-3">
+                    <h6 class="fw-bold mb-1">Kıdemli Backend Geliştirici</h6>
+                    <div class="text-muted mb-2">Tech Solutions A.Ş. | Oca 2020 - Devam Ediyor</div>
+                    <p class="small">ASP.NET Core ile mikroservis mimarileri geliştirildi. PostgreSQL veritabanı optimizasyonları yapıldı.</p>
+                </div>
+                <div class="mb-4 border-bottom pb-3">
+                    <h6 class="fw-bold mb-1">Yazılım Uzmanı</h6>
+                    <div class="text-muted mb-2">WebSoft Ltd. | Mar 2017 - Ara 2019</div>
+                    <p class="small">ERP entegrasyonları ve API geliştirme süreçlerinde yer alındı.</p>
+                </div>
+            </div>
+
+            <!-- Diğer sekmeler (Şimdilik yer tutucu olarak eklendi) -->
+            <div class="tab-pane fade" id="beceriler" role="tabpanel">
+                <h5 class="mb-4">Teknik ve Sosyal Beceriler</h5>
+                <span class="badge bg-primary me-2 mb-2 p-2">C# (Uzman)</span>
+                <span class="badge bg-primary me-2 mb-2 p-2">.NET Core (Uzman)</span>
+                <span class="badge bg-primary me-2 mb-2 p-2">PostgreSQL (İleri)</span>
+                <span class="badge bg-secondary me-2 mb-2 p-2">Docker (Orta)</span>
+                <span class="badge bg-secondary me-2 mb-2 p-2">Takım Çalışması</span>
+            </div>
+
+            <div class="tab-pane fade" id="projeler" role="tabpanel"><h5 class="mb-4">Projeler</h5><p class="text-muted">Katılım sağlanan projeler burada listelenecek.</p></div>
+            <div class="tab-pane fade" id="sektorler" role="tabpanel"><h5 class="mb-4">Sektör Deneyimi</h5><p class="text-muted">E-Ticaret (3 Yıl), Finans (2 Yıl)</p></div>
+
+            <div class="tab-pane fade" id="egitim" role="tabpanel">
+                <h5 class="mb-4">Eğitim Geçmişi</h5>
+                <h6 class="fw-bold mb-1">Bilgisayar Mühendisliği (Lisans)</h6>
+                <div class="text-muted">Boğaziçi Üniversitesi | 2013 - 2017</div>
+            </div>
+
+            <div class="tab-pane fade" id="sertifikalar" role="tabpanel"><h5 class="mb-4">Sertifikalar</h5><p class="text-muted">AWS Certified Developer - Associate (2022)</p></div>
+
+            <div class="tab-pane fade" id="diller" role="tabpanel">
+                <h5 class="mb-4">Yabancı Diller</h5>
+                <p><strong>İngilizce:</strong> C1 (İleri Düzey)</p>
+                <p><strong>Almanca:</strong> A2 (Başlangıç Düzeyi)</p>
+            </div>
+
+            <div class="tab-pane fade" id="calisma-sekli" role="tabpanel">
+                <h5 class="mb-4">Tercih Edilen Çalışma Şekli</h5>
+                <p class="text-muted">Tam Zamanlı, Uzaktan (Remote) veya Hibrit</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Profili Düzenle Modalı -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold" id="editProfileModalLabel">Aday Profilini Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Ad Soyad</label>
+                            <input type="text" class="form-control" value="Ayşe Yılmaz">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Başvurulan Pozisyon</label>
+                            <input type="text" class="form-control" value="Kıdemli Yazılım Geliştirici">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">E-posta</label>
+                            <input type="email" class="form-control" value="ayse.yilmaz@example.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Telefon</label>
+                            <input type="tel" class="form-control" value="+90 555 123 45 67">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Lokasyon</label>
+                            <input type="text" class="form-control" value="İstanbul, Türkiye">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Çalışma Şekli</label>
+                            <select class="form-select">
+                                <option value="1" selected>Tam Zamanlı, Uzaktan (Remote)</option>
+                                <option value="2">Hibrit</option>
+                                <option value="3">Ofis</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small">Kısa Notlar (İK Değerlendirmesi)</label>
+                            <textarea class="form-control" rows="3">Görüşme olumlu geçti, teknik testi başarıyla tamamladı.</textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                <!-- Demo amaçlı alert eklendi, backend bağlandığında burası Ajax ile formu submit edecek -->
+                <button type="button" class="btn btn-primary" onclick="alert('Değişiklikler başarıyla kaydedildi! (Demo)')" data-bs-dismiss="modal">Değişiklikleri Kaydet</button>
+            </div>
+
+        </div>
+    </div>
+</div>

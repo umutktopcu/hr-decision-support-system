@@ -1,0 +1,140 @@
+﻿@{
+    ViewData["Title"] = "Çalışan Yönetimi";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Çalışan Listesi</h2>
+    <button class="btn btn-primary">
+        + Yeni Çalışan Ekle
+    </button>
+</div>
+
+<!-- Filtreleme Alanı -->
+<div class="card section-card shadow-sm mb-4">
+    <div class="card-body bg-light">
+        <form class="row g-3 align-items-end" onsubmit="event.preventDefault(); filterEmployees();">
+            <div class="col-md-4">
+                <label class="form-label text-muted small">İsim veya Pozisyon Ara</label>
+                <!-- EKLENDİ: id="searchInput" -->
+                <input type="text" id="searchInput" class="form-control" placeholder="Örn: Ahmet Yılmaz...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small">Departman</label>
+                <select id="departmentSelect" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="Yazılım">Yazılım</option>
+                    <option value="İnsan Kaynakları">İnsan Kaynakları</option>
+                    <option value="Satış & Pazarlama">Satış & Pazarlama</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small">Çalışma Şekli</label>
+                <select id="workTypeSelect" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="Uzaktan">Uzaktan (Remote)</option>
+                    <option value="Hibrit">Hibrit</option>
+                    <option value="Ofis">Ofis</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-primary" onclick="filterEmployees()">Ara</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Çalışan Tablosu -->
+<div class="card section-card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Çalışan Adı</th>
+                        <th>Departman</th>
+                        <th>Unvan</th>
+                        <th>Çalışma Şekli</th>
+                        <th class="text-end pe-4">İşlemler</th>
+                    </tr>
+                </thead>
+                <!-- EKLENDİ: id="employeeTableBody" -->
+                <tbody id="employeeTableBody">
+                    <tr>
+                        <td class="ps-4 fw-bold">Mehmet Öz</td>
+                        <td>Yazılım</td>
+                        <td>Kıdemli Backend Geliştirici</td>
+                        <td><span class="badge bg-info text-dark">Uzaktan</span></td>
+                        <td class="text-end pe-4">
+                            <a asp-action="Details" asp-route-id="1" class="btn btn-sm btn-outline-primary">Detay</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 fw-bold">Elif Yılmaz</td>
+                        <td>İnsan Kaynakları</td>
+                        <td>İK Uzmanı</td>
+                        <td><span class="badge bg-secondary">Hibrit</span></td>
+                        <td class="text-end pe-4">
+                            <a asp-action="Details" asp-route-id="2" class="btn btn-sm btn-outline-primary">Detay</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 fw-bold">Ayşe Demir</td>
+                        <td>Satış & Pazarlama</td>
+                        <td>Bölge Satış Müdürü</td>
+                        <td><span class="badge bg-success">Ofis</span></td>
+                        <td class="text-end pe-4">
+                            <a asp-action="Details" asp-route-id="3" class="btn btn-sm btn-outline-primary">Detay</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterEmployees() {
+            // Input ve Select elemanlarını ID'leri üzerinden yakalıyoruz
+            const searchInput = document.getElementById('searchInput');
+            const deptSelect = document.getElementById('departmentSelect');
+            const workSelect = document.getElementById('workTypeSelect');
+
+            // Değerleri alıyoruz (varsa) ve küçük harfe çeviriyoruz
+            const searchText = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const deptFilter = deptSelect ? deptSelect.value.toLowerCase() : '';
+            const workFilter = workSelect ? workSelect.value.toLowerCase() : '';
+
+            // Tablonun satırlarını (tr) alıyoruz
+            const rows = document.querySelectorAll('#employeeTableBody tr');
+
+            rows.forEach(row => {
+                // Hataları önlemek için hücre sayısı kontrolü
+                if (row.cells.length < 4) return;
+
+                // DÜZELTİLDİ: Sütun sıraları HTML tablonla birebir eşleştirildi
+                const name = row.cells[0].innerText.toLowerCase();       // 1. Sütun: İsim
+                const department = row.cells[1].innerText.toLowerCase(); // 2. Sütun: Departman
+                const position = row.cells[2].innerText.toLowerCase();   // 3. Sütun: Unvan
+                const workType = row.cells[3].innerText.toLowerCase();   // 4. Sütun: Çalışma Şekli
+
+                // Eşleşme kontrolleri (Arama kutusu hem isme hem unvana bakar)
+                const matchSearch = name.includes(searchText) || position.includes(searchText);
+                const matchDept = deptFilter === "" || department.includes(deptFilter);
+                const matchWork = workFilter === "" || workType.includes(workFilter);
+
+                // Tüm şartlar sağlanıyorsa satırı göster, sağlanmıyorsa gizle
+                if (matchSearch && matchDept && matchWork) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Kullanıcı klavyeden bir şey yazdığında veya dropdown değiştirdiğinde anında filtrelesin
+        document.getElementById('searchInput').addEventListener('keyup', filterEmployees);
+        document.getElementById('departmentSelect').addEventListener('change', filterEmployees);
+        document.getElementById('workTypeSelect').addEventListener('change', filterEmployees);
+    </script>
+}

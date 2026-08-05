@@ -1,0 +1,31 @@
+﻿@{
+    // Title is set in your DashboardController, but we can override or use it here
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Dashboard</h2>
+</div>
+
+<div class="row">
+    <!-- Employees Card -->
+    <div class="col-md-6 mb-4">
+        <div class="card dashboard-card shadow-sm p-3">
+            <div class="card-body">
+                <h5 class="text-muted">Toplam Çalışan</h5>
+                <div class="dashboard-number">124</div>
+                <a asp-controller="Employee" asp-action="Index" class="btn btn-outline-primary mt-3">Çalışanları Gör</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Candidates Card -->
+    <div class="col-md-6 mb-4">
+        <div class="card dashboard-card shadow-sm p-3">
+            <div class="card-body">
+                <h5 class="text-muted">Aktif Adaylar</h5>
+                <div class="dashboard-number">38</div>
+                <a asp-controller="Candidate" asp-action="Index" class="btn btn-outline-primary mt-3">Adayları Gör</a>
+            </div>
+        </div>
+    </div>
+</div>
