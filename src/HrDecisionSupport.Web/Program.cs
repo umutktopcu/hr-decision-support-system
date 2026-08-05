@@ -1,11 +1,16 @@
-using HrDecisionSupport.Infrastructure.Persistence;
+using HrDecisionSupport.Application;
+using HrDecisionSupport.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddDbContext<HrDecisionSupportDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSql")));
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("PostgreSql")
+        ?? throw new InvalidOperationException(
+            "PostgreSQL connection string is not configured.")));
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
