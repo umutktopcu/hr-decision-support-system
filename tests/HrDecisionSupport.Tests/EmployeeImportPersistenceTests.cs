@@ -70,9 +70,60 @@ public class EmployeeImportPersistenceTests
         await using var db = TestDatabase.CreateContext(); var result = await Service(db, Source("E1", "C#", "A", "ERP (5 yıl)", "Lisans", "Computer Science")).ImportAsync(Request("dry", true));
         Assert.True(result.IsSuccess); Assert.Empty(db.Sectors); Assert.Empty(db.PersonSectorExperiences); Assert.Empty(db.EducationRecords); Assert.Empty(db.EmployeeImportBatches);
     }
-    private static EmployeeImportService Service(HrDecisionSupport.Infrastructure.Persistence.HrDecisionSupportDbContext db, EmployeeImportSourceRow row) => new(db, new Reader(row), new EmployeeImportRowNormalizer(), new EmployeeImportRowValidator(), new EmployeeImportDryRunService(new Reader(row), new EmployeeImportRowNormalizer(), new EmployeeImportRowValidator()), new Runner(), TimeProvider.System);
+    [Fact]
+    public async Task ImportAsync_CreatesAndReusesImportedCertificateWithoutChangingRealEvidence()
+    {
+        await using var db = TestDatabase.CreateContext(); var first = await Service(db, Source("E1", "C#", "A", certificates: "AWS Certified")).ImportAsync(Request("first")); var certificate = await db.Certificates.SingleAsync(); var imported = await db.PersonCertificates.SingleAsync();
+        Assert.Equal("AWS_CERTIFIED", certificate.Code); Assert.Equal("AWS Certified", certificate.Name); Assert.Null(certificate.Issuer); Assert.Null(imported.IssueDate); Assert.Null(imported.ExpirationDate); Assert.Null(imported.CredentialCode); Assert.Equal(1, first.Value.CertificateLinksCreated);
+        var second = await Service(db, Source("E1", "C#", "A", certificates: "AWS Certified")).ImportAsync(Request("second")); Assert.Equal(1, await db.PersonCertificates.CountAsync()); Assert.Equal(0, second.Value.CertificateLinksCreated);
+        db.PersonCertificates.Add(new PersonCertificate { Id = Guid.NewGuid(), PersonId = imported.PersonId, CertificateId = certificate.Id, IssueDate = new DateOnly(2020, 1, 1), CredentialCode = "REAL" }); await db.SaveChangesAsync(); await Service(db, Source("E1", "C#", "A", certificates: "AWS Certified")).ImportAsync(Request("third"));
+        Assert.Equal(2, await db.PersonCertificates.CountAsync()); Assert.Contains(await db.PersonCertificates.ToListAsync(), x => x.CredentialCode == "REAL");
+    }
+    [Fact]
+    public async Task ImportAsync_PreservesCertificateNameWhenCanonicalCodeConflicts()
+    {
+        await using var db = TestDatabase.CreateContext(); await Service(db, Source("E1", "C#", "A", certificates: "AWS")).ImportAsync(Request("first")); var result = await Service(db, Source("E2", "C#", "A", certificates: "AWS!")).ImportAsync(Request("second"));
+        Assert.Equal("AWS", (await db.Certificates.SingleAsync()).Name); Assert.Equal(EmployeeImportRowStatus.SucceededWithWarnings, result.Value.Rows.Single().Status); Assert.Contains(result.Value.Rows.Single().Diagnostics, x => x.Code == "certificate_name_conflict");
+    }
+    [Fact]
+    public async Task ImportAsync_MergesLanguageWithoutOverwritingExistingProficiencyOrNative()
+    {
+        await using var db = TestDatabase.CreateContext(); await Service(db, Source("E1", "C#", "A", languages: "English (Native)")).ImportAsync(Request("first")); var filled = await Service(db, Source("E1", "C#", "A", languages: "English C1")).ImportAsync(Request("second")); var conflict = await Service(db, Source("E1", "C#", "A", languages: "English C2")).ImportAsync(Request("third"));
+        var language = await db.Languages.SingleAsync(); var link = await db.PersonLanguages.SingleAsync(); Assert.Equal("EN", language.Code); Assert.Equal("English", language.Name); Assert.Equal(LanguageProficiencyLevel.C1, link.ProficiencyLevel); Assert.True(link.IsNative); Assert.Equal(0, filled.Value.LanguageLinksCreated); Assert.Equal(0, conflict.Value.LanguageLinksCreated); Assert.Equal(EmployeeImportRowStatus.SucceededWithWarnings, conflict.Value.Rows.Single().Status); Assert.Contains(conflict.Value.Rows.Single().Diagnostics, x => x.Code == "language_proficiency_conflict");
+    }
+    [Fact]
+    public async Task ImportAsync_PreservesLanguageNameWhenCodeConflicts()
+    {
+        await using var db = TestDatabase.CreateContext(); db.Languages.Add(new Language { Id = Guid.NewGuid(), Code = "EN", Name = "English language" }); await db.SaveChangesAsync(); var result = await Service(db, Source("E1", "C#", "A", languages: "English C1")).ImportAsync(Request("first"));
+        Assert.Equal("English language", (await db.Languages.SingleAsync()).Name); Assert.Equal(EmployeeImportRowStatus.SucceededWithWarnings, result.Value.Rows.Single().Status); Assert.Contains(result.Value.Rows.Single().Diagnostics, x => x.Code == "language_name_conflict");
+    }
+    [Fact]
+    public async Task ImportAsync_CreatesCanonicalWorkModesAndMergesExperience()
+    {
+        await using var db = TestDatabase.CreateContext(); var allModes = await Service(db, Source("E1", "C#", "A", workModes: "Ofis, hibrit ve uzaktan")).ImportAsync(Request("first"));
+        Assert.Equal(3, await db.WorkModes.CountAsync()); Assert.Equal(3, await db.PersonWorkModeExperiences.CountAsync()); Assert.Equal(3, allModes.Value.WorkModeLinksCreated); Assert.Contains(await db.WorkModes.ToListAsync(), x => x.Code == "ON_SITE" && x.Name == "On-site"); Assert.Contains(await db.WorkModes.ToListAsync(), x => x.Code == "HYBRID" && x.Name == "Hybrid"); Assert.Contains(await db.WorkModes.ToListAsync(), x => x.Code == "REMOTE" && x.Name == "Remote");
+        var filled = await Service(db, Source("E1", "C#", "A"), new WorkModeNormalizer(12)).ImportAsync(Request("second")); var unchanged = await Service(db, Source("E1", "C#", "A"), new WorkModeNormalizer(null)).ImportAsync(Request("third")); var conflict = await Service(db, Source("E1", "C#", "A"), new WorkModeNormalizer(24)).ImportAsync(Request("fourth"));
+        var hybrid = await db.PersonWorkModeExperiences.Include(x => x.WorkMode).SingleAsync(x => x.WorkMode.Code == "HYBRID"); Assert.Equal(24, hybrid.ExperienceMonths); Assert.Equal(0, filled.Value.WorkModeLinksCreated); Assert.Equal(0, unchanged.Value.WorkModeLinksCreated); Assert.Equal(0, conflict.Value.WorkModeLinksCreated); Assert.Contains(conflict.Value.Rows.Single().Diagnostics, x => x.Code == "work_mode_experience_conflict");
+    }
+    [Fact]
+    public async Task ImportAsync_PreservesWorkModeNameWhenCodeConflicts()
+    {
+        await using var db = TestDatabase.CreateContext(); db.WorkModes.Add(new WorkMode { Id = Guid.NewGuid(), Code = "REMOTE", Name = "Remote work" }); await db.SaveChangesAsync(); var result = await Service(db, Source("E1", "C#", "A", workModes: "Uzaktan")).ImportAsync(Request("first"));
+        Assert.Equal("Remote work", (await db.WorkModes.SingleAsync()).Name); Assert.Equal(EmployeeImportRowStatus.SucceededWithWarnings, result.Value.Rows.Single().Status); Assert.Contains(result.Value.Rows.Single().Diagnostics, x => x.Code == "work_mode_name_conflict");
+    }
+    [Fact]
+    public async Task ImportAsync_DryRunDoesNotPersistCertificateLanguageOrWorkMode()
+    {
+        await using var db = TestDatabase.CreateContext(); var result = await Service(db, Source("E1", "C#", "A", certificates: "AWS", languages: "English C1", workModes: "Ofis, hibrit ve uzaktan")).ImportAsync(Request("dry-assets", true));
+        Assert.True(result.IsSuccess); Assert.Empty(db.Certificates); Assert.Empty(db.PersonCertificates); Assert.Empty(db.Languages); Assert.Empty(db.PersonLanguages); Assert.Empty(db.WorkModes); Assert.Empty(db.PersonWorkModeExperiences); Assert.Empty(db.EmployeeImportBatches);
+    }
+    private static EmployeeImportService Service(HrDecisionSupport.Infrastructure.Persistence.HrDecisionSupportDbContext db, EmployeeImportSourceRow row, IEmployeeImportRowNormalizer? normalizer = null)
+    {
+        normalizer ??= new EmployeeImportRowNormalizer(); return new(db, new Reader(row), normalizer, new EmployeeImportRowValidator(), new EmployeeImportDryRunService(new Reader(row), new EmployeeImportRowNormalizer(), new EmployeeImportRowValidator()), new Runner(), TimeProvider.System);
+    }
     private static EmployeeImportRequest Request(string name = "x", bool dryRun = false, DateOnly? observationDate = null) => new(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(name)), name, EmployeeDatasetSplit.Training, observationDate, "v1", "l1", dryRun);
-    private static EmployeeImportSourceRow Source(string code, string competency, string project, string? sector = null, string? educationLevel = null, string? educationField = null) => new(2, code, "Backend", 1, 1, null, competency, null, project, sector, educationLevel, educationField, null, null, null, new DateOnly(2020, 1, 1), null, 1, null, null, null, null, 0, 0, 1, new Dictionary<string, string?>(), []);
+    private static EmployeeImportSourceRow Source(string code, string competency, string project, string? sector = null, string? educationLevel = null, string? educationField = null, string? certificates = null, string? languages = null, string? workModes = null) => new(2, code, "Backend", 1, 1, null, competency, null, project, sector, educationLevel, educationField, certificates, languages, workModes, new DateOnly(2020, 1, 1), null, 1, null, null, null, null, 0, 0, 1, new Dictionary<string, string?>(), []);
     private sealed class Reader(EmployeeImportSourceRow row) : IEmployeeSpreadsheetReader { public Task<Result<EmployeeImportSpreadsheetReadResult>> ReadAsync(Stream s, CancellationToken c = default) => Task.FromResult(Result<EmployeeImportSpreadsheetReadResult>.Success(new("S", [], [row], []))); }
+    private sealed class WorkModeNormalizer(int? experienceMonths) : IEmployeeImportRowNormalizer { public EmployeeImportNormalizedRow Normalize(EmployeeImportSourceRow row) => new EmployeeImportRowNormalizer().Normalize(row) with { WorkModes = [new("HYBRID", "Hybrid", experienceMonths)] }; }
     private sealed class Runner : IEmployeeImportTransactionRunner { public Task<T> ExecuteAsync<T>(Func<CancellationToken, Task<T>> op, CancellationToken c = default) => op(c); }
 }
