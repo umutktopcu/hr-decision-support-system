@@ -28,6 +28,7 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
             var preparedRows = source.Value.Rows.Select(sourceRow => new PreparedRow(normalizer.Normalize(sourceRow), default!)).ToArray();
             for (var i = 0; i < preparedRows.Length; i++) preparedRows[i] = preparedRows[i] with { Validation = validator.Validate(preparedRows[i].Row, new(request.DatasetSplit, request.ObservationDate)) };
             var cache = await PreloadCacheAsync(preparedRows, ct);
+            var profileCache = new ProfileLinkCache();
             var existing = await context.EmployeeImportBatches.FirstOrDefaultAsync(x => x.FileHash == copy.Hash, ct);
             if (existing is not null) return Result<EmployeeImportResult>.Failure("employee_import.already_imported", "A batch with this file hash already exists.");
             var now = timeProvider.GetUtcNow().UtcDateTime;
@@ -39,7 +40,14 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
                 ct.ThrowIfCancellationRequested(); var normalized = prepared.Row; var validation = prepared.Validation; orchestrationHook?.BeforeRow(normalized); ct.ThrowIfCancellationRequested();
                 var rowCounts = new Counts();
                 var mutations = new List<Action>();
-                try { var rowResult = await transactions.ExecuteAsync(token => PersistRowAsync(batch, normalized, validation, request, catalog, rowCounts, mutations, token), ct); mutations.ForEach(mutation => mutation()); counts.Add(rowCounts); rows.Add(rowResult); }
+                Employee? cachedEmployee = null; Person? cachedPerson = null;
+                if (validation.Status != EmployeeImportValidationStatus.Invalid && !string.IsNullOrWhiteSpace(normalized.EmployeeCode))
+                {
+                    catalog.EmployeesByCode.TryGetValue(normalized.EmployeeCode, out cachedEmployee);
+                    catalog.PeopleByCode.TryGetValue(normalized.EmployeeCode, out cachedPerson);
+                    await profileCache.EnsureLoadedAsync(cachedEmployee, cachedPerson, normalized, context, ct);
+                }
+                try { var rowResult = await transactions.ExecuteAsync(token => PersistRowAsync(batch, normalized, validation, request, catalog, profileCache, rowCounts, mutations, token), ct); mutations.ForEach(mutation => mutation()); counts.Add(rowCounts); rows.Add(rowResult); }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception) { rows.Add(await PersistFailureAsync(batch, normalized, validation.Diagnostics, "row_persistence_failed", ct)); }
             }
@@ -59,7 +67,7 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
         }
     }
     private async Task<Result<EmployeeImportResult>> RunDryAsync(EmployeeImportRequest request, CancellationToken ct) { var result = await dryRun.DryRunAsync(request.Content, new(request.DatasetSplit, request.ObservationDate), ct); if (result.IsFailure) return Result<EmployeeImportResult>.Failure(result.Error!); var rows = result.Value.Rows.Select(x => new EmployeeImportRowResult(x.SourceRowNumber, x.EmployeeCode, x.Status == EmployeeImportValidationStatus.Invalid ? EmployeeImportRowStatus.Failed : x.Status == EmployeeImportValidationStatus.ValidWithWarnings ? EmployeeImportRowStatus.SucceededWithWarnings : EmployeeImportRowStatus.Succeeded, null, x.Diagnostics)).ToArray(); return Result<EmployeeImportResult>.Success(Build(null, true, request, rows, new())); }
-    private async Task<EmployeeImportRowResult> PersistRowAsync(EmployeeImportBatch batch, EmployeeImportNormalizedRow row, EmployeeImportRowValidationResult validation, EmployeeImportRequest request, Catalog catalog, Counts counts, ICollection<Action> mutations, CancellationToken ct)
+    private async Task<EmployeeImportRowResult> PersistRowAsync(EmployeeImportBatch batch, EmployeeImportNormalizedRow row, EmployeeImportRowValidationResult validation, EmployeeImportRequest request, Catalog catalog, ProfileLinkCache profileCache, Counts counts, ICollection<Action> mutations, CancellationToken ct)
     {
         var now = timeProvider.GetUtcNow().UtcDateTime; var diagnostics = validation.Diagnostics.ToList(); var importRow = new EmployeeImportRow { Id = Guid.NewGuid(), ImportBatchId = batch.Id, SourceRowNumber = row.SourceRowNumber, ExternalEmployeeCode = row.EmployeeCode, RawPayloadJson = JsonSerializer.Serialize(row.RawValues, JsonOptions), ValidationErrorsJson = JsonSerializer.Serialize(diagnostics, JsonOptions), CreatedAtUtc = now }; context.EmployeeImportRows.Add(importRow);
         if (validation.Status == EmployeeImportValidationStatus.Invalid) { importRow.ImportStatus = EmployeeImportRowStatus.Failed; await context.SaveChangesAsync(ct); return new(row.SourceRowNumber, row.EmployeeCode, importRow.ImportStatus, null, diagnostics); }
@@ -68,10 +76,13 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
         if (employee is not null && person is not null && employee.PersonId != person.Id) throw new InvalidOperationException();
         if (employee is null) { if (person is null) { person = new Person { Id = Guid.NewGuid(), AnonymousCode = row.EmployeeCode!, CreatedAtUtc = now }; context.People.Add(person); mutations.Add(() => catalog.PeopleByCode[row.EmployeeCode!] = person); } employee = new Employee { Id = Guid.NewGuid(), PersonId = person.Id, EmployeeCode = row.EmployeeCode!, HireDate = row.HireDate!.Value, EmploymentStatus = row.TerminationDate is null ? EmploymentStatus.Active : EmploymentStatus.Terminated }; context.Employees.Add(employee); mutations.Add(() => catalog.EmployeesByCode[row.EmployeeCode!] = employee); counts.NewEmployees++; } else { if (row.HireDate is not null) employee.HireDate = row.HireDate.Value; if (row.TerminationDate is not null) employee.TerminationDate = row.TerminationDate; employee.EmploymentStatus = employee.TerminationDate is null ? EmploymentStatus.Active : EmploymentStatus.Terminated; counts.UpdatedEmployees++; person = employee.Person; }
         persistenceHook?.AfterPersonAndEmployeePrepared(row);
-        if (!await context.EmployeeAssignments.AnyAsync(x => x.EmployeeId == employee.Id && x.DepartmentId == catalog.It.Id && x.PositionId == catalog.Backend.Id && x.StartDate == null && x.EndDate == null, ct)) { context.EmployeeAssignments.Add(new() { Id = Guid.NewGuid(), EmployeeId = employee.Id, DepartmentId = catalog.It.Id, PositionId = catalog.Backend.Id }); }
-        for (var i = 0; i < row.PreviousPositions.Count; i++) if (!await context.PersonPriorPositionEvidences.AnyAsync(x => x.PersonId == person!.Id && x.SequenceNumber == i + 1 && x.Title == row.PreviousPositions[i], ct)) context.PersonPriorPositionEvidences.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, ImportRowId = importRow.Id, Title = row.PreviousPositions[i], SequenceNumber = i + 1, CreatedAtUtc = now });
-        foreach (var item in row.Competencies) { catalog.CompetenciesByCode.TryGetValue(item.Code, out var competency); if (competency is null) { competency = await context.Competencies.FirstOrDefaultAsync(x => x.Code == item.Code, ct); if (competency is null) { competency = new Competency { Id = Guid.NewGuid(), Code = item.Code, Name = item.Name, CompetencyCategory = item.Category, IsActive = true }; context.Competencies.Add(competency); } var cached = competency; mutations.Add(() => catalog.CompetenciesByCode[item.Code] = cached); } if (!await context.PersonCompetencies.AnyAsync(x => x.PersonId == person!.Id && x.CompetencyId == competency.Id, ct)) { context.PersonCompetencies.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, CompetencyId = competency.Id }); counts.CompetencyLinksCreated++; } }
-        foreach (var projectText in row.ProjectExperiences) { var existingProjectLink = await context.PersonProjects.Include(x => x.Project).FirstOrDefaultAsync(x => x.PersonId == person!.Id && x.Description == projectText, ct); if (existingProjectLink is null) { var project = new Project { Id = Guid.NewGuid(), Name = ProjectName(projectText), Description = projectText }; context.Projects.Add(project); context.PersonProjects.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, ProjectId = project.Id, Description = projectText }); counts.ProjectsCreated++; } }
+        var profile = profileCache.Get(person!.Id) ?? ProfileLinks.Empty(employee.Id);
+        void Mutate(Action<ProfileLinks> change) => mutations.Add(() => change(profileCache.GetOrAdd(person.Id, employee.Id)));
+        var assignmentKey = new AssignmentKey(employee.Id, catalog.It.Id, catalog.Backend.Id, null, null);
+        if (!profile.Assignments.Contains(assignmentKey)) { context.EmployeeAssignments.Add(new() { Id = Guid.NewGuid(), EmployeeId = employee.Id, DepartmentId = catalog.It.Id, PositionId = catalog.Backend.Id }); Mutate(x => x.Assignments.Add(assignmentKey)); }
+        for (var i = 0; i < row.PreviousPositions.Count; i++) { var key = new PreviousPositionKey(i + 1, row.PreviousPositions[i]); if (!profile.PreviousPositions.Contains(key)) { context.PersonPriorPositionEvidences.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, ImportRowId = importRow.Id, Title = row.PreviousPositions[i], SequenceNumber = i + 1, CreatedAtUtc = now }); Mutate(x => x.PreviousPositions.Add(key)); } }
+        foreach (var item in row.Competencies) { catalog.CompetenciesByCode.TryGetValue(item.Code, out var competency); if (competency is null) { competency = await context.Competencies.FirstOrDefaultAsync(x => x.Code == item.Code, ct); if (competency is null) { competency = new Competency { Id = Guid.NewGuid(), Code = item.Code, Name = item.Name, CompetencyCategory = item.Category, IsActive = true }; context.Competencies.Add(competency); } var cached = competency; mutations.Add(() => catalog.CompetenciesByCode[item.Code] = cached); } if (!profile.CompetencyIds.Contains(competency.Id)) { context.PersonCompetencies.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, CompetencyId = competency.Id }); Mutate(x => x.CompetencyIds.Add(competency.Id)); counts.CompetencyLinksCreated++; } }
+        foreach (var projectText in row.ProjectExperiences) { if (!profile.ProjectTexts.Contains(projectText)) { var project = new Project { Id = Guid.NewGuid(), Name = ProjectName(projectText), Description = projectText }; context.Projects.Add(project); context.PersonProjects.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, ProjectId = project.Id, Description = projectText }); Mutate(x => x.ProjectTexts.Add(projectText)); counts.ProjectsCreated++; } }
         foreach (var item in row.SectorExperiences)
         {
             if (!catalog.SectorsByCode.TryGetValue(item.Code, out var sector))
@@ -81,8 +92,8 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
                 var cached = sector; mutations.Add(() => catalog.SectorsByCode[item.Code] = cached);
             }
             if (!string.Equals(sector.Name, item.Name, StringComparison.Ordinal)) diagnostics.Add(Warning("sector_name_conflict", "SectorExperience", "The existing sector name was preserved.", row));
-            var experience = await context.PersonSectorExperiences.FirstOrDefaultAsync(x => x.PersonId == person!.Id && x.SectorId == sector.Id, ct);
-            if (experience is null) { context.PersonSectorExperiences.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, SectorId = sector.Id, ExperienceMonths = item.ExperienceMonths, Notes = null }); counts.SectorLinksCreated++; }
+            profile.Sectors.TryGetValue(sector.Id, out var experience);
+            if (experience is null) { experience = new() { Id = Guid.NewGuid(), PersonId = person.Id, SectorId = sector.Id, ExperienceMonths = item.ExperienceMonths, Notes = null }; context.PersonSectorExperiences.Add(experience); var cached = experience; Mutate(x => x.Sectors[sector.Id] = cached); counts.SectorLinksCreated++; }
             else if (item.ExperienceMonths is not null)
             {
                 if (experience.ExperienceMonths is not null && experience.ExperienceMonths != item.ExperienceMonths) diagnostics.Add(Warning("sector_experience_conflict", "SectorExperience", "The imported sector experience value was applied.", row));
@@ -92,8 +103,8 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
         if (row.EducationLevel is not null)
         {
             var field = NormalizeEducationField(row.EducationField);
-            var candidates = await context.EducationRecords.Where(x => x.PersonId == person!.Id && x.DegreeLevel == row.EducationLevel.Value && x.Institution == null && x.StartDate == null && x.GraduationDate == null).ToListAsync(ct);
-            if (!candidates.Any(x => NormalizeEducationField(x.FieldOfStudy) == field)) { context.EducationRecords.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, Institution = null, FieldOfStudy = row.EducationField, DegreeLevel = row.EducationLevel.Value, StartDate = null, GraduationDate = null }); counts.EducationRecordsCreated++; }
+            var key = new EducationKey(row.EducationLevel.Value, field);
+            if (!profile.Educations.Contains(key)) { context.EducationRecords.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, Institution = null, FieldOfStudy = row.EducationField, DegreeLevel = row.EducationLevel.Value, StartDate = null, GraduationDate = null }); Mutate(x => x.Educations.Add(key)); counts.EducationRecordsCreated++; }
         }
         foreach (var name in row.Certificates)
         {
@@ -105,7 +116,7 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
                 var cached = certificate; mutations.Add(() => catalog.CertificatesByCode[code] = cached);
             }
             if (!string.Equals(certificate.Name, name, StringComparison.Ordinal)) diagnostics.Add(Warning("certificate_name_conflict", "Certificate", "The existing certificate name was preserved.", row));
-            if (!await context.PersonCertificates.AnyAsync(x => x.PersonId == person!.Id && x.CertificateId == certificate.Id && x.IssueDate == null && x.ExpirationDate == null && x.CredentialCode == null, ct)) { context.PersonCertificates.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, CertificateId = certificate.Id, IssueDate = null, ExpirationDate = null, CredentialCode = null }); counts.CertificateLinksCreated++; }
+            if (!profile.CertificateIds.Contains(certificate.Id)) { context.PersonCertificates.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, CertificateId = certificate.Id, IssueDate = null, ExpirationDate = null, CredentialCode = null }); Mutate(x => x.CertificateIds.Add(certificate.Id)); counts.CertificateLinksCreated++; }
         }
         foreach (var item in row.Languages)
         {
@@ -116,8 +127,8 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
                 var cached = language; mutations.Add(() => catalog.LanguagesByCode[item.Code] = cached);
             }
             if (!string.Equals(language.Name, item.Name, StringComparison.Ordinal)) diagnostics.Add(Warning("language_name_conflict", "Language", "The existing language name was preserved.", row));
-            var link = await context.PersonLanguages.FirstOrDefaultAsync(x => x.PersonId == person!.Id && x.LanguageId == language.Id, ct);
-            if (link is null) { context.PersonLanguages.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, LanguageId = language.Id, ProficiencyLevel = item.ProficiencyLevel, IsNative = item.IsNative }); counts.LanguageLinksCreated++; }
+            profile.Languages.TryGetValue(language.Id, out var link);
+            if (link is null) { link = new() { Id = Guid.NewGuid(), PersonId = person.Id, LanguageId = language.Id, ProficiencyLevel = item.ProficiencyLevel, IsNative = item.IsNative }; context.PersonLanguages.Add(link); var cached = link; Mutate(x => x.Languages[language.Id] = cached); counts.LanguageLinksCreated++; }
             else
             {
                 if (link.ProficiencyLevel is null && item.ProficiencyLevel is not null) link.ProficiencyLevel = item.ProficiencyLevel;
@@ -134,8 +145,8 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
                 var cached = workMode; mutations.Add(() => catalog.WorkModesByCode[item.Code] = cached);
             }
             if (!string.Equals(workMode.Name, item.Name, StringComparison.Ordinal)) diagnostics.Add(Warning("work_mode_name_conflict", "WorkMode", "The existing work mode name was preserved.", row));
-            var experience = await context.PersonWorkModeExperiences.FirstOrDefaultAsync(x => x.PersonId == person!.Id && x.WorkModeId == workMode.Id, ct);
-            if (experience is null) { context.PersonWorkModeExperiences.Add(new() { Id = Guid.NewGuid(), PersonId = person.Id, WorkModeId = workMode.Id, ExperienceMonths = item.ExperienceMonths }); counts.WorkModeLinksCreated++; }
+            profile.WorkModes.TryGetValue(workMode.Id, out var experience);
+            if (experience is null) { experience = new() { Id = Guid.NewGuid(), PersonId = person.Id, WorkModeId = workMode.Id, ExperienceMonths = item.ExperienceMonths }; context.PersonWorkModeExperiences.Add(experience); var cached = experience; Mutate(x => x.WorkModes[workMode.Id] = cached); counts.WorkModeLinksCreated++; }
             else if (item.ExperienceMonths is not null)
             {
                 if (experience.ExperienceMonths is not null && experience.ExperienceMonths != item.ExperienceMonths) diagnostics.Add(Warning("work_mode_experience_conflict", "WorkMode", "The imported work mode experience value was applied.", row));
@@ -164,6 +175,78 @@ public sealed class EmployeeImportService(IHrDecisionSupportDbContext context, I
         var competencies = await context.Competencies.Where(x => competencyCodes.Contains(x.Code)).ToListAsync(ct); var sectors = await context.Sectors.Where(x => sectorCodes.Contains(x.Code)).ToListAsync(ct); var certificates = await context.Certificates.Where(x => certificateCodes.Contains(x.Code)).ToListAsync(ct); var languages = await context.Languages.Where(x => languageCodes.Contains(x.Code)).ToListAsync(ct); var workModes = await context.WorkModes.Where(x => workModeCodes.Contains(x.Code)).ToListAsync(ct);
         return new(null!, null!, employees.ToDictionary(x => x.EmployeeCode, StringComparer.Ordinal), people.ToDictionary(x => x.AnonymousCode, StringComparer.Ordinal), competencies.ToDictionary(x => x.Code, StringComparer.Ordinal), sectors.ToDictionary(x => x.Code, StringComparer.Ordinal), certificates.ToDictionary(x => x.Code, StringComparer.Ordinal), languages.ToDictionary(x => x.Code, StringComparer.Ordinal), workModes.ToDictionary(x => x.Code, StringComparer.Ordinal));
     }
+    private sealed class ProfileLinkCache
+    {
+        private readonly Dictionary<Guid, ProfileLinks> _profiles = [];
+        public ProfileLinks? Get(Guid personId) => _profiles.GetValueOrDefault(personId);
+        public ProfileLinks GetOrAdd(Guid personId, Guid employeeId)
+        {
+            if (!_profiles.TryGetValue(personId, out var profile)) _profiles[personId] = profile = ProfileLinks.Empty(employeeId);
+            else if (profile.EmployeeId == Guid.Empty) profile.EmployeeId = employeeId;
+            return profile;
+        }
+        public async Task EnsureLoadedAsync(Employee? employee, Person? anonymousPerson, EmployeeImportNormalizedRow row, IHrDecisionSupportDbContext db, CancellationToken ct)
+        {
+            var person = employee?.Person ?? anonymousPerson;
+            if (person is null) return;
+            var profile = GetOrAdd(person.Id, employee?.Id ?? Guid.Empty);
+            if (employee is not null && !profile.AssignmentsLoaded)
+            {
+                foreach (var item in await db.EmployeeAssignments.Where(x => x.EmployeeId == employee.Id).ToListAsync(ct)) profile.Assignments.Add(new(item.EmployeeId, item.DepartmentId, item.PositionId, item.StartDate, item.EndDate));
+                profile.AssignmentsLoaded = true;
+            }
+            if (row.PreviousPositions.Count > 0 && !profile.PreviousPositionsLoaded)
+            {
+                foreach (var item in await db.PersonPriorPositionEvidences.Where(x => x.PersonId == person.Id).ToListAsync(ct)) profile.PreviousPositions.Add(new(item.SequenceNumber, item.Title));
+                profile.PreviousPositionsLoaded = true;
+            }
+            if (row.Competencies.Count > 0 && !profile.CompetenciesLoaded)
+            {
+                foreach (var item in await db.PersonCompetencies.Where(x => x.PersonId == person.Id).ToListAsync(ct)) profile.CompetencyIds.Add(item.CompetencyId);
+                profile.CompetenciesLoaded = true;
+            }
+            if (row.ProjectExperiences.Count > 0 && !profile.ProjectsLoaded)
+            {
+                foreach (var item in await db.PersonProjects.Include(x => x.Project).Where(x => x.PersonId == person.Id).ToListAsync(ct)) if (!string.IsNullOrWhiteSpace(item.Description)) profile.ProjectTexts.Add(item.Description);
+                profile.ProjectsLoaded = true;
+            }
+            if (row.SectorExperiences.Count > 0 && !profile.SectorsLoaded)
+            {
+                foreach (var item in await db.PersonSectorExperiences.Where(x => x.PersonId == person.Id).ToListAsync(ct)) profile.Sectors[item.SectorId] = item;
+                profile.SectorsLoaded = true;
+            }
+            if (row.EducationLevel is not null && !profile.EducationsLoaded)
+            {
+                foreach (var item in await db.EducationRecords.Where(x => x.PersonId == person.Id && x.Institution == null && x.StartDate == null && x.GraduationDate == null).ToListAsync(ct)) profile.Educations.Add(new(item.DegreeLevel, NormalizeEducationField(item.FieldOfStudy)));
+                profile.EducationsLoaded = true;
+            }
+            if (row.Certificates.Count > 0 && !profile.CertificatesLoaded)
+            {
+                foreach (var item in await db.PersonCertificates.Where(x => x.PersonId == person.Id && x.IssueDate == null && x.ExpirationDate == null && x.CredentialCode == null).ToListAsync(ct)) profile.CertificateIds.Add(item.CertificateId);
+                profile.CertificatesLoaded = true;
+            }
+            if (row.Languages.Count > 0 && !profile.LanguagesLoaded)
+            {
+                foreach (var item in await db.PersonLanguages.Where(x => x.PersonId == person.Id).ToListAsync(ct)) profile.Languages[item.LanguageId] = item;
+                profile.LanguagesLoaded = true;
+            }
+            if (row.WorkModes.Count > 0 && !profile.WorkModesLoaded)
+            {
+                foreach (var item in await db.PersonWorkModeExperiences.Where(x => x.PersonId == person.Id).ToListAsync(ct)) profile.WorkModes[item.WorkModeId] = item;
+                profile.WorkModesLoaded = true;
+            }
+        }
+    }
+    private sealed class ProfileLinks
+    {
+        public Guid EmployeeId { get; set; }
+        public bool AssignmentsLoaded { get; set; } public bool PreviousPositionsLoaded { get; set; } public bool CompetenciesLoaded { get; set; } public bool ProjectsLoaded { get; set; } public bool SectorsLoaded { get; set; } public bool EducationsLoaded { get; set; } public bool CertificatesLoaded { get; set; } public bool LanguagesLoaded { get; set; } public bool WorkModesLoaded { get; set; }
+        public HashSet<AssignmentKey> Assignments { get; } = []; public HashSet<PreviousPositionKey> PreviousPositions { get; } = []; public HashSet<Guid> CompetencyIds { get; } = []; public HashSet<string> ProjectTexts { get; } = new(StringComparer.Ordinal); public Dictionary<Guid, PersonSectorExperience> Sectors { get; } = []; public HashSet<EducationKey> Educations { get; } = []; public HashSet<Guid> CertificateIds { get; } = []; public Dictionary<Guid, PersonLanguage> Languages { get; } = []; public Dictionary<Guid, PersonWorkModeExperience> WorkModes { get; } = [];
+        public static ProfileLinks Empty(Guid employeeId) => new() { EmployeeId = employeeId };
+    }
+    private readonly record struct AssignmentKey(Guid EmployeeId, Guid DepartmentId, Guid PositionId, DateOnly? StartDate, DateOnly? EndDate);
+    private readonly record struct PreviousPositionKey(int SequenceNumber, string Title);
+    private readonly record struct EducationKey(DegreeLevel DegreeLevel, string? FieldOfStudy);
     private sealed record PreparedRow(EmployeeImportNormalizedRow Row, EmployeeImportRowValidationResult Validation);
     private sealed record Catalog(Department It, Position Backend, Dictionary<string, Employee> EmployeesByCode, Dictionary<string, Person> PeopleByCode, Dictionary<string, Competency> CompetenciesByCode, Dictionary<string, Sector> SectorsByCode, Dictionary<string, Certificate> CertificatesByCode, Dictionary<string, Language> LanguagesByCode, Dictionary<string, WorkMode> WorkModesByCode); private sealed class Counts { public int NewEmployees { get; set; } public int UpdatedEmployees { get; set; } public int CompetencyLinksCreated { get; set; } public int ProjectsCreated { get; set; } public int SectorLinksCreated { get; set; } public int EducationRecordsCreated { get; set; } public int CertificateLinksCreated { get; set; } public int LanguageLinksCreated { get; set; } public int WorkModeLinksCreated { get; set; } public int FeatureSnapshotsCreated { get; set; } public int RetentionLabelsCreated { get; set; } public void Add(Counts value) { NewEmployees += value.NewEmployees; UpdatedEmployees += value.UpdatedEmployees; CompetencyLinksCreated += value.CompetencyLinksCreated; ProjectsCreated += value.ProjectsCreated; SectorLinksCreated += value.SectorLinksCreated; EducationRecordsCreated += value.EducationRecordsCreated; CertificateLinksCreated += value.CertificateLinksCreated; LanguageLinksCreated += value.LanguageLinksCreated; WorkModeLinksCreated += value.WorkModeLinksCreated; FeatureSnapshotsCreated += value.FeatureSnapshotsCreated; RetentionLabelsCreated += value.RetentionLabelsCreated; } }
 }

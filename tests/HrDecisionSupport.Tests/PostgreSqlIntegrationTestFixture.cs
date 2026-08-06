@@ -4,6 +4,7 @@ using HrDecisionSupport.Infrastructure;
 using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
@@ -29,12 +30,12 @@ public sealed class PostgreSqlIntegrationTestFixture : IAsyncLifetime
 
     public Task DisposeAsync() => Task.CompletedTask;
 
-    public HrDecisionSupportDbContext CreateDbContext()
+    public HrDecisionSupportDbContext CreateDbContext(DbCommandInterceptor? interceptor = null)
     {
         RequireConfigured();
-        var options = new DbContextOptionsBuilder<HrDecisionSupportDbContext>()
-            .UseNpgsql(ConnectionString)
-            .Options;
+        var builder = new DbContextOptionsBuilder<HrDecisionSupportDbContext>().UseNpgsql(ConnectionString);
+        if (interceptor is not null) builder.AddInterceptors(interceptor);
+        var options = builder.Options;
         return new HrDecisionSupportDbContext(options);
     }
 
