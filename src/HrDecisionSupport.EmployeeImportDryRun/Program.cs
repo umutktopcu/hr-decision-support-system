@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using HrDecisionSupport.Application.EmployeeImports.Processing;
 using HrDecisionSupport.Application.EmployeeImports.Spreadsheet;
+using HrDecisionSupport.Application.EmployeeImports.Persistence;
 using HrDecisionSupport.Infrastructure.EmployeeImports;
 
 namespace HrDecisionSupport.EmployeeImportDryRun;
@@ -10,9 +11,11 @@ internal static class Program
     private const string FileVariable = "HRDS_EMPLOYEE_IMPORT_FILE";
     public static async Task<int> Main(string[] args)
     {
+        if (args.Length > 0 && string.Equals(args[0], "import", StringComparison.OrdinalIgnoreCase))
+            return await ImportAsync(args);
         if (args.Length > 0 && string.Equals(args[0], "analyze", StringComparison.OrdinalIgnoreCase))
             return await AnalyzeAsync(args);
-        if (args.Length == 0 || !string.Equals(args[0], "dry-run", StringComparison.OrdinalIgnoreCase)) return Fail("Usage: dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- dry-run [--observation-date yyyy-MM-dd]\n       dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- analyze --file <workbook.xlsx> --observation-date yyyy-MM-dd");
+        if (args.Length == 0 || !string.Equals(args[0], "dry-run", StringComparison.OrdinalIgnoreCase)) return Fail("Usage: dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- dry-run [--observation-date yyyy-MM-dd]\n       dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- analyze --file <workbook.xlsx> --observation-date yyyy-MM-dd\n       dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- import --observation-date yyyy-MM-dd [--confirm-import <row-count>]");
         var filePath = Environment.GetEnvironmentVariable(FileVariable);
         if (string.IsNullOrWhiteSpace(filePath)) return Fail($"{FileVariable} is not set.");
         if (!File.Exists(filePath)) return Fail($"The file configured by {FileVariable} does not exist.");
@@ -34,6 +37,17 @@ internal static class Program
         }
         catch (OperationCanceledException) { Console.Error.WriteLine("Dry-run cancelled."); return 2; }
         catch (Exception exception) { return Fail("Dry-run failed: " + exception.Message); }
+    }
+
+    private static async Task<int> ImportAsync(string[] args)
+    {
+        var filePath = Environment.GetEnvironmentVariable(FileVariable);
+        if (!TryObservationDate(args, out var observationDate, out var error)) return Fail(error!);
+        var options = new ControlledImportOptions(filePath, observationDate, Option(args, "--confirm-import"), Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production");
+        await using var execution = new PostgreSqlEmployeeImportExecution(Environment.GetEnvironmentVariable("ConnectionStrings__PostgreSql") ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection"));
+        using var cancellation = new CancellationTokenSource();
+        Console.CancelKeyPress += (_, eventArgs) => { eventArgs.Cancel = true; cancellation.Cancel(); };
+        return await new ControlledEmployeeImportCommand(execution, new ConsoleImportConfirmation(), new ConsoleImportOutput()).ExecuteAsync(options, cancellation.Token);
     }
 
     private static async Task<int> AnalyzeAsync(string[] args)
