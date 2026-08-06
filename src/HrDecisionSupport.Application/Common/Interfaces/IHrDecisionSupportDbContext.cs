@@ -28,6 +28,11 @@ public interface IHrDecisionSupportDbContext
     DbSet<PersonSectorExperience> PersonSectorExperiences { get; }
     DbSet<WorkMode> WorkModes { get; }
     DbSet<PersonWorkModeExperience> PersonWorkModeExperiences { get; }
+    DbSet<EmployeeImportBatch> EmployeeImportBatches { get; }
+    DbSet<EmployeeImportRow> EmployeeImportRows { get; }
+    DbSet<PersonPriorPositionEvidence> PersonPriorPositionEvidences { get; }
+    DbSet<EmployeeCareerFeatureSnapshot> EmployeeCareerFeatureSnapshots { get; }
+    DbSet<EmployeeRetentionLabel> EmployeeRetentionLabels { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

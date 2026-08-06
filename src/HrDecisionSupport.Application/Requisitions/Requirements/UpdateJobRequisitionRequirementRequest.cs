@@ -4,6 +4,6 @@ namespace HrDecisionSupport.Application.Requisitions.Requirements;
 
 public sealed record UpdateJobRequisitionRequirementRequest(
     int? MinimumExperienceMonths,
-    ProficiencyLevel? MinimumProficiencyLevel,
+    CompetencyProficiencyLevel? MinimumProficiencyLevel,
     bool IsRequired,
     string? Notes);

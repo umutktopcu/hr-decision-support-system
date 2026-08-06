@@ -5,5 +5,5 @@ namespace HrDecisionSupport.Application.Profiles.Languages;
 public sealed record CreatePersonLanguageRequest(
     Guid PersonId,
     Guid LanguageId,
-    ProficiencyLevel ProficiencyLevel,
+    LanguageProficiencyLevel ProficiencyLevel,
     bool IsNative);

@@ -54,7 +54,7 @@ public class PersonLanguageServiceTests
     {
         await using var context = TestDatabase.CreateContext();
         var result = await Service(context).CreateAsync(Create(Guid.NewGuid(), Guid.NewGuid()) with
-            { ProficiencyLevel = (ProficiencyLevel)500 });
+            { ProficiencyLevel = (LanguageProficiencyLevel)500 });
         AssertError(result, "proficiency_level_invalid", ErrorType.Validation);
     }
 
@@ -65,8 +65,8 @@ public class PersonLanguageServiceTests
         var language = TestDatabase.Language(); context.AddRange(person, language); await context.SaveChangesAsync();
         var service = Service(context); var created = await service.CreateAsync(Create(person.Id, language.Id) with { IsNative = true });
         Assert.True(created.Value.IsNative);
-        var updated = await service.UpdateAsync(created.Value.Id, new(ProficiencyLevel.Expert, false));
-        Assert.False(updated.Value.IsNative); Assert.Equal(ProficiencyLevel.Expert, updated.Value.ProficiencyLevel);
+        var updated = await service.UpdateAsync(created.Value.Id, new(LanguageProficiencyLevel.C2, false));
+        Assert.False(updated.Value.IsNative); Assert.Equal(LanguageProficiencyLevel.C2, updated.Value.ProficiencyLevel);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class PersonLanguageServiceTests
         await using var context = TestDatabase.CreateContext(); var person = TestDatabase.Person("LNG-UPD");
         var language = TestDatabase.Language(); var link = Link(person, language);
         context.AddRange(person, language, link); await context.SaveChangesAsync();
-        var result = await Service(context).UpdateAsync(link.Id, new(ProficiencyLevel.Advanced, true));
+        var result = await Service(context).UpdateAsync(link.Id, new(LanguageProficiencyLevel.B2, true));
         Assert.Equal(person.Id, result.Value.PersonId); Assert.Equal(language.Id, result.Value.LanguageId);
     }
 
@@ -104,16 +104,16 @@ public class PersonLanguageServiceTests
     {
         await using var context = TestDatabase.CreateContext(); var service = Service(context); var id = Guid.NewGuid();
         AssertError(await service.GetByIdAsync(id), "person_language_not_found", ErrorType.NotFound);
-        AssertError(await service.UpdateAsync(id, new(ProficiencyLevel.Beginner, false)), "person_language_not_found", ErrorType.NotFound);
+        AssertError(await service.UpdateAsync(id, new(LanguageProficiencyLevel.A1, false)), "person_language_not_found", ErrorType.NotFound);
         AssertError(await service.DeleteAsync(id), "person_language_not_found", ErrorType.NotFound);
     }
 
     private static CreatePersonLanguageRequest Create(Guid personId, Guid languageId) =>
-        new(personId, languageId, ProficiencyLevel.Intermediate, false);
+        new(personId, languageId, LanguageProficiencyLevel.B1, false);
     private static PersonLanguage Link(Person person, Language language) => new()
     {
         Id = Guid.NewGuid(), PersonId = person.Id, Person = person, LanguageId = language.Id,
-        Language = language, ProficiencyLevel = ProficiencyLevel.Intermediate
+        Language = language, ProficiencyLevel = LanguageProficiencyLevel.B1
     };
     private static PersonLanguageService Service(HrDecisionSupportDbContext context) =>
         new(context, new CreatePersonLanguageRequestValidator(), new UpdatePersonLanguageRequestValidator());

@@ -210,14 +210,15 @@ public sealed class EmployeeAssignmentService : IEmployeeAssignmentService
         var current = currentAssignments[0];
         if (current.DepartmentId == request.DepartmentId && current.PositionId == request.PositionId)
             return Result<EmployeeAssignmentDto>.Failure(UseCaseErrors.EmployeeAssignmentNoChange);
-        if (request.NewStartDate <= current.StartDate)
+        if (current.StartDate is not { } currentStartDate
+            || request.NewStartDate <= currentStartDate)
             return Result<EmployeeAssignmentDto>.Failure(UseCaseErrors.EmployeeAssignmentChangeDateInvalid);
 
         var employeeDateError = ValidateEmployeeDates(employee, request.NewStartDate, null, true);
         if (employeeDateError is not null)
             return Result<EmployeeAssignmentDto>.Failure(employeeDateError);
 
-        // NewStartDate is known to be greater than current.StartDate, so it cannot be MinValue.
+        // NewStartDate is known to be greater than currentStartDate, so it cannot be MinValue.
         var closingDate = request.NewStartDate.AddDays(-1);
         if (await HasOverlapAsync(
                 request.EmployeeId,
@@ -261,19 +262,20 @@ public sealed class EmployeeAssignmentService : IEmployeeAssignmentService
         var validation = _closeValidator.Validate(request);
         if (!validation.IsValid)
             return Result<EmployeeAssignmentDto>.ValidationFailure(validation.Errors);
-        if (request.EndDate < assignment.StartDate)
+        if (assignment.StartDate is not { } assignmentStartDate
+            || request.EndDate < assignmentStartDate)
             return Result<EmployeeAssignmentDto>.Failure(UseCaseErrors.EmployeeAssignmentEndBeforeStart);
 
         var employee = await _dbContext.Employees.AsNoTracking()
             .SingleAsync(item => item.Id == assignment.EmployeeId, cancellationToken);
         var employeeDateError = ValidateEmployeeDates(
-            employee, assignment.StartDate, request.EndDate, false);
+            employee, assignmentStartDate, request.EndDate, false);
         if (employeeDateError is not null)
             return Result<EmployeeAssignmentDto>.Failure(employeeDateError);
 
         if (await HasOverlapAsync(
                 assignment.EmployeeId,
-                assignment.StartDate,
+                assignmentStartDate,
                 request.EndDate,
                 assignment.Id,
                 cancellationToken))

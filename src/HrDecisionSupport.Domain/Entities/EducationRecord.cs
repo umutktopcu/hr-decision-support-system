@@ -6,7 +6,7 @@ public class EducationRecord
 {
     public Guid Id { get; set; }
     public Guid PersonId { get; set; }
-    public string Institution { get; set; } = null!;
+    public string? Institution { get; set; }
     public string? FieldOfStudy { get; set; }
     public DegreeLevel DegreeLevel { get; set; }
     public DateOnly? StartDate { get; set; }

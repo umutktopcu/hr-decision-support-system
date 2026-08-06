@@ -6,7 +6,7 @@ public class EmployeeAssignment
     public Guid EmployeeId { get; set; }
     public Guid DepartmentId { get; set; }
     public Guid PositionId { get; set; }
-    public DateOnly StartDate { get; set; }
+    public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
 
     public Employee Employee { get; set; } = null!;

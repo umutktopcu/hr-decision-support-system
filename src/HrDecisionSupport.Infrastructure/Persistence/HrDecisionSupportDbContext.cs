@@ -32,6 +32,13 @@ public class HrDecisionSupportDbContext : DbContext, IHrDecisionSupportDbContext
     public DbSet<WorkMode> WorkModes => Set<WorkMode>();
     public DbSet<PersonWorkModeExperience> PersonWorkModeExperiences =>
         Set<PersonWorkModeExperience>();
+    public DbSet<EmployeeImportBatch> EmployeeImportBatches => Set<EmployeeImportBatch>();
+    public DbSet<EmployeeImportRow> EmployeeImportRows => Set<EmployeeImportRow>();
+    public DbSet<PersonPriorPositionEvidence> PersonPriorPositionEvidences =>
+        Set<PersonPriorPositionEvidence>();
+    public DbSet<EmployeeCareerFeatureSnapshot> EmployeeCareerFeatureSnapshots =>
+        Set<EmployeeCareerFeatureSnapshot>();
+    public DbSet<EmployeeRetentionLabel> EmployeeRetentionLabels => Set<EmployeeRetentionLabel>();
     public DbSet<JobRequisition> JobRequisitions => Set<JobRequisition>();
     public DbSet<JobRequisitionRequirement> JobRequisitionRequirements =>
         Set<JobRequisitionRequirement>();

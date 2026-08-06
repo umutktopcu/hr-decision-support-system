@@ -37,7 +37,7 @@ public sealed record EmployeeAssignmentDto(
     string DepartmentName,
     Guid PositionId,
     string PositionName,
-    DateOnly StartDate,
+    DateOnly? StartDate,
     DateOnly? EndDate);
 
 public sealed record CreateEmployeeRequest(

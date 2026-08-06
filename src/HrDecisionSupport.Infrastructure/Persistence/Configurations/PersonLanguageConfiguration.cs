@@ -16,7 +16,7 @@ public class PersonLanguageConfiguration : IEntityTypeConfiguration<PersonLangua
         builder.Property(personLanguage => personLanguage.LanguageId).IsRequired();
         builder.Property(personLanguage => personLanguage.ProficiencyLevel)
             .HasConversion<int>()
-            .IsRequired();
+            .IsRequired(false);
         builder.Property(personLanguage => personLanguage.IsNative).IsRequired();
 
         builder.HasIndex(personLanguage => new

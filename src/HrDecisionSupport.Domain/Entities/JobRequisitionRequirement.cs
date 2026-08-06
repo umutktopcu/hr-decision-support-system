@@ -8,7 +8,7 @@ public class JobRequisitionRequirement
     public Guid JobRequisitionId { get; set; }
     public Guid CompetencyId { get; set; }
     public int? MinimumExperienceMonths { get; set; }
-    public ProficiencyLevel? MinimumProficiencyLevel { get; set; }
+    public CompetencyProficiencyLevel? MinimumProficiencyLevel { get; set; }
     public bool IsRequired { get; set; }
     public string? Notes { get; set; }
 

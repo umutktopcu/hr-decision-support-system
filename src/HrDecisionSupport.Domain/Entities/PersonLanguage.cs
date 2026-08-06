@@ -7,7 +7,7 @@ public class PersonLanguage
     public Guid Id { get; set; }
     public Guid PersonId { get; set; }
     public Guid LanguageId { get; set; }
-    public ProficiencyLevel ProficiencyLevel { get; set; }
+    public LanguageProficiencyLevel? ProficiencyLevel { get; set; }
     public bool IsNative { get; set; }
 
     public Person Person { get; set; } = null!;

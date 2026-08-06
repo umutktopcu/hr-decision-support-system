@@ -10,6 +10,6 @@ public sealed record JobRequisitionRequirementDto(
     string CompetencyName,
     CompetencyCategory CompetencyCategory,
     int? MinimumExperienceMonths,
-    ProficiencyLevel? MinimumProficiencyLevel,
+    CompetencyProficiencyLevel? MinimumProficiencyLevel,
     bool IsRequired,
     string? Notes);

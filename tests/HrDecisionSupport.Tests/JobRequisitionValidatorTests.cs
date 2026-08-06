@@ -98,7 +98,7 @@ public class JobRequisitionValidatorTests
     public void RequirementCreateValidator_ValidRequest_IsValid()
     {
         var result = new CreateJobRequisitionRequirementRequestValidator().Validate(
-            new(Guid.NewGuid(), Guid.NewGuid(), 0, ProficiencyLevel.Beginner, false, null));
+            new(Guid.NewGuid(), Guid.NewGuid(), 0, CompetencyProficiencyLevel.Beginner, false, null));
         Assert.True(result.IsValid);
     }
 
@@ -106,7 +106,7 @@ public class JobRequisitionValidatorTests
     public void RequirementCreateValidator_MultipleInvalidFields_ReturnsAllErrors()
     {
         var result = new CreateJobRequisitionRequirementRequestValidator().Validate(
-            new(Guid.Empty, Guid.Empty, -1, (ProficiencyLevel)999, true, " "));
+            new(Guid.Empty, Guid.Empty, -1, (CompetencyProficiencyLevel)999, true, " "));
         AssertErrors(
             result.Errors,
             ("job_requisition_id_required", "JobRequisitionId"),
@@ -122,7 +122,7 @@ public class JobRequisitionValidatorTests
     public void RequirementValidator_NotesLengthHonorsConfigurationBoundary(int length, bool valid)
     {
         var result = new UpdateJobRequisitionRequirementRequestValidator().Validate(
-            new(0, ProficiencyLevel.Beginner, true, new string('N', length)));
+            new(0, CompetencyProficiencyLevel.Beginner, true, new string('N', length)));
         Assert.Equal(valid, result.IsValid);
         if (!valid) Assert.Contains(result.Errors, error => error.Code == "notes_max_length");
     }

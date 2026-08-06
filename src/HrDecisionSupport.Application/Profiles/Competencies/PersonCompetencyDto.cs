@@ -10,4 +10,4 @@ public sealed record PersonCompetencyDto(
     string CompetencyName,
     CompetencyCategory CompetencyCategory,
     int? ExperienceMonths,
-    ProficiencyLevel? ProficiencyLevel);
+    CompetencyProficiencyLevel? ProficiencyLevel);
