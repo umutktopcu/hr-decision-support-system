@@ -14,6 +14,7 @@ public class EmployeeImportProcessingTests
     [InlineData("C", "C")]
     [InlineData("C++", "CPP")]
     [InlineData(".NET", "DOTNET")]
+    [InlineData(".NET Core", "DOTNET_CORE")]
     [InlineData("ASP.NET Core", "ASP_NET_CORE")]
     [InlineData("Vue.js", "VUE_JS")]
     [InlineData("Node.js", "NODE_JS")]
@@ -25,6 +26,34 @@ public class EmployeeImportProcessingTests
         Assert.Equal(expected, competency.Code);
         if (input is "C#" or "C Sharp" or "c#") { Assert.Equal("C#", competency.Name); Assert.Equal(CompetencyCategory.ProgrammingLanguage, competency.Category); }
     }
+
+    [Theory]
+    [MemberData(nameof(CsvCompetencies))]
+    public void Normalizer_ResolvesCsvCompetenciesWithoutUnknownDiagnostics(string token, string code, string name)
+    {
+        var result = new EmployeeImportRowNormalizer().Normalize(Source() with { TechnicalSkillsRaw = token, TechnologiesAndToolsRaw = null });
+        var competency = Assert.Single(result.Competencies);
+        Assert.Equal(code, competency.Code); Assert.Equal(name, competency.Name);
+        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "unknown_competency");
+    }
+
+    [Fact]
+    public void Normalizer_CsvCompetenciesAreUniqueAndDuplicateTokensProduceOneCompetency()
+    {
+        var tokens = CsvCompetencies.Select(item => (string)item[0]).ToArray();
+        var result = new EmployeeImportRowNormalizer().Normalize(Source() with { TechnicalSkillsRaw = string.Join("; ", tokens.Append(tokens[0])), TechnologiesAndToolsRaw = null });
+
+        Assert.Equal(tokens.Length, result.Competencies.Count);
+        Assert.Equal(result.Competencies.Count, result.Competencies.Select(item => item.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(result.Competencies.Count, result.Competencies.Select(item => item.Code).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(1, result.Competencies.Count(item => item.Name == "AWS"));
+        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "unknown_competency");
+    }
+
+    public static IEnumerable<object[]> CsvCompetencies =>
+    [
+        ["AWS", "AWS", "AWS"], ["Linux", "LINUX", "Linux"], ["Olay güdümlü mimari", "OLAY_GUDUMLU_MIMARI", "Olay güdümlü mimari"], ["SOLID prensipleri", "SOLID_PRENSIPLERI", "SOLID prensipleri"], ["Postman", "POSTMAN", "Postman"], ["REST API geliştirme", "REST_API_GELISTIRME", "REST API geliştirme"], ["Veri tabanı tasarımı", "VERI_TABANI_TASARIMI", "Veri tabanı tasarımı"], ["GitLab CI", "GITLAB_CI", "GitLab CI"], ["Tasarım desenleri", "TASARIM_DESENLERI", "Tasarım desenleri"], ["Dağıtık sistemler", "DAGITIK_SISTEMLER", "Dağıtık sistemler"], ["Nginx", "NGINX", "Nginx"], ["Grafana", "GRAFANA", "Grafana"], ["Elasticsearch", "ELASTICSEARCH", "Elasticsearch"], ["API güvenliği", "API_GUVENLIGI", "API güvenliği"], ["Swagger", "SWAGGER", "Swagger"], ["Güvenli kodlama", "GUVENLI_KODLAMA", "Güvenli kodlama"], ["Önbellekleme stratejileri", "ONBELLEKLEME_STRATEJILERI", "Önbellekleme stratejileri"], ["Clean Code", "CLEAN_CODE", "Clean Code"], ["Loglama ve izleme", "LOGLAMA_VE_IZLEME", "Loglama ve izleme"], ["Prometheus", "PROMETHEUS", "Prometheus"], ["GitHub Actions", "GITHUB_ACTIONS", "GitHub Actions"], ["Azure", "AZURE", "Azure"], ["Performans optimizasyonu", "PERFORMANS_OPTIMIZASYONU", "Performans optimizasyonu"], ["Sistem tasarımı", "SISTEM_TASARIMI", "Sistem tasarımı"], ["Test otomasyonu", "TEST_OTOMASYONU", "Test otomasyonu"], ["Asenkron programlama", "ASENKRON_PROGRAMLAMA", "Asenkron programlama"], ["Ktor", "KTOR", "Ktor"], ["Express.js", "EXPRESS_JS", "Express.js"], ["FastAPI", "FASTAPI", "FastAPI"], ["LINQ", "LINQ", "LINQ"], ["Fiber", "FIBER", "Fiber"], ["Entity Framework", "ENTITY_FRAMEWORK", "Entity Framework"], [".NET Core", "DOTNET_CORE", ".NET Core"], ["SQLAlchemy", "SQLALCHEMY", "SQLAlchemy"], ["GORM", "GORM", "GORM"], ["Celery", "CELERY", "Celery"], ["Sequelize", "SEQUELIZE", "Sequelize"], ["Gin", "GIN", "Gin"], ["Symfony", "SYMFONY", "Symfony"], ["Laravel", "LARAVEL", "Laravel"], ["Maven", "MAVEN", "Maven"], ["Spring Security", "SPRING_SECURITY", "Spring Security"], ["Composer", "COMPOSER", "Composer"], ["Hibernate", "HIBERNATE", "Hibernate"], ["Gradle", "GRADLE", "Gradle"], ["NestJS", "NESTJS", "NestJS"], ["TypeORM", "TYPEORM", "TypeORM"], ["Prisma", "PRISMA", "Prisma"]
+    ];
     [Theory]
     [InlineData("5.2 yıl", 62)]
     [InlineData("5,2 yıl", 62)]

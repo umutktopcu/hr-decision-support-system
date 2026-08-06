@@ -131,7 +131,7 @@ public class EmployeeImportPersistenceTests
     [Fact]
     public async Task ImportAsync_PersistsUnknownCompetencyRawTokenAndDiagnosticWhileLinkingKnownCompetency()
     {
-        const string unknown = "Asenkron programlama";
+        const string unknown = "Kuantum programlama";
         var source = Source("E1", "C#; " + unknown, "A") with
         {
             RawValues = new Dictionary<string, string?>
