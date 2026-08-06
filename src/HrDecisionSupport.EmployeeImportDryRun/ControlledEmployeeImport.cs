@@ -58,7 +58,8 @@ public sealed class ConsoleImportConfirmation : IImportConfirmation
 {
     public Task<bool> ConfirmAsync(string requiredText, string? suppliedRowCount, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(suppliedRowCount)) return Task.FromResult(string.Equals(suppliedRowCount, requiredText["IMPORT ".Length..], StringComparison.Ordinal));
+        var separator = requiredText.IndexOf(' '); var expectedCount = separator >= 0 ? requiredText[(separator + 1)..] : requiredText;
+        if (!string.IsNullOrWhiteSpace(suppliedRowCount)) return Task.FromResult(string.Equals(suppliedRowCount, expectedCount, StringComparison.Ordinal));
         if (Console.IsInputRedirected) return Task.FromResult(false);
         Console.Write($"Type {requiredText} to continue: ");
         return Task.FromResult(string.Equals(Console.ReadLine(), requiredText, StringComparison.Ordinal));

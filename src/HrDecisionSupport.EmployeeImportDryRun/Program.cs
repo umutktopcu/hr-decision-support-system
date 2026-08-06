@@ -13,9 +13,11 @@ internal static class Program
     {
         if (args.Length > 0 && string.Equals(args[0], "import", StringComparison.OrdinalIgnoreCase))
             return await ImportAsync(args);
+        if (args.Length > 0 && string.Equals(args[0], "backfill-termination-dates", StringComparison.OrdinalIgnoreCase))
+            return await BackfillTerminationDatesAsync(args);
         if (args.Length > 0 && string.Equals(args[0], "analyze", StringComparison.OrdinalIgnoreCase))
             return await AnalyzeAsync(args);
-        if (args.Length == 0 || !string.Equals(args[0], "dry-run", StringComparison.OrdinalIgnoreCase)) return Fail("Usage: dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- dry-run [--observation-date yyyy-MM-dd]\n       dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- analyze --file <workbook.xlsx> --observation-date yyyy-MM-dd\n       dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- import --observation-date yyyy-MM-dd [--confirm-import <row-count>]");
+        if (args.Length == 0 || !string.Equals(args[0], "dry-run", StringComparison.OrdinalIgnoreCase)) return Fail("Usage: dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- dry-run [--observation-date yyyy-MM-dd]\n       dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- analyze --file <workbook.xlsx> --observation-date yyyy-MM-dd\n       dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- import --observation-date yyyy-MM-dd [--confirm-import <row-count>]\n       dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- backfill-termination-dates --batch-id <guid> [--confirm-backfill <candidate-count>]");
         var filePath = Environment.GetEnvironmentVariable(FileVariable);
         if (string.IsNullOrWhiteSpace(filePath)) return Fail($"{FileVariable} is not set.");
         if (!File.Exists(filePath)) return Fail($"The file configured by {FileVariable} does not exist.");
@@ -48,6 +50,15 @@ internal static class Program
         using var cancellation = new CancellationTokenSource();
         Console.CancelKeyPress += (_, eventArgs) => { eventArgs.Cancel = true; cancellation.Cancel(); };
         return await new ControlledEmployeeImportCommand(execution, new ConsoleImportConfirmation(), new ConsoleImportOutput()).ExecuteAsync(options, cancellation.Token);
+    }
+
+    private static async Task<int> BackfillTerminationDatesAsync(string[] args)
+    {
+        var batchText = Option(args, "--batch-id"); var batchId = Guid.TryParse(batchText, out var parsed) ? parsed : (Guid?)null;
+        var options = new TerminationDateBackfillOptions(batchId, Option(args, "--confirm-backfill"), Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production");
+        await using var execution = new PostgreSqlTerminationDateBackfillExecution(Environment.GetEnvironmentVariable("ConnectionStrings__PostgreSql") ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection"));
+        using var cancellation = new CancellationTokenSource(); Console.CancelKeyPress += (_, eventArgs) => { eventArgs.Cancel = true; cancellation.Cancel(); };
+        return await new TerminationDateBackfillCommand(execution, new ConsoleImportConfirmation(), new ConsoleImportOutput()).ExecuteAsync(options, cancellation.Token);
     }
 
     private static async Task<int> AnalyzeAsync(string[] args)
