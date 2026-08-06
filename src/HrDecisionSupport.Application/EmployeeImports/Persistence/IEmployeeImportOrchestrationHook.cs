@@ -6,6 +6,9 @@ public interface IEmployeeImportOrchestrationHook
 {
     void AfterCatalogPrepared();
     void BeforeRow(EmployeeImportNormalizedRow row);
+    void AfterRowPersistence(int trackedEntryCount) { }
+    void BeforeTrackerCleanup(int trackedEntryCount) { }
+    void AfterTrackerCleanup(int trackedEntryCount) { }
 }
 
 public sealed class NoOpEmployeeImportOrchestrationHook : IEmployeeImportOrchestrationHook
