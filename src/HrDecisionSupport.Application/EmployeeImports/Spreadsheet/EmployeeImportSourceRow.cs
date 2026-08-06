@@ -19,7 +19,7 @@ public sealed record EmployeeImportSourceRow(
     DateOnly? HireDate,
     DateOnly? TerminationDate,
     decimal? CompanyTenureYears,
-    int? PreviousCompanyAverageStayMonths,
+    decimal? PreviousCompanyAverageStayMonths,
     int? ShortestPreviousJobMonths,
     int? LongestPreviousJobMonths,
     int? LastPreviousCompanyStayMonths,

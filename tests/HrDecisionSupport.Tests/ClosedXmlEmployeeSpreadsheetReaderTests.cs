@@ -225,6 +225,30 @@ public class ClosedXmlEmployeeSpreadsheetReaderTests
     }
 
     [Fact]
+    public async Task ReadAsync_PreviousCompanyAverageStayMonths_ParsesDecimalValuesWithoutChangingOtherIntegerFields()
+    {
+        using var content = CreateWorkbook(sheet =>
+        {
+            Set(sheet, 2, EmployeeImportSpreadsheetHeaders.AnonymousEmployeeCode, "EMP-AVG-1"); Set(sheet, 2, EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths, 12d);
+            Set(sheet, 3, EmployeeImportSpreadsheetHeaders.AnonymousEmployeeCode, "EMP-AVG-2"); Set(sheet, 3, EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths, 12.5d);
+            Set(sheet, 4, EmployeeImportSpreadsheetHeaders.AnonymousEmployeeCode, "EMP-AVG-3"); Set(sheet, 4, EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths, "12,5");
+            Set(sheet, 5, EmployeeImportSpreadsheetHeaders.AnonymousEmployeeCode, "EMP-AVG-4"); Set(sheet, 5, EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths, "12.5");
+            Set(sheet, 6, EmployeeImportSpreadsheetHeaders.AnonymousEmployeeCode, "EMP-AVG-5"); sheet.Cell(6, HeaderColumn(EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths)).FormulaA1 = "29.7";
+            Set(sheet, 7, EmployeeImportSpreadsheetHeaders.AnonymousEmployeeCode, "EMP-AVG-6"); Set(sheet, 7, EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths, "not-a-number");
+            Set(sheet, 8, EmployeeImportSpreadsheetHeaders.AnonymousEmployeeCode, "EMP-AVG-7"); Set(sheet, 8, EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths, 12.55d);
+            Set(sheet, 8, EmployeeImportSpreadsheetHeaders.CompanyChangeCount, 12.5d);
+        });
+
+        var result = await Reader.ReadAsync(content);
+
+        Assert.True(result.IsSuccess); Assert.Equal(12m, result.Value.Rows[0].PreviousCompanyAverageStayMonths); Assert.Equal(12.5m, result.Value.Rows[1].PreviousCompanyAverageStayMonths); Assert.Equal(12.5m, result.Value.Rows[2].PreviousCompanyAverageStayMonths); Assert.Equal(12.5m, result.Value.Rows[3].PreviousCompanyAverageStayMonths); Assert.Equal(29.7m, result.Value.Rows[4].PreviousCompanyAverageStayMonths);
+        Assert.Contains(result.Value.Rows[5].Diagnostics, diagnostic => diagnostic.Code == "invalid_decimal_value" && diagnostic.PropertyName == EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths);
+        Assert.Contains(result.Value.Rows[6].Diagnostics, diagnostic => diagnostic.Code == "invalid_decimal_value" && diagnostic.PropertyName == EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths);
+        Assert.Contains(result.Value.Rows[6].Diagnostics, diagnostic => diagnostic.Code == "invalid_integer_value" && diagnostic.PropertyName == EmployeeImportSpreadsheetHeaders.CompanyChangeCount);
+        Assert.DoesNotContain(result.Value.Rows.Take(5).SelectMany(row => row.Diagnostics), diagnostic => diagnostic.Code == "invalid_integer_value" && diagnostic.PropertyName == EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths);
+    }
+
+    [Fact]
     public async Task ReadAsync_ParsesDatesIncludingSerialAndFormulaAndDoesNotDiagnoseBlankTerminationDate()
     {
         using var content = CreateWorkbook(sheet =>

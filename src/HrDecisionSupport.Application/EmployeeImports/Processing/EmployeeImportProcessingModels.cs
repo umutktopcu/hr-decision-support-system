@@ -17,7 +17,7 @@ public sealed record EmployeeImportNormalizedRow(
     DegreeLevel? EducationLevel, string? EducationField, IReadOnlyList<string> Certificates,
     IReadOnlyList<NormalizedLanguageExperience> Languages, IReadOnlyList<NormalizedWorkModeExperience> WorkModes,
     DateOnly? HireDate, DateOnly? TerminationDate, int? CompanyTenureMonths,
-    int? PreviousCompanyAverageStayMonths, int? ShortestPreviousJobMonths,
+    decimal? PreviousCompanyAverageStayMonths, int? ShortestPreviousJobMonths,
     int? LongestPreviousJobMonths, int? LastPreviousCompanyStayMonths, int? CompanyChangeCount,
     decimal? JobChangeRate, EmployeeRetentionLabelValue? StayLabel,
     IReadOnlyDictionary<string, string?> RawValues, IReadOnlyList<EmployeeImportDiagnostic> Diagnostics);

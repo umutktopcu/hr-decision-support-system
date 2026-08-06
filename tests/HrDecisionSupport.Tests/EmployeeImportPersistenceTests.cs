@@ -117,6 +117,39 @@ public class EmployeeImportPersistenceTests
         await using var db = TestDatabase.CreateContext(); var result = await Service(db, Source("E1", "C#", "A", certificates: "AWS", languages: "English C1", workModes: "Ofis, hibrit ve uzaktan")).ImportAsync(Request("dry-assets", true));
         Assert.True(result.IsSuccess); Assert.Empty(db.Certificates); Assert.Empty(db.PersonCertificates); Assert.Empty(db.Languages); Assert.Empty(db.PersonLanguages); Assert.Empty(db.WorkModes); Assert.Empty(db.PersonWorkModeExperiences); Assert.Empty(db.EmployeeImportBatches);
     }
+    [Fact]
+    public async Task ImportAsync_PersistsDecimalPreviousCompanyAverageStayWithoutRounding()
+    {
+        await using var db = TestDatabase.CreateContext();
+        var fractional = await Service(db, Source("E1", "C#", "A") with { PreviousCompanyAverageStayMonths = 29.7m }).ImportAsync(Request("fractional"));
+        var whole = await Service(db, Source("E2", "C#", "A") with { PreviousCompanyAverageStayMonths = 29m }).ImportAsync(Request("whole"));
+
+        Assert.True(fractional.IsSuccess); Assert.True(whole.IsSuccess); Assert.True(fractional.Value.Rows.Single().Status is EmployeeImportRowStatus.Succeeded or EmployeeImportRowStatus.SucceededWithWarnings); Assert.True(whole.Value.Rows.Single().Status is EmployeeImportRowStatus.Succeeded or EmployeeImportRowStatus.SucceededWithWarnings);
+        var values = await db.EmployeeCareerFeatureSnapshots.OrderBy(snapshot => snapshot.EmployeeId).Select(snapshot => snapshot.PreviousCompanyAverageStayMonths).ToArrayAsync();
+        Assert.Contains(29.7m, values); Assert.Contains(29m, values); Assert.DoesNotContain(fractional.Value.Rows.Single().Diagnostics, diagnostic => diagnostic.Code == "invalid_integer_value");
+    }
+    [Fact]
+    public async Task ImportAsync_PersistsUnknownCompetencyRawTokenAndDiagnosticWhileLinkingKnownCompetency()
+    {
+        const string unknown = "Asenkron programlama";
+        var source = Source("E1", "C#; " + unknown, "A") with
+        {
+            RawValues = new Dictionary<string, string?>
+            {
+                [EmployeeImportSpreadsheetHeaders.TechnicalSkills] = "C#; " + unknown
+            }
+        };
+        await using var db = TestDatabase.CreateContext();
+        var first = await Service(db, source).ImportAsync(Request("unknown-competency"));
+
+        Assert.True(first.IsSuccess); Assert.Equal(EmployeeImportRowStatus.SucceededWithWarnings, first.Value.Rows.Single().Status); Assert.Equal(1, first.Value.SucceededWithWarningsRows); Assert.Equal(0, first.Value.FailedRows); Assert.Equal(1, first.Value.CompetencyLinksCreated);
+        Assert.Single(await db.Competencies.Where(competency => competency.Code == "C_SHARP").ToListAsync()); Assert.Single(await db.PersonCompetencies.ToListAsync()); Assert.DoesNotContain(await db.Competencies.ToListAsync(), competency => competency.Name == unknown);
+        var persisted = await db.EmployeeImportRows.SingleAsync(); Assert.Equal(EmployeeImportRowStatus.SucceededWithWarnings, persisted.ImportStatus); Assert.Contains(unknown, persisted.RawPayloadJson); Assert.Contains("unknown_competency", persisted.ValidationErrorsJson); Assert.Contains(unknown, persisted.ValidationErrorsJson);
+        var batch = await db.EmployeeImportBatches.SingleAsync(); Assert.Equal(EmployeeImportBatchStatus.Completed, batch.Status); Assert.Equal(1, batch.SuccessfulRowCount); Assert.Equal(0, batch.FailedRowCount);
+
+        var repeated = await Service(db, source).ImportAsync(Request("unknown-competency"));
+        Assert.True(repeated.IsFailure); Assert.Equal("employee_import.already_imported", repeated.Error!.Code); Assert.Single(await db.EmployeeImportRows.ToListAsync());
+    }
     private static EmployeeImportService Service(HrDecisionSupport.Infrastructure.Persistence.HrDecisionSupportDbContext db, EmployeeImportSourceRow row, IEmployeeImportRowNormalizer? normalizer = null)
     {
         normalizer ??= new EmployeeImportRowNormalizer(); return new(db, new Reader(row), normalizer, new EmployeeImportRowValidator(), new EmployeeImportDryRunService(new Reader(row), new EmployeeImportRowNormalizer(), new EmployeeImportRowValidator()), new Runner(), TimeProvider.System);

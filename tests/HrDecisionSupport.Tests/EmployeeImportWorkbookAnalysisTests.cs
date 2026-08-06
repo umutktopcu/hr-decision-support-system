@@ -29,7 +29,7 @@ public sealed class EmployeeImportWorkbookAnalysisTests
         Assert.Equal(1, result.Classifications[nameof(AverageStayValueClass.DotDecimalText)]);
         Assert.Equal(1, result.Classifications[nameof(AverageStayValueClass.InvalidText)]);
         Assert.Equal(1, result.NegativeCount); Assert.Equal(1, result.ZeroCount); Assert.Equal(-1m, result.Min); Assert.Equal(12.5m, result.Max);
-        Assert.Equal(4, result.InvalidIntegerDiagnosticCount);
+        Assert.Equal(4, result.InvalidDecimalDiagnosticCount);
         Assert.Equal(1, result.FractionalPrecisionDistribution["1"]); Assert.Equal(1, result.FractionalPrecisionDistribution["2"]); Assert.Equal(1, result.FractionalPrecisionDistribution["3"]);
     }
 

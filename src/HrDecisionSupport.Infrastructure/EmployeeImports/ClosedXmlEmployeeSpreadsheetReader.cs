@@ -184,7 +184,7 @@ public sealed class ClosedXmlEmployeeSpreadsheetReader : IEmployeeSpreadsheetRea
             ReadDate(Cell(EmployeeImportSpreadsheetHeaders.HireDate), EmployeeImportSpreadsheetHeaders.HireDate, sourceRowNumber, diagnostics),
             ReadDate(Cell(EmployeeImportSpreadsheetHeaders.TerminationDate), EmployeeImportSpreadsheetHeaders.TerminationDate, sourceRowNumber, diagnostics),
             ReadDecimal(Cell(EmployeeImportSpreadsheetHeaders.CompanyTenureYears), EmployeeImportSpreadsheetHeaders.CompanyTenureYears, sourceRowNumber, diagnostics),
-            ReadInteger(Cell(EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths), EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths, sourceRowNumber, diagnostics),
+            ReadDecimal(Cell(EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths), EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths, sourceRowNumber, diagnostics, "invalid_decimal_value", 6, 1),
             ReadInteger(Cell(EmployeeImportSpreadsheetHeaders.ShortestPreviousJobMonths), EmployeeImportSpreadsheetHeaders.ShortestPreviousJobMonths, sourceRowNumber, diagnostics),
             ReadInteger(Cell(EmployeeImportSpreadsheetHeaders.LongestPreviousJobMonths), EmployeeImportSpreadsheetHeaders.LongestPreviousJobMonths, sourceRowNumber, diagnostics),
             ReadInteger(Cell(EmployeeImportSpreadsheetHeaders.LastPreviousCompanyStayMonths), EmployeeImportSpreadsheetHeaders.LastPreviousCompanyStayMonths, sourceRowNumber, diagnostics),
@@ -199,19 +199,28 @@ public sealed class ClosedXmlEmployeeSpreadsheetReader : IEmployeeSpreadsheetRea
         IXLCell cell,
         string header,
         int sourceRowNumber,
-        ICollection<EmployeeImportDiagnostic> diagnostics)
+        ICollection<EmployeeImportDiagnostic> diagnostics,
+        string diagnosticCode = "invalid_numeric_value",
+        int? precision = null,
+        int? scale = null)
     {
         var value = cell.Value;
         if (value.IsBlank)
             return null;
         if (value.IsNumber)
-            return (decimal)value.GetNumber();
+        {
+            var numeric = (decimal)value.GetNumber();
+            if (FitsPrecision(numeric, precision, scale))
+                return numeric;
+            diagnostics.Add(InvalidValue(diagnosticCode, header, sourceRowNumber));
+            return null;
+        }
 
         var text = NormalizeText(GetVisibleText(cell));
-        if (text is not null && TryParseDecimal(text, out var parsed))
+        if (text is not null && TryParseDecimal(text, out var parsed) && FitsPrecision(parsed, precision, scale))
             return parsed;
 
-        diagnostics.Add(InvalidValue("invalid_numeric_value", header, sourceRowNumber));
+        diagnostics.Add(InvalidValue(diagnosticCode, header, sourceRowNumber));
         return null;
     }
 
@@ -281,6 +290,21 @@ public sealed class ClosedXmlEmployeeSpreadsheetReader : IEmployeeSpreadsheetRea
             CultureInfo.InvariantCulture, out parsed)
         || decimal.TryParse(value, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
             TurkishCulture, out parsed);
+
+    private static bool FitsPrecision(decimal value, int? precision, int? scale)
+    {
+        if (precision is null || scale is null)
+            return true;
+
+        var rounded = decimal.Round(value, scale.Value, MidpointRounding.ToZero);
+        if (rounded != value)
+            return false;
+
+        var wholeDigitLimit = precision.Value - scale.Value;
+        var maximumText = new string('9', wholeDigitLimit) + "." + new string('9', scale.Value);
+        var maximum = decimal.Parse(maximumText, CultureInfo.InvariantCulture);
+        return decimal.Abs(value) <= maximum;
+    }
 
     private static bool TryParseDate(string value, out DateOnly parsed)
     {

@@ -38,9 +38,9 @@ public static class EmployeeImportWorkbookAnalysis
             samples.Add(ToAverageStaySample(rowNumber, worksheet.Cell(rowNumber, averageStayColumn)));
         }
 
-        var invalidIntegerRows = read.Value.Rows
+        var invalidDecimalRows = read.Value.Rows
             .SelectMany(row => row.Diagnostics)
-            .Where(diagnostic => diagnostic.Code == "invalid_integer_value" && diagnostic.PropertyName == EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths)
+            .Where(diagnostic => diagnostic.Code == "invalid_decimal_value" && diagnostic.PropertyName == EmployeeImportSpreadsheetHeaders.PreviousCompanyAverageStayMonths)
             .Select(diagnostic => diagnostic.SourceRowNumber!.Value)
             .ToHashSet();
         var normalized = new EmployeeImportRowNormalizer();
@@ -53,14 +53,14 @@ public static class EmployeeImportWorkbookAnalysis
 
         return new(
             new(Path.GetFileName(workbookPath), worksheet.Name, read.Value.Rows.Count, lastColumn, headerRow.Cells(1, lastColumn).Select(cell => cell.GetFormattedString()).ToArray(), true),
-            BuildAverageStayAnalysis(samples, invalidIntegerRows),
+            BuildAverageStayAnalysis(samples, invalidDecimalRows),
             BuildUnknownCompetencyAnalysis(occurrences),
             temporaryObservationDate,
             true,
             "Do not change the production parser from this analysis alone. Review fractional month values and approved competency mappings separately.");
     }
 
-    public static AverageStayAnalysis BuildAverageStayAnalysis(IEnumerable<AverageStayCellSample> samples, IReadOnlySet<int>? invalidIntegerRows = null)
+    public static AverageStayAnalysis BuildAverageStayAnalysis(IEnumerable<AverageStayCellSample> samples, IReadOnlySet<int>? invalidDecimalRows = null)
     {
         var values = samples.ToArray();
         var parsed = values.Where(sample => sample.ParsedValue.HasValue).Select(sample => sample.ParsedValue!.Value).Order().ToArray();
@@ -71,7 +71,7 @@ public static class EmployeeImportWorkbookAnalysis
             .OrderByDescending(group => group.Count()).ThenBy(group => group.Key.ParsedValue).Take(20)
             .Select(group => new FractionalAverageStayValue(group.Key.ParsedValue!.Value.ToString("G29", CultureInfo.InvariantCulture), group.Key.CellType, group.Count(), group.Select(sample => sample.SourceRowNumber).Take(20).ToArray()))
             .ToArray();
-        var diagnosticCount = invalidIntegerRows?.Count ?? values.Count(sample => sample.ParsedValue is decimal value && (decimal.Truncate(value) != value || value < int.MinValue || value > int.MaxValue) || sample.Classification == AverageStayValueClass.InvalidText);
+        var diagnosticCount = invalidDecimalRows?.Count ?? values.Count(sample => sample.Classification == AverageStayValueClass.InvalidText);
         return new(values.Length, classifications, values.Count(sample => sample.CellType == "Number"), values.Count(sample => sample.CellType == "Text"), values.Count(sample => sample.ParsedValue is decimal value && value < 0), values.Count(sample => sample.ParsedValue is decimal value && value == 0), parsed.Length == 0 ? null : parsed[0], parsed.Length == 0 ? null : parsed[^1], parsed.Length == 0 ? null : Median(parsed), parsed.Length == 0 ? null : parsed.Average(), precision, topFractionals, diagnosticCount);
     }
 
@@ -145,7 +145,7 @@ public static class EmployeeImportWorkbookAnalysis
 public enum AverageStayValueClass { Empty, NumericInteger, NumericFractional, TextInteger, CommaDecimalText, DotDecimalText, InvalidText }
 public sealed record AverageStayCellSample(int SourceRowNumber, string CellType, string FormattedValue, AverageStayValueClass Classification, decimal? ParsedValue);
 public sealed record FractionalAverageStayValue(string Value, string CellType, int OccurrenceCount, IReadOnlyList<int> SampleSourceRows);
-public sealed record AverageStayAnalysis(int TotalDataRows, IReadOnlyDictionary<string, int> Classifications, int NumericCellCount, int TextCellCount, int NegativeCount, int ZeroCount, decimal? Min, decimal? Max, decimal? Median, decimal? Average, IReadOnlyDictionary<string, int> FractionalPrecisionDistribution, IReadOnlyList<FractionalAverageStayValue> TopFractionalValues, int InvalidIntegerDiagnosticCount);
+public sealed record AverageStayAnalysis(int TotalDataRows, IReadOnlyDictionary<string, int> Classifications, int NumericCellCount, int TextCellCount, int NegativeCount, int ZeroCount, decimal? Min, decimal? Max, decimal? Median, decimal? Average, IReadOnlyDictionary<string, int> FractionalPrecisionDistribution, IReadOnlyList<FractionalAverageStayValue> TopFractionalValues, int InvalidDecimalDiagnosticCount);
 public sealed record UnknownCompetencyOccurrence(string Token, int SourceRowNumber);
 public sealed record UnknownCompetencyAggregate(string RawToken, string NormalizedToken, int OccurrenceCount, int UniqueRowCount, IReadOnlyList<int> SampleSourceRows, bool ExistingCanonicalMatch, bool ExistingAliasMatch, string ProposedAction, string? ProposedCanonicalCode, string? ProposedCanonicalName, string? ProposedCategory, string Confidence, string Notes);
 public sealed record UnknownCompetencyAnalysis(int TotalOccurrenceCount, int DistinctTokenCount, IReadOnlyList<UnknownCompetencyAggregate> Top100, int DescriptionOrPhraseReviewCount, int ManualReviewCount);

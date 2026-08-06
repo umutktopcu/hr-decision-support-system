@@ -17,6 +17,18 @@ namespace HrDecisionSupport.Tests;
 public sealed class EmployeeImportQueryIntegrationTests(PostgreSqlIntegrationTestFixture fixture, ITestOutputHelper output)
 {
     [PostgreSqlIntegrationFact]
+    public async Task ImportAsync_PreviousCompanyAverageStay_RoundTripsDecimalWithoutRounding()
+    {
+        fixture.RequireConfigured(); await fixture.ResetDatabaseAsync(); await using var db = fixture.CreateDbContext();
+        var fractional = await Service(db, [Source(2, "AVG001") with { PreviousCompanyAverageStayMonths = 29.7m }]).ImportAsync(Request("decimal-average"));
+        var whole = await Service(db, [Source(3, "AVG002") with { PreviousCompanyAverageStayMonths = 29m }]).ImportAsync(Request("whole-average"));
+
+        Assert.True(fractional.IsSuccess); Assert.True(whole.IsSuccess); Assert.True(fractional.Value.Rows.Single().Status is EmployeeImportRowStatus.Succeeded or EmployeeImportRowStatus.SucceededWithWarnings); Assert.True(whole.Value.Rows.Single().Status is EmployeeImportRowStatus.Succeeded or EmployeeImportRowStatus.SucceededWithWarnings);
+        var values = await db.EmployeeCareerFeatureSnapshots.Select(snapshot => snapshot.PreviousCompanyAverageStayMonths).OrderBy(value => value).ToArrayAsync();
+        Assert.Equal([29m, 29.7m], values); Assert.DoesNotContain(fractional.Value.Rows.Single().Diagnostics, diagnostic => diagnostic.Code == "invalid_integer_value");
+    }
+
+    [PostgreSqlIntegrationFact]
     public async Task ImportAsync_TwentyNewEmployees_UsesSharedCatalogLookups()
     {
         fixture.RequireConfigured(); await fixture.ResetDatabaseAsync(); var counter = new PostgreSqlCommandCounter(); await using var db = fixture.CreateDbContext(counter);

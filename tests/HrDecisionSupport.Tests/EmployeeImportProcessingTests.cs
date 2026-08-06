@@ -85,6 +85,32 @@ public class EmployeeImportProcessingTests
     }
 
     [Fact]
+    public void NormalizerAndValidator_PreserveFractionalAverageStayAndRejectOnlyNegativeValues()
+    {
+        var normalizer = new EmployeeImportRowNormalizer(); var validator = new EmployeeImportRowValidator();
+        var fractional = normalizer.Normalize(Source() with { PreviousCompanyAverageStayMonths = 12.5m, ShortestPreviousJobMonths = 2, LongestPreviousJobMonths = 6 });
+        var zero = normalizer.Normalize(Source() with { PreviousCompanyAverageStayMonths = 0m });
+        var negative = normalizer.Normalize(Source() with { PreviousCompanyAverageStayMonths = -0.5m });
+        var missing = normalizer.Normalize(Source() with { PreviousCompanyAverageStayMonths = null });
+
+        Assert.Equal(12.5m, fractional.PreviousCompanyAverageStayMonths); Assert.Equal(2, fractional.ShortestPreviousJobMonths); Assert.Equal(6, fractional.LongestPreviousJobMonths);
+        Assert.Equal(EmployeeImportValidationStatus.Valid, validator.Validate(fractional, new(EmployeeDatasetSplit.Training, new DateOnly(2025, 1, 1))).Status);
+        Assert.Equal(EmployeeImportValidationStatus.Valid, validator.Validate(zero, new(EmployeeDatasetSplit.Training, new DateOnly(2025, 1, 1))).Status);
+        var invalid = validator.Validate(negative, new(EmployeeDatasetSplit.Training, new DateOnly(2025, 1, 1)));
+        Assert.Equal(EmployeeImportValidationStatus.Invalid, invalid.Status); Assert.Contains(invalid.Diagnostics, diagnostic => diagnostic.Code == "previous_company_average_stay_months_negative");
+        Assert.Equal(EmployeeImportValidationStatus.Valid, validator.Validate(missing, new(EmployeeDatasetSplit.Training, new DateOnly(2025, 1, 1))).Status);
+    }
+
+    [Fact]
+    public async Task DryRun_FractionalAverageStayIsValidAndDoesNotProduceIntegerDiagnostics()
+    {
+        var reader = new StubReader([Source() with { PreviousCompanyAverageStayMonths = 29.7m }]);
+        var result = await new EmployeeImportDryRunService(reader, new EmployeeImportRowNormalizer(), new EmployeeImportRowValidator()).DryRunAsync(Stream.Null, new(EmployeeDatasetSplit.Training, new DateOnly(2025, 1, 1)));
+
+        Assert.True(result.IsSuccess); Assert.Equal(1, result.Value.ValidRows); Assert.Equal(0, result.Value.InvalidRows); Assert.DoesNotContain(result.Value.Rows.Single().Diagnostics, diagnostic => diagnostic.Code == "invalid_integer_value" || diagnostic.Code == "invalid_decimal_value");
+    }
+
+    [Fact]
     public async Task DryRun_OrchestratesRowsAndAggregatesWithoutPersistence()
     {
         var reader = new StubReader([Source(), Source(3) with { AnonymousEmployeeCode = null }]);

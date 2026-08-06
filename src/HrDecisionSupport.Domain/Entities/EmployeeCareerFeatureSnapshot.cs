@@ -11,7 +11,7 @@ public class EmployeeCareerFeatureSnapshot
     public int? TotalExperienceMonths { get; set; }
     public int? BackendExperienceMonths { get; set; }
     public bool? HasPreviousCompany { get; set; }
-    public int? PreviousCompanyAverageStayMonths { get; set; }
+    public decimal? PreviousCompanyAverageStayMonths { get; set; }
     public int? ShortestPreviousJobMonths { get; set; }
     public int? LongestPreviousJobMonths { get; set; }
     public int? LastPreviousCompanyStayMonths { get; set; }

@@ -19,7 +19,8 @@ public sealed class EmployeeImportRowValidator : IEmployeeImportRowValidator
         if(row.TerminationDate is not null&&row.HireDate is not null&&row.TerminationDate<row.HireDate)Error("termination_before_hire","TerminationDate");
         if(row.ShortestPreviousJobMonths is not null&&row.LongestPreviousJobMonths is not null&&row.ShortestPreviousJobMonths>row.LongestPreviousJobMonths)Error("shortest_job_exceeds_longest","ShortestPreviousJobMonths");
         if(row.CompanyChangeCount<0)Error("company_change_count_negative","CompanyChangeCount");
-        if(new[]{row.CompanyTenureMonths,row.PreviousCompanyAverageStayMonths,row.ShortestPreviousJobMonths,row.LongestPreviousJobMonths,row.LastPreviousCompanyStayMonths}.Any(x=>x<0))Error("month_feature_negative","MonthFeature");
+        if(new[]{row.CompanyTenureMonths,row.ShortestPreviousJobMonths,row.LongestPreviousJobMonths,row.LastPreviousCompanyStayMonths}.Any(x=>x<0))Error("month_feature_negative","MonthFeature");
+        if(row.PreviousCompanyAverageStayMonths < 0)Error("previous_company_average_stay_months_negative","PreviousCompanyAverageStayMonths");
         if(string.IsNullOrWhiteSpace(row.CurrentPosition))Warning("current_position_missing","CurrentPosition");
         if(context.ObservationDate is null&&row.TerminationDate is null)Warning("observation_date_missing","ObservationDate");
         var status=diagnostics.Any(x=>x.Severity==EmployeeImportDiagnosticSeverity.Error)?EmployeeImportValidationStatus.Invalid:diagnostics.Any()?EmployeeImportValidationStatus.ValidWithWarnings:EmployeeImportValidationStatus.Valid;

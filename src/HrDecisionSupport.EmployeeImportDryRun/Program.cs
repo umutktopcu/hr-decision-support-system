@@ -28,6 +28,7 @@ internal static class Program
             var output = Environment.GetEnvironmentVariable("HRDS_EMPLOYEE_IMPORT_OUTPUT") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HrDecisionSupport", "employee-import-dry-run");
             await DryRunReportWriter.WriteAsync(report, result.Value, output, cancellation.Token);
             Console.WriteLine($"Dry-run completed: {report.TotalRows} rows; valid={report.ValidRows}; warnings={report.ValidWithWarningsRows}; invalid={report.InvalidRows}.");
+            Console.WriteLine("Top diagnostics: " + string.Join("; ", report.Diagnostics.Take(10).Select(diagnostic => diagnostic.Code + "=" + diagnostic.Count)));
             Console.WriteLine($"Reports written to: {output}");
             return 0;
         }
@@ -50,7 +51,7 @@ internal static class Program
             var output = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HrDecisionSupport", "employee-import-dry-run", "analysis");
             var report = await EmployeeImportWorkbookAnalysis.AnalyzeAsync(filePath, observationDate.Value, cancellation.Token);
             await EmployeeImportWorkbookAnalysis.WriteAsync(report, output, cancellation.Token);
-            Console.WriteLine($"Analysis completed: {report.Workbook.FileName}; rows={report.Workbook.DataRowCount}; invalid-integer={report.PreviousCompanyAverageStay.InvalidIntegerDiagnosticCount}; unknown-competencies={report.UnknownCompetencies.TotalOccurrenceCount}.");
+            Console.WriteLine($"Analysis completed: {report.Workbook.FileName}; rows={report.Workbook.DataRowCount}; invalid-decimal={report.PreviousCompanyAverageStay.InvalidDecimalDiagnosticCount}; unknown-competencies={report.UnknownCompetencies.TotalOccurrenceCount}.");
             Console.WriteLine($"Average-stay classification: numeric-integer={report.PreviousCompanyAverageStay.Classifications[nameof(AverageStayValueClass.NumericInteger)]}; numeric-fractional={report.PreviousCompanyAverageStay.Classifications[nameof(AverageStayValueClass.NumericFractional)]}; comma-decimal-text={report.PreviousCompanyAverageStay.Classifications[nameof(AverageStayValueClass.CommaDecimalText)]}; dot-decimal-text={report.PreviousCompanyAverageStay.Classifications[nameof(AverageStayValueClass.DotDecimalText)]}; invalid-text={report.PreviousCompanyAverageStay.Classifications[nameof(AverageStayValueClass.InvalidText)]}; empty={report.PreviousCompanyAverageStay.Classifications[nameof(AverageStayValueClass.Empty)]}.");
             Console.WriteLine($"Average-stay statistics: min={report.PreviousCompanyAverageStay.Min}; max={report.PreviousCompanyAverageStay.Max}; median={report.PreviousCompanyAverageStay.Median}; average={report.PreviousCompanyAverageStay.Average}; negative={report.PreviousCompanyAverageStay.NegativeCount}; zero={report.PreviousCompanyAverageStay.ZeroCount}; precision={string.Join("|", report.PreviousCompanyAverageStay.FractionalPrecisionDistribution.Select(pair => pair.Key + ":" + pair.Value))}.");
             Console.WriteLine($"Unknown-competency aggregate: distinct={report.UnknownCompetencies.DistinctTokenCount}; phrase-review={report.UnknownCompetencies.DescriptionOrPhraseReviewCount}; manual-review={report.UnknownCompetencies.ManualReviewCount}.");

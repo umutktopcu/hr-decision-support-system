@@ -40,7 +40,9 @@ public class EmployeeCareerFeatureSnapshotConfiguration
         builder.Property(snapshot => snapshot.TotalExperienceMonths).IsRequired(false);
         builder.Property(snapshot => snapshot.BackendExperienceMonths).IsRequired(false);
         builder.Property(snapshot => snapshot.HasPreviousCompany).IsRequired(false);
-        builder.Property(snapshot => snapshot.PreviousCompanyAverageStayMonths).IsRequired(false);
+        builder.Property(snapshot => snapshot.PreviousCompanyAverageStayMonths)
+            .HasPrecision(6, 1)
+            .IsRequired(false);
         builder.Property(snapshot => snapshot.ShortestPreviousJobMonths).IsRequired(false);
         builder.Property(snapshot => snapshot.LongestPreviousJobMonths).IsRequired(false);
         builder.Property(snapshot => snapshot.LastPreviousCompanyStayMonths).IsRequired(false);
