@@ -5,6 +5,7 @@ using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Application.Common.Validation;
 using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Application.Employees.Dtos;
+using HrDecisionSupport.Application.EmployeeImports.Spreadsheet;
 using HrDecisionSupport.Application.Profiles.Certificates;
 using HrDecisionSupport.Application.Profiles.Competencies;
 using HrDecisionSupport.Application.Profiles.Education;
@@ -15,6 +16,7 @@ using HrDecisionSupport.Application.Profiles.Sectors;
 using HrDecisionSupport.Application.Profiles.WorkModes;
 using HrDecisionSupport.Infrastructure;
 using HrDecisionSupport.Infrastructure.Persistence;
+using HrDecisionSupport.Infrastructure.EmployeeImports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -103,6 +105,21 @@ public class DependencyInjectionTests
         var abstraction = scope.ServiceProvider.GetRequiredService<IHrDecisionSupportDbContext>();
 
         Assert.Same(concrete, abstraction);
+    }
+
+    [Fact]
+    public void AddInfrastructure_ResolvesStatelessSpreadsheetReader()
+    {
+        var services = CreateServices();
+        using var provider = services.BuildServiceProvider();
+
+        var first = provider.GetRequiredService<IEmployeeSpreadsheetReader>();
+        var second = provider.GetRequiredService<IEmployeeSpreadsheetReader>();
+
+        Assert.IsType<ClosedXmlEmployeeSpreadsheetReader>(first);
+        Assert.Same(first, second);
+        Assert.Empty(Assert.Single(typeof(ClosedXmlEmployeeSpreadsheetReader)
+            .GetConstructors()).GetParameters());
     }
 
     [Fact]
