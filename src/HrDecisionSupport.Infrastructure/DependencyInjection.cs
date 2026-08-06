@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IHrDecisionSupportDbContext>(serviceProvider =>
             serviceProvider.GetRequiredService<HrDecisionSupportDbContext>());
         services.AddSingleton<IEmployeeSpreadsheetReader, ClosedXmlEmployeeSpreadsheetReader>();
+        services.AddScoped<IEmployeeImportTransactionRunner, EmployeeImportTransactionRunner>();
 
         return services;
     }
