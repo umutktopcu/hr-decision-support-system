@@ -36,7 +36,7 @@ internal static class JobRequisitionRequirementValidation
     internal static void ValidateMetadata(
         ICollection<ValidationError> errors,
         int? minimumExperienceMonths,
-        ProficiencyLevel? minimumProficiencyLevel,
+        CompetencyProficiencyLevel? minimumProficiencyLevel,
         string? notes)
     {
         if (minimumExperienceMonths < 0)

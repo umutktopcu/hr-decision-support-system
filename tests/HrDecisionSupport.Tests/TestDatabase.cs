@@ -89,7 +89,7 @@ internal static class TestDatabase
             JobRequisitionId = requisition.Id,
             CompetencyId = competency.Id,
             MinimumExperienceMonths = 12,
-            MinimumProficiencyLevel = ProficiencyLevel.Intermediate,
+            MinimumProficiencyLevel = CompetencyProficiencyLevel.Intermediate,
             IsRequired = isRequired,
             Notes = "Relevant experience"
         };

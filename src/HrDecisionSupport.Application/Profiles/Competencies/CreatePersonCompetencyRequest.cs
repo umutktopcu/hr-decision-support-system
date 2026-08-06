@@ -6,4 +6,4 @@ public sealed record CreatePersonCompetencyRequest(
     Guid PersonId,
     Guid CompetencyId,
     int? ExperienceMonths,
-    ProficiencyLevel? ProficiencyLevel);
+    CompetencyProficiencyLevel? ProficiencyLevel);

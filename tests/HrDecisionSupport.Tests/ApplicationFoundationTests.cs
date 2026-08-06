@@ -303,6 +303,14 @@ public class ApplicationFoundationTests
             [nameof(IHrDecisionSupportDbContext.PersonSectorExperiences)] = typeof(PersonSectorExperience),
             [nameof(IHrDecisionSupportDbContext.WorkModes)] = typeof(WorkMode),
             [nameof(IHrDecisionSupportDbContext.PersonWorkModeExperiences)] = typeof(PersonWorkModeExperience)
+            , [nameof(IHrDecisionSupportDbContext.EmployeeImportBatches)] = typeof(EmployeeImportBatch)
+            , [nameof(IHrDecisionSupportDbContext.EmployeeImportRows)] = typeof(EmployeeImportRow)
+            , [nameof(IHrDecisionSupportDbContext.PersonPriorPositionEvidences)] =
+                typeof(PersonPriorPositionEvidence)
+            , [nameof(IHrDecisionSupportDbContext.EmployeeCareerFeatureSnapshots)] =
+                typeof(EmployeeCareerFeatureSnapshot)
+            , [nameof(IHrDecisionSupportDbContext.EmployeeRetentionLabels)] =
+                typeof(EmployeeRetentionLabel)
         };
 
         foreach (var (propertyName, entityType) in expectedSets)

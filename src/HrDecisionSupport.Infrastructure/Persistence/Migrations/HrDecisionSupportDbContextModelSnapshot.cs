@@ -234,7 +234,6 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         .HasColumnName("graduation_date");
 
                     b.Property<string>("Institution")
-                        .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("character varying(250)")
                         .HasColumnName("institution");
@@ -323,7 +322,7 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("position_id");
 
-                    b.Property<DateOnly>("StartDate")
+                    b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date")
                         .HasColumnName("start_date");
 
@@ -337,7 +336,261 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
 
                     b.ToTable("employee_assignments", null, t =>
                         {
-                            t.HasCheckConstraint("ck_employee_assignments_end_date_not_before_start_date", "end_date IS NULL OR end_date >= start_date");
+                            t.HasCheckConstraint("ck_employee_assignments_end_date_not_before_start_date", "start_date IS NULL OR end_date IS NULL OR end_date >= start_date");
+                        });
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeCareerFeatureSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("BackendExperienceMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("backend_experience_months");
+
+                    b.Property<int?>("CompanyChangeCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_change_count");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<string>("FeatureSchemaVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("feature_schema_version");
+
+                    b.Property<int>("FeatureSource")
+                        .HasColumnType("integer")
+                        .HasColumnName("feature_source");
+
+                    b.Property<bool?>("HasPreviousCompany")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_previous_company");
+
+                    b.Property<Guid>("ImportBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("import_batch_id");
+
+                    b.Property<decimal?>("ImportedJobChangeRate")
+                        .HasPrecision(12, 6)
+                        .HasColumnType("numeric(12,6)")
+                        .HasColumnName("imported_job_change_rate");
+
+                    b.Property<int?>("LastPreviousCompanyStayMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_previous_company_stay_months");
+
+                    b.Property<int?>("LongestPreviousJobMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("longest_previous_job_months");
+
+                    b.Property<DateOnly?>("ObservedAt")
+                        .HasColumnType("date")
+                        .HasColumnName("observed_at");
+
+                    b.Property<int?>("ObservedCompanyTenureMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("observed_company_tenure_months");
+
+                    b.Property<decimal?>("PreviousCompanyAverageStayMonths")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)")
+                        .HasColumnName("previous_company_average_stay_months");
+
+                    b.Property<int?>("ShortestPreviousJobMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("shortest_previous_job_months");
+
+                    b.Property<int?>("TotalExperienceMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_experience_months");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportBatchId");
+
+                    b.HasIndex("EmployeeId", "ImportBatchId", "FeatureSchemaVersion")
+                        .IsUnique();
+
+                    b.ToTable("employee_career_feature_snapshots", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_emp_feature_backend_lte_total", "backend_experience_months IS NULL OR total_experience_months IS NULL OR backend_experience_months <= total_experience_months");
+
+                            t.HasCheckConstraint("ck_emp_feature_job_change_rate_non_negative", "imported_job_change_rate IS NULL OR imported_job_change_rate >= 0");
+
+                            t.HasCheckConstraint("ck_emp_feature_shortest_lte_longest", "shortest_previous_job_months IS NULL OR longest_previous_job_months IS NULL OR shortest_previous_job_months <= longest_previous_job_months");
+
+                            t.HasCheckConstraint("ck_employee_career_feature_snapshots_months_non_negative", "(total_experience_months IS NULL OR total_experience_months >= 0) AND (backend_experience_months IS NULL OR backend_experience_months >= 0) AND (previous_company_average_stay_months IS NULL OR previous_company_average_stay_months >= 0) AND (shortest_previous_job_months IS NULL OR shortest_previous_job_months >= 0) AND (longest_previous_job_months IS NULL OR longest_previous_job_months >= 0) AND (last_previous_company_stay_months IS NULL OR last_previous_company_stay_months >= 0) AND (company_change_count IS NULL OR company_change_count >= 0) AND (observed_company_tenure_months IS NULL OR observed_company_tenure_months >= 0)");
+                        });
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeImportBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("DatasetSplit")
+                        .HasColumnType("integer")
+                        .HasColumnName("dataset_split");
+
+                    b.Property<int>("FailedRowCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("failed_row_count");
+
+                    b.Property<string>("FileHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("file_hash");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("character varying(260)")
+                        .HasColumnName("file_name");
+
+                    b.Property<DateTime>("ImportedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("imported_at_utc");
+
+                    b.Property<DateOnly?>("ObservationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("observation_date");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<int>("SuccessfulRowCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("successful_row_count");
+
+                    b.Property<int>("TotalRowCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_row_count");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileHash")
+                        .IsUnique();
+
+                    b.ToTable("employee_import_batches", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_emp_import_batch_completed_counts_lte_total", "successful_row_count + failed_row_count <= total_row_count");
+
+                            t.HasCheckConstraint("ck_employee_import_batches_file_hash_lowercase_sha256", "file_hash ~ '^[0-9a-f]{64}$'");
+
+                            t.HasCheckConstraint("ck_employee_import_batches_row_counts_non_negative", "total_row_count >= 0 AND successful_row_count >= 0 AND failed_row_count >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeImportRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid?>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<string>("ExternalEmployeeCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("external_employee_code");
+
+                    b.Property<Guid>("ImportBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("import_batch_id");
+
+                    b.Property<int>("ImportStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("import_status");
+
+                    b.Property<string>("RawPayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("raw_payload_json");
+
+                    b.Property<int>("SourceRowNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("source_row_number");
+
+                    b.Property<string>("ValidationErrorsJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("validation_errors_json");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ImportBatchId", "ExternalEmployeeCode")
+                        .IsUnique()
+                        .HasFilter("\"external_employee_code\" IS NOT NULL");
+
+                    b.HasIndex("ImportBatchId", "SourceRowNumber")
+                        .IsUnique();
+
+                    b.ToTable("employee_import_rows", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_employee_import_rows_source_row_number_positive", "source_row_number > 0");
+                        });
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeRetentionLabel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("EmployeeCareerFeatureSnapshotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_career_feature_snapshot_id");
+
+                    b.Property<int>("Label")
+                        .HasColumnType("integer")
+                        .HasColumnName("label");
+
+                    b.Property<string>("LabelDefinitionVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("label_definition_version");
+
+                    b.Property<int>("LabelSource")
+                        .HasColumnType("integer")
+                        .HasColumnName("label_source");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeCareerFeatureSnapshotId")
+                        .IsUnique();
+
+                    b.ToTable("employee_retention_labels", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_employee_retention_labels_label_valid", "label IN (0, 1, 2)");
                         });
                 });
 
@@ -678,7 +931,7 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("person_id");
 
-                    b.Property<int>("ProficiencyLevel")
+                    b.Property<int?>("ProficiencyLevel")
                         .HasColumnType("integer")
                         .HasColumnName("proficiency_level");
 
@@ -690,6 +943,48 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("person_languages", (string)null);
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.PersonPriorPositionEvidence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("ImportRowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("import_row_id");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("person_id");
+
+                    b.Property<int>("SequenceNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence_number");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ImportRowId");
+
+                    b.HasIndex("PersonId", "SequenceNumber", "Title")
+                        .IsUnique();
+
+                    b.ToTable("person_prior_position_evidences", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_person_prior_position_evidences_sequence_number_positive", "sequence_number > 0");
+                        });
                 });
 
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.PersonProject", b =>
@@ -998,6 +1293,54 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                     b.Navigation("Position");
                 });
 
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeCareerFeatureSnapshot", b =>
+                {
+                    b.HasOne("HrDecisionSupport.Domain.Entities.Employee", "Employee")
+                        .WithMany("CareerFeatureSnapshots")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HrDecisionSupport.Domain.Entities.EmployeeImportBatch", "ImportBatch")
+                        .WithMany("FeatureSnapshots")
+                        .HasForeignKey("ImportBatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("ImportBatch");
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeImportRow", b =>
+                {
+                    b.HasOne("HrDecisionSupport.Domain.Entities.Employee", "Employee")
+                        .WithMany("ImportRows")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HrDecisionSupport.Domain.Entities.EmployeeImportBatch", "ImportBatch")
+                        .WithMany("Rows")
+                        .HasForeignKey("ImportBatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("ImportBatch");
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeRetentionLabel", b =>
+                {
+                    b.HasOne("HrDecisionSupport.Domain.Entities.EmployeeCareerFeatureSnapshot", "EmployeeCareerFeatureSnapshot")
+                        .WithOne("RetentionLabel")
+                        .HasForeignKey("HrDecisionSupport.Domain.Entities.EmployeeRetentionLabel", "EmployeeCareerFeatureSnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("EmployeeCareerFeatureSnapshot");
+                });
+
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmploymentHistory", b =>
                 {
                     b.HasOne("HrDecisionSupport.Domain.Entities.Person", "Person")
@@ -1104,6 +1447,25 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                     b.Navigation("Person");
                 });
 
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.PersonPriorPositionEvidence", b =>
+                {
+                    b.HasOne("HrDecisionSupport.Domain.Entities.EmployeeImportRow", "ImportRow")
+                        .WithMany("PriorPositionEvidences")
+                        .HasForeignKey("ImportRowId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HrDecisionSupport.Domain.Entities.Person", "Person")
+                        .WithMany("PriorPositionEvidences")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ImportRow");
+
+                    b.Navigation("Person");
+                });
+
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.PersonProject", b =>
                 {
                     b.HasOne("HrDecisionSupport.Domain.Entities.Person", "Person")
@@ -1188,6 +1550,27 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.Employee", b =>
                 {
                     b.Navigation("Assignments");
+
+                    b.Navigation("CareerFeatureSnapshots");
+
+                    b.Navigation("ImportRows");
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeCareerFeatureSnapshot", b =>
+                {
+                    b.Navigation("RetentionLabel");
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeImportBatch", b =>
+                {
+                    b.Navigation("FeatureSnapshots");
+
+                    b.Navigation("Rows");
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EmployeeImportRow", b =>
+                {
+                    b.Navigation("PriorPositionEvidences");
                 });
 
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.JobRequisition", b =>
@@ -1223,6 +1606,8 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                     b.Navigation("PersonSectorExperiences");
 
                     b.Navigation("PersonWorkModeExperiences");
+
+                    b.Navigation("PriorPositionEvidences");
                 });
 
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.Position", b =>

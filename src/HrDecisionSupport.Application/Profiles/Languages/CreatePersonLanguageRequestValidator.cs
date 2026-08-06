@@ -18,7 +18,7 @@ public sealed class CreatePersonLanguageRequestValidator : IValidator<CreatePers
         return RequestValidation.ToResult(errors);
     }
 
-    internal static void ValidateLevel(ICollection<ValidationError> errors, ProficiencyLevel level)
+    internal static void ValidateLevel(ICollection<ValidationError> errors, LanguageProficiencyLevel level)
     {
         if (!Enum.IsDefined(level))
             errors.Add(new("proficiency_level_invalid", "ProficiencyLevel must be a defined value.", "ProficiencyLevel"));

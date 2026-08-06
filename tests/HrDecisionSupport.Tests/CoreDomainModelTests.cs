@@ -35,6 +35,11 @@ public class CoreDomainModelTests
             typeof(PersonSectorExperience),
             typeof(WorkMode),
             typeof(PersonWorkModeExperience),
+            typeof(EmployeeImportBatch),
+            typeof(EmployeeImportRow),
+            typeof(PersonPriorPositionEvidence),
+            typeof(EmployeeCareerFeatureSnapshot),
+            typeof(EmployeeRetentionLabel),
             typeof(JobRequisition),
             typeof(JobRequisitionRequirement),
             typeof(CandidateEvaluationCase)
@@ -144,7 +149,7 @@ public class CoreDomainModelTests
     [InlineData(
         typeof(EmployeeAssignment),
         "ck_employee_assignments_end_date_not_before_start_date",
-        "end_date IS NULL OR end_date >= start_date")]
+        "start_date IS NULL OR end_date IS NULL OR end_date >= start_date")]
     [InlineData(
         typeof(EmploymentHistory),
         "ck_employment_histories_end_date_not_before_start_date",

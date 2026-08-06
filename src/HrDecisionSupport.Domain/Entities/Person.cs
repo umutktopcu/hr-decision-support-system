@@ -18,6 +18,7 @@ public class Person
     public ICollection<EducationRecord> EducationRecords { get; set; } = [];
     public ICollection<PersonCertificate> PersonCertificates { get; set; } = [];
     public ICollection<PersonLanguage> PersonLanguages { get; set; } = [];
+    public ICollection<PersonPriorPositionEvidence> PriorPositionEvidences { get; set; } = [];
     public ICollection<PersonProject> PersonProjects { get; set; } = [];
     public ICollection<PersonSectorExperience> PersonSectorExperiences { get; set; } = [];
     public ICollection<PersonWorkModeExperience> PersonWorkModeExperiences { get; set; } = [];

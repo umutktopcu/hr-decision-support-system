@@ -50,10 +50,10 @@ public class PersonCompetencyServiceTests
         await using var context = TestDatabase.CreateContext();
         var person = TestDatabase.Person("PC-CREATE"); var competency = TestDatabase.Competency();
         context.AddRange(person, competency); await context.SaveChangesAsync();
-        var result = await Service(context).CreateAsync(new(person.Id, competency.Id, 12, ProficiencyLevel.Advanced));
+        var result = await Service(context).CreateAsync(new(person.Id, competency.Id, 12, CompetencyProficiencyLevel.Advanced));
         Assert.True(result.IsSuccess);
         var stored = await context.PersonCompetencies.SingleAsync();
-        Assert.Equal(12, stored.ExperienceMonths); Assert.Equal(ProficiencyLevel.Advanced, stored.ProficiencyLevel);
+        Assert.Equal(12, stored.ExperienceMonths); Assert.Equal(CompetencyProficiencyLevel.Advanced, stored.ProficiencyLevel);
     }
 
     [Fact]
@@ -91,9 +91,9 @@ public class PersonCompetencyServiceTests
     }
 
     [Theory]
-    [InlineData(-1, ProficiencyLevel.Beginner, "experience_months_negative")]
-    [InlineData(1, (ProficiencyLevel)500, "proficiency_level_invalid")]
-    public async Task Create_InvalidMetadata_ReturnsValidation(int months, ProficiencyLevel level, string code)
+    [InlineData(-1, CompetencyProficiencyLevel.Beginner, "experience_months_negative")]
+    [InlineData(1, (CompetencyProficiencyLevel)500, "proficiency_level_invalid")]
+    public async Task Create_InvalidMetadata_ReturnsValidation(int months, CompetencyProficiencyLevel level, string code)
     {
         await using var context = TestDatabase.CreateContext();
         var result = await Service(context).CreateAsync(new(Guid.NewGuid(), Guid.NewGuid(), months, level));
@@ -107,9 +107,9 @@ public class PersonCompetencyServiceTests
         var person = TestDatabase.Person("PC-UPD"); var competency = TestDatabase.Competency();
         var link = Link(person, competency); context.AddRange(person, competency, link); await context.SaveChangesAsync();
         var personId = link.PersonId; var competencyId = link.CompetencyId;
-        var result = await Service(context).UpdateAsync(link.Id, new(48, ProficiencyLevel.Expert));
+        var result = await Service(context).UpdateAsync(link.Id, new(48, CompetencyProficiencyLevel.Expert));
         Assert.True(result.IsSuccess); Assert.Equal(personId, result.Value.PersonId); Assert.Equal(competencyId, result.Value.CompetencyId);
-        Assert.Equal(48, result.Value.ExperienceMonths); Assert.Equal(ProficiencyLevel.Expert, result.Value.ProficiencyLevel);
+        Assert.Equal(48, result.Value.ExperienceMonths); Assert.Equal(CompetencyProficiencyLevel.Expert, result.Value.ProficiencyLevel);
     }
 
     [Fact]

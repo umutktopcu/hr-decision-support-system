@@ -27,13 +27,65 @@ public enum CompetencyCategory
     TechnicalConcept = 6
 }
 
-public enum ProficiencyLevel
+public enum CompetencyProficiencyLevel
 {
     Beginner = 1,
     Elementary = 2,
     Intermediate = 3,
     Advanced = 4,
     Expert = 5
+}
+
+public enum LanguageProficiencyLevel
+{
+    A1 = 1,
+    A2 = 2,
+    B1 = 3,
+    B2 = 4,
+    C1 = 5,
+    C2 = 6
+}
+
+public enum EmployeeDatasetSplit
+{
+    Training = 1,
+    HoldoutTest = 2,
+    Production = 3
+}
+
+public enum EmployeeImportBatchStatus
+{
+    Pending = 1,
+    Processing = 2,
+    Completed = 3,
+    CompletedWithErrors = 4,
+    Failed = 5
+}
+
+public enum EmployeeImportRowStatus
+{
+    Pending = 1,
+    Succeeded = 2,
+    SucceededWithWarnings = 3,
+    Failed = 4
+}
+
+public enum EmployeeCareerFeatureSource
+{
+    ImportedAggregate = 1,
+    CalculatedFromEmploymentHistory = 2
+}
+
+public enum EmployeeRetentionLabelValue
+{
+    Short = 0,
+    Normal = 1,
+    Long = 2
+}
+
+public enum EmployeeRetentionLabelSource
+{
+    ImportedDataset = 1
 }
 
 public enum DegreeLevel

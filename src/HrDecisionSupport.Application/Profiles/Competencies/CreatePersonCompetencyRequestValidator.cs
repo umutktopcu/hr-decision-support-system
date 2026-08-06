@@ -23,7 +23,7 @@ public sealed class CreatePersonCompetencyRequestValidator : IValidator<CreatePe
     internal static void ValidateMetadata(
         ICollection<ValidationError> errors,
         int? experienceMonths,
-        ProficiencyLevel? proficiencyLevel)
+        CompetencyProficiencyLevel? proficiencyLevel)
     {
         if (experienceMonths < 0)
             errors.Add(new("experience_months_negative", "ExperienceMonths cannot be negative.", "ExperienceMonths"));

@@ -8,5 +8,5 @@ public sealed record PersonLanguageDto(
     Guid LanguageId,
     string LanguageCode,
     string LanguageName,
-    ProficiencyLevel ProficiencyLevel,
+    LanguageProficiencyLevel? ProficiencyLevel,
     bool IsNative);

@@ -12,14 +12,14 @@ public class EmployeeAssignmentConfiguration : IEntityTypeConfiguration<Employee
             "employee_assignments",
             table => table.HasCheckConstraint(
                 "ck_employee_assignments_end_date_not_before_start_date",
-                "end_date IS NULL OR end_date >= start_date"));
+                "start_date IS NULL OR end_date IS NULL OR end_date >= start_date"));
         builder.HasKey(assignment => assignment.Id);
 
         builder.Property(assignment => assignment.Id).IsRequired();
         builder.Property(assignment => assignment.EmployeeId).IsRequired();
         builder.Property(assignment => assignment.DepartmentId).IsRequired();
         builder.Property(assignment => assignment.PositionId).IsRequired();
-        builder.Property(assignment => assignment.StartDate).IsRequired();
+        builder.Property(assignment => assignment.StartDate).IsRequired(false);
         builder.Property(assignment => assignment.EndDate).IsRequired(false);
 
         builder.HasIndex(assignment => assignment.EmployeeId);

@@ -13,4 +13,6 @@ public class Employee
 
     public Person Person { get; set; } = null!;
     public ICollection<EmployeeAssignment> Assignments { get; set; } = [];
+    public ICollection<EmployeeImportRow> ImportRows { get; set; } = [];
+    public ICollection<EmployeeCareerFeatureSnapshot> CareerFeatureSnapshots { get; set; } = [];
 }

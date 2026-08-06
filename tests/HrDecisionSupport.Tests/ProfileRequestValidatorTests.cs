@@ -16,13 +16,13 @@ public class ProfileRequestValidatorTests
     public void AllProfileValidators_ValidRequests_AreValid()
     {
         Assert.True(new CreatePersonCompetencyRequestValidator().Validate(CompetencyCreate()).IsValid);
-        Assert.True(new UpdatePersonCompetencyRequestValidator().Validate(new(1, ProficiencyLevel.Beginner)).IsValid);
+        Assert.True(new UpdatePersonCompetencyRequestValidator().Validate(new(1, CompetencyProficiencyLevel.Beginner)).IsValid);
         Assert.True(new CreateEducationRecordRequestValidator().Validate(EducationCreate()).IsValid);
         Assert.True(new UpdateEducationRecordRequestValidator().Validate(EducationUpdate()).IsValid);
         Assert.True(new CreatePersonCertificateRequestValidator().Validate(CertificateCreate()).IsValid);
         Assert.True(new UpdatePersonCertificateRequestValidator().Validate(CertificateUpdate()).IsValid);
         Assert.True(new CreatePersonLanguageRequestValidator().Validate(LanguageCreate()).IsValid);
-        Assert.True(new UpdatePersonLanguageRequestValidator().Validate(new(ProficiencyLevel.Advanced, true)).IsValid);
+        Assert.True(new UpdatePersonLanguageRequestValidator().Validate(new(LanguageProficiencyLevel.B2, true)).IsValid);
         Assert.True(new CreateEmploymentHistoryRequestValidator().Validate(EmploymentCreate()).IsValid);
         Assert.True(new UpdateEmploymentHistoryRequestValidator().Validate(EmploymentUpdate()).IsValid);
         Assert.True(new CreatePersonProjectRequestValidator().Validate(ProjectCreate()).IsValid);
@@ -37,8 +37,8 @@ public class ProfileRequestValidatorTests
     public void CompetencyValidators_MultipleInvalidFields_ReturnMultipleErrors()
     {
         var create = new CreatePersonCompetencyRequestValidator().Validate(
-            new(Guid.Empty, Guid.Empty, -1, (ProficiencyLevel)500));
-        var update = new UpdatePersonCompetencyRequestValidator().Validate(new(-1, (ProficiencyLevel)500));
+            new(Guid.Empty, Guid.Empty, -1, (CompetencyProficiencyLevel)500));
+        var update = new UpdatePersonCompetencyRequestValidator().Validate(new(-1, (CompetencyProficiencyLevel)500));
         Assert.Equal(4, create.Errors.Count); Assert.Equal(2, update.Errors.Count);
         Assert.Contains(create.Errors, error => error.PropertyName == "PersonId");
         Assert.Contains(create.Errors, error => error.PropertyName == "CompetencyId");
@@ -68,8 +68,8 @@ public class ProfileRequestValidatorTests
     public void LanguageValidators_RejectEmptyIdsAndInvalidEnum()
     {
         var create = new CreatePersonLanguageRequestValidator().Validate(
-            new(Guid.Empty, Guid.Empty, (ProficiencyLevel)500, false));
-        var update = new UpdatePersonLanguageRequestValidator().Validate(new((ProficiencyLevel)500, true));
+            new(Guid.Empty, Guid.Empty, (LanguageProficiencyLevel)500, false));
+        var update = new UpdatePersonLanguageRequestValidator().Validate(new((LanguageProficiencyLevel)500, true));
         Assert.Equal(3, create.Errors.Count); Assert.Single(update.Errors);
         Assert.All(create.Errors, error => Assert.NotEmpty(error.PropertyName));
     }
@@ -269,7 +269,7 @@ public class ProfileRequestValidatorTests
     }
 
     private static CreatePersonCompetencyRequest CompetencyCreate() =>
-        new(Guid.NewGuid(), Guid.NewGuid(), 12, ProficiencyLevel.Advanced);
+        new(Guid.NewGuid(), Guid.NewGuid(), 12, CompetencyProficiencyLevel.Advanced);
     private static CreateEducationRecordRequest EducationCreate() =>
         new(Guid.NewGuid(), "University", "Computing", DegreeLevel.Bachelor, new(2020, 1, 1), new(2024, 1, 1));
     private static UpdateEducationRecordRequest EducationUpdate() =>
@@ -279,7 +279,7 @@ public class ProfileRequestValidatorTests
     private static UpdatePersonCertificateRequest CertificateUpdate() =>
         new(new(2020, 1, 1), new(2024, 1, 1), "code");
     private static CreatePersonLanguageRequest LanguageCreate() =>
-        new(Guid.NewGuid(), Guid.NewGuid(), ProficiencyLevel.Advanced, false);
+        new(Guid.NewGuid(), Guid.NewGuid(), LanguageProficiencyLevel.B2, false);
     private static CreateEmploymentHistoryRequest EmploymentCreate() =>
         new(Guid.NewGuid(), "Employer", "Engineer", new(2020, 1, 1), null, "Description");
     private static UpdateEmploymentHistoryRequest EmploymentUpdate() =>

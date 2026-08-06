@@ -17,7 +17,7 @@ public class EducationRecordConfiguration : IEntityTypeConfiguration<EducationRe
 
         builder.Property(education => education.Id).IsRequired();
         builder.Property(education => education.PersonId).IsRequired();
-        builder.Property(education => education.Institution).HasMaxLength(250).IsRequired();
+        builder.Property(education => education.Institution).HasMaxLength(250).IsRequired(false);
         builder.Property(education => education.FieldOfStudy).HasMaxLength(200).IsRequired(false);
         builder.Property(education => education.DegreeLevel).HasConversion<int>().IsRequired();
         builder.Property(education => education.StartDate).IsRequired(false);

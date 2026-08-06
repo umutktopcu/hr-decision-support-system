@@ -10,6 +10,6 @@ public sealed record EmployeeAssignmentDto(
     Guid PositionId,
     string PositionCode,
     string PositionName,
-    DateOnly StartDate,
+    DateOnly? StartDate,
     DateOnly? EndDate,
     bool IsCurrent);

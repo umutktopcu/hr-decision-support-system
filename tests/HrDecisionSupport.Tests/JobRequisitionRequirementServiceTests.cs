@@ -106,7 +106,7 @@ public class JobRequisitionRequirementServiceTests
         await context.SaveChangesAsync();
 
         var result = await Service(context).CreateAsync(
-            new(data.Requisition.Id, competency.Id, 24, ProficiencyLevel.Advanced, true, "  Notes  "));
+            new(data.Requisition.Id, competency.Id, 24, CompetencyProficiencyLevel.Advanced, true, "  Notes  "));
 
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value.Id);
@@ -202,13 +202,13 @@ public class JobRequisitionRequirementServiceTests
         var competencyId = requirement.CompetencyId;
 
         var result = await Service(context).UpdateAsync(
-            requirement.Id, new(60, ProficiencyLevel.Expert, false, "  Updated  "));
+            requirement.Id, new(60, CompetencyProficiencyLevel.Expert, false, "  Updated  "));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(requisitionId, result.Value.JobRequisitionId);
         Assert.Equal(competencyId, result.Value.CompetencyId);
         Assert.Equal(60, result.Value.MinimumExperienceMonths);
-        Assert.Equal(ProficiencyLevel.Expert, result.Value.MinimumProficiencyLevel);
+        Assert.Equal(CompetencyProficiencyLevel.Expert, result.Value.MinimumProficiencyLevel);
         Assert.False(result.Value.IsRequired);
         Assert.Equal("Updated", result.Value.Notes);
     }
@@ -239,7 +239,7 @@ public class JobRequisitionRequirementServiceTests
 
         var result = await Service(context).UpdateAsync(
             requirement.Id,
-            new(-1, (ProficiencyLevel)999, !originalRequired, " "));
+            new(-1, (CompetencyProficiencyLevel)999, !originalRequired, " "));
 
         Assert.True(result.IsFailure);
         Assert.All(result.Errors, error => Assert.Equal(ErrorType.Validation, error.Type));
@@ -304,7 +304,7 @@ public class JobRequisitionRequirementServiceTests
     {
         await using var context = TestDatabase.CreateContext();
         var result = await Service(context).CreateAsync(
-            new(Guid.Empty, Guid.Empty, -1, (ProficiencyLevel)999, true, "   "));
+            new(Guid.Empty, Guid.Empty, -1, (CompetencyProficiencyLevel)999, true, "   "));
         Assert.Equal(5, result.Errors.Count);
         Assert.All(result.Errors, error => Assert.Equal(ErrorType.Validation, error.Type));
     }
@@ -318,7 +318,7 @@ public class JobRequisitionRequirementServiceTests
     private static CreateJobRequisitionRequirementRequest ValidCreate(
         Guid requisitionId,
         Guid competencyId) =>
-        new(requisitionId, competencyId, 12, ProficiencyLevel.Intermediate, true, null);
+        new(requisitionId, competencyId, 12, CompetencyProficiencyLevel.Intermediate, true, null);
 
     private static Seed SeedData(JobRequisitionStatus status = JobRequisitionStatus.Draft)
     {

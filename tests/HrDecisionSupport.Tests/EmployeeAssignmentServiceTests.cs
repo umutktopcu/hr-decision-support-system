@@ -314,13 +314,13 @@ public class EmployeeAssignmentServiceTests
         fixture.Context.EmployeeAssignments.Add(assignment);
         await fixture.Context.SaveChangesAsync();
 
-        var missingDepartment = fixture.UpdateRequest(assignment.StartDate, assignment.EndDate) with
+        var missingDepartment = fixture.UpdateRequest(assignment.StartDate!.Value, assignment.EndDate) with
         {
             DepartmentId = Guid.NewGuid()
         };
         AssertError(await fixture.Service.UpdateAsync(assignment.Id, missingDepartment),
             "department_not_found", ErrorType.NotFound);
-        var missingPosition = fixture.UpdateRequest(assignment.StartDate, assignment.EndDate) with
+        var missingPosition = fixture.UpdateRequest(assignment.StartDate!.Value, assignment.EndDate) with
         {
             PositionId = Guid.NewGuid()
         };
@@ -362,7 +362,7 @@ public class EmployeeAssignmentServiceTests
         await fixture.Context.SaveChangesAsync();
 
         var result = await fixture.Service.UpdateAsync(
-            assignment.Id, fixture.UpdateRequest(assignment.StartDate, assignment.EndDate));
+            assignment.Id, fixture.UpdateRequest(assignment.StartDate!.Value, assignment.EndDate));
 
         Assert.True(result.IsSuccess);
     }
@@ -392,7 +392,7 @@ public class EmployeeAssignmentServiceTests
         await fixture.Context.SaveChangesAsync();
 
         var result = await fixture.Service.UpdateAsync(closed.Id,
-            fixture.UpdateRequest(closed.StartDate, null));
+            fixture.UpdateRequest(closed.StartDate!.Value, null));
 
         AssertError(result, "employee_assignment_open_conflict", ErrorType.Conflict);
     }
@@ -406,10 +406,10 @@ public class EmployeeAssignmentServiceTests
         await fixture.Context.SaveChangesAsync();
 
         var opened = await fixture.Service.UpdateAsync(
-            assignment.Id, fixture.UpdateRequest(assignment.StartDate, null));
+            assignment.Id, fixture.UpdateRequest(assignment.StartDate!.Value, null));
         var closed = await fixture.Service.UpdateAsync(
             assignment.Id,
-            fixture.UpdateRequest(assignment.StartDate, new DateOnly(2024, 4, 30)));
+            fixture.UpdateRequest(assignment.StartDate!.Value, new DateOnly(2024, 4, 30)));
 
         Assert.True(opened.Value.IsCurrent);
         Assert.False(closed.Value.IsCurrent);
@@ -428,7 +428,7 @@ public class EmployeeAssignmentServiceTests
                 fixture.UpdateRequest(new DateOnly(2023, 12, 31), assignment.EndDate)),
             "employee_assignment_before_hire_date", ErrorType.Failure);
         AssertError(await fixture.Service.UpdateAsync(assignment.Id,
-                fixture.UpdateRequest(assignment.StartDate, new DateOnly(2024, 7, 1))),
+                fixture.UpdateRequest(assignment.StartDate!.Value, new DateOnly(2024, 7, 1))),
             "employee_assignment_after_termination_date", ErrorType.Failure);
     }
 
@@ -453,7 +453,7 @@ public class EmployeeAssignmentServiceTests
         var originalEndDate = assignment.EndDate;
 
         var result = await fixture.Service.UpdateAsync(
-            assignment.Id, fixture.UpdateRequest(assignment.StartDate, null));
+            assignment.Id, fixture.UpdateRequest(assignment.StartDate!.Value, null));
 
         AssertError(result, "employee_assignment_employee_state_conflict", ErrorType.Conflict);
         var stored = await fixture.Context.EmployeeAssignments.AsNoTracking()
