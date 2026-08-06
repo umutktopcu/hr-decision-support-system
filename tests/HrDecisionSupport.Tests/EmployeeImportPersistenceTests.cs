@@ -150,6 +150,45 @@ public class EmployeeImportPersistenceTests
         var repeated = await Service(db, source).ImportAsync(Request("unknown-competency"));
         Assert.True(repeated.IsFailure); Assert.Equal("employee_import.already_imported", repeated.Error!.Code); Assert.Single(await db.EmployeeImportRows.ToListAsync());
     }
+    [Fact]
+    public async Task ImportAsync_NewEmployee_PersistsTerminationDate()
+    {
+        var termination = new DateOnly(2024, 6, 30); await using var db = TestDatabase.CreateContext(); var result = await Service(db, Source("E1", "C#", "A") with { TerminationDate = termination }).ImportAsync(Request("new-terminated"));
+        Assert.True(result.IsSuccess); var employee = await db.Employees.SingleAsync(); Assert.Equal(termination, employee.TerminationDate); Assert.Equal(EmploymentStatus.Terminated, employee.EmploymentStatus);
+    }
+    [Fact]
+    public async Task ImportAsync_NewEmployee_WithNullTerminationDate_RemainsActive()
+    {
+        await using var db = TestDatabase.CreateContext(); var result = await Service(db, Source("E1", "C#", "A")).ImportAsync(Request("new-active"));
+        Assert.True(result.IsSuccess); var employee = await db.Employees.SingleAsync(); Assert.Null(employee.TerminationDate); Assert.Equal(EmploymentStatus.Active, employee.EmploymentStatus);
+    }
+    [Fact]
+    public async Task ImportAsync_ExistingEmployee_WithNullDatabaseTermination_SetsSourceTermination()
+    {
+        var person = TestDatabase.Person("E1"); var employee = new Employee { Id = Guid.NewGuid(), PersonId = person.Id, EmployeeCode = "E1", HireDate = new DateOnly(2020, 1, 1), EmploymentStatus = EmploymentStatus.Active }; var termination = new DateOnly(2024, 6, 30);
+        await using var db = TestDatabase.CreateContext(); db.AddRange(person, employee); await db.SaveChangesAsync(); var result = await Service(db, Source("E1", "C#", "A") with { TerminationDate = termination }).ImportAsync(Request("existing-fill-termination"));
+        Assert.True(result.IsSuccess); var persisted = await db.Employees.SingleAsync(); Assert.Equal(termination, persisted.TerminationDate); Assert.Equal(EmploymentStatus.Terminated, persisted.EmploymentStatus);
+    }
+    [Fact]
+    public async Task ImportAsync_ExistingEmployee_WithSourceNullTermination_PreservesDatabaseTermination()
+    {
+        var termination = new DateOnly(2024, 6, 30); var person = TestDatabase.Person("E1"); var employee = new Employee { Id = Guid.NewGuid(), PersonId = person.Id, EmployeeCode = "E1", HireDate = new DateOnly(2020, 1, 1), TerminationDate = termination, EmploymentStatus = EmploymentStatus.Terminated };
+        await using var db = TestDatabase.CreateContext(); db.AddRange(person, employee); await db.SaveChangesAsync(); var result = await Service(db, Source("E1", "C#", "A")).ImportAsync(Request("existing-preserve-termination"));
+        Assert.True(result.IsSuccess); var persisted = await db.Employees.SingleAsync(); Assert.Equal(termination, persisted.TerminationDate); Assert.Equal(EmploymentStatus.Terminated, persisted.EmploymentStatus);
+    }
+    [Fact]
+    public async Task ImportAsync_ExistingEmployee_WithDifferentSourceTermination_UpdatesTermination()
+    {
+        var previous = new DateOnly(2023, 6, 30); var replacement = new DateOnly(2024, 6, 30); var person = TestDatabase.Person("E1"); var employee = new Employee { Id = Guid.NewGuid(), PersonId = person.Id, EmployeeCode = "E1", HireDate = new DateOnly(2020, 1, 1), TerminationDate = previous, EmploymentStatus = EmploymentStatus.Terminated };
+        await using var db = TestDatabase.CreateContext(); db.AddRange(person, employee); await db.SaveChangesAsync(); var result = await Service(db, Source("E1", "C#", "A") with { TerminationDate = replacement }).ImportAsync(Request("existing-update-termination"));
+        Assert.True(result.IsSuccess); Assert.Equal(replacement, (await db.Employees.SingleAsync()).TerminationDate);
+    }
+    [Fact]
+    public async Task ImportAsync_TerminationBeforeHireDate_IsInvalidAndDoesNotCreateEmployee()
+    {
+        await using var db = TestDatabase.CreateContext(); var result = await Service(db, Source("E1", "C#", "A") with { TerminationDate = new DateOnly(2019, 12, 31) }).ImportAsync(Request("invalid-termination"));
+        Assert.True(result.IsSuccess); Assert.Equal(EmployeeImportRowStatus.Failed, result.Value.Rows.Single().Status); Assert.Empty(await db.Employees.ToListAsync());
+    }
     private static EmployeeImportService Service(HrDecisionSupport.Infrastructure.Persistence.HrDecisionSupportDbContext db, EmployeeImportSourceRow row, IEmployeeImportRowNormalizer? normalizer = null)
     {
         normalizer ??= new EmployeeImportRowNormalizer(); return new(db, new Reader(row), normalizer, new EmployeeImportRowValidator(), new EmployeeImportDryRunService(new Reader(row), new EmployeeImportRowNormalizer(), new EmployeeImportRowValidator()), new Runner(), TimeProvider.System);

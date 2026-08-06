@@ -32,9 +32,9 @@ public sealed class EmployeeImportQueryIntegrationTests(PostgreSqlIntegrationTes
     public async Task ImportAsync_TwentyNewEmployees_UsesSharedCatalogLookups()
     {
         fixture.RequireConfigured(); await fixture.ResetDatabaseAsync(); var counter = new PostgreSqlCommandCounter(); await using var db = fixture.CreateDbContext(counter);
-        var rows = Enumerable.Range(1, 20).Select(i => Source(i + 1, "E" + i.ToString("000"))).ToArray();
+        var rows = Enumerable.Range(1, 20).Select(i => Source(i + 1, "E" + i.ToString("000")) with { TerminationDate = i <= 3 ? new DateOnly(2024, 6, 30) : null }).ToArray();
         counter.Start(); var result = await Service(db, rows).ImportAsync(Request("twenty-shared-catalog")); counter.Stop();
-        Assert.True(result.IsSuccess); Assert.Equal(20, result.Value.SucceededRows); Assert.Equal(20, await db.Employees.CountAsync()); Assert.Equal(1, await db.Competencies.CountAsync()); Assert.Equal(20, await db.PersonCompetencies.CountAsync());
+        Assert.True(result.IsSuccess); Assert.Equal(20, result.Value.SucceededRows); Assert.Equal(20, await db.Employees.CountAsync()); Assert.Equal(3, await db.Employees.CountAsync(employee => employee.TerminationDate == new DateOnly(2024, 6, 30))); Assert.Equal(1, await db.Competencies.CountAsync()); Assert.Equal(20, await db.PersonCompetencies.CountAsync());
         // One preload plus the catalog insert is expected; it must not become one lookup per employee.
         Assert.True(counter["competency lookup"] <= 3, $"competency commands: {counter["competency lookup"]}");
     }
