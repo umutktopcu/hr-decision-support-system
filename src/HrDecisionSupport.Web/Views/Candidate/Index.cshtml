@@ -1,0 +1,173 @@
+﻿@{
+    ViewData["Title"] = "Aday Yönetimi";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Aday Listesi</h2>
+    <button class="btn btn-success">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel me-2" viewBox="0 0 16 16">
+            <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z" />
+            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z" />
+        </svg>
+        Excel'den Aday Aktar
+    </button>
+</div>
+
+<!-- Filtreleme Alanı -->
+<div class="card section-card shadow-sm mb-4">
+    <div class="card-body bg-light">
+        <!-- Dikkat: form elemanını kaldırdık, sayfanın yenilenmesini istemiyoruz -->
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-muted small">İsim veya Pozisyon Ara</label>
+                <!-- ID eklendi: searchInput -->
+                <input type="text" id="searchInput" class="form-control" placeholder="Örn: Yazılım Uzmanı...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small">Aranan Yetkinlikler</label>
+                <!-- Sadece fareyle tıklanabilen, kaydırılabilir onay kutusu listesi -->
+                <div class="border rounded p-2 bg-white form-control" style="max-height: 85px; overflow-y: auto;">
+                    <div class="form-check mb-1">
+                        <input class="form-check-input skill-checkbox" type="checkbox" value="c#" id="chk-csharp">
+                        <label class="form-check-label small" style="cursor:pointer;" for="chk-csharp">C# / .NET</label>
+                    </div>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input skill-checkbox" type="checkbox" value="react" id="chk-react">
+                        <label class="form-check-label small" style="cursor:pointer;" for="chk-react">React.js</label>
+                    </div>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input skill-checkbox" type="checkbox" value="sql" id="chk-sql">
+                        <label class="form-check-label small" style="cursor:pointer;" for="chk-sql">PostgreSQL / SQL</label>
+                    </div>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input skill-checkbox" type="checkbox" value="java" id="chk-java">
+                        <label class="form-check-label small" style="cursor:pointer;" for="chk-java">Java</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label text-muted small">Min. Deneyim</label>
+                <!-- ID ve sayısal Value'lar eklendi: expSelect -->
+                <select id="expSelect" class="form-select">
+                    <option value="0">Herhangi</option>
+                    <option value="1">1+ Yıl</option>
+                    <option value="3">3+ Yıl</option>
+                    <option value="5">5+ Yıl</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label text-muted small">Sırala</label>
+                <select class="form-select fw-bold text-primary">
+                    <option value="score_desc">En Yüksek Uyum Skoru</option>
+                    <option value="date_desc">En Yeni Eklenenler</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <!-- ID eklendi ve type="button" yapıldı: filterBtn -->
+                <button type="button" id="filterBtn" class="btn btn-primary w-100">Filtrele</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Aday Tablosu -->
+<div class="card section-card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Aday Adı</th>
+                        <th>Başvurduğu Pozisyon</th>
+                        <th>Deneyim</th>
+                        <th>Ana Yetkinlikler</th>
+                        <th>Uyum Skoru</th>
+                        <th class="text-end pe-4">İşlemler</th>
+                    </tr>
+                </thead>
+                <!-- ID eklendi: candidateTableBody -->
+                <tbody id="candidateTableBody">
+                    <tr>
+                        <td class="ps-4 fw-bold">Ayşe Yılmaz</td>
+                        <td>Kıdemli Yazılım Geliştirici</td>
+                        <td class="exp-cell">6 Yıl</td>
+                        <td class="skills-cell">
+                            <span class="badge bg-secondary">C#</span>
+                            <span class="badge bg-secondary">PostgreSQL</span>
+                        </td>
+                        <td><span class="badge bg-success" style="font-size: 0.9em;">%92 Uyumlu</span></td>
+                        <td class="text-end pe-4">
+                            <a asp-action="Details" asp-route-id="1" class="btn btn-sm btn-outline-primary">Profili İncele</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 fw-bold">Caner Demir</td>
+                        <td>Yazılım Geliştirici</td>
+                        <td class="exp-cell">3 Yıl</td>
+                        <td class="skills-cell">
+                            <span class="badge bg-secondary">C#</span>
+                            <span class="badge bg-secondary">React</span>
+                        </td>
+                        <td><span class="badge bg-info text-dark" style="font-size: 0.9em;">%78 Uyumlu</span></td>
+                        <td class="text-end pe-4">
+                            <a asp-action="Details" asp-route-id="2" class="btn btn-sm btn-outline-primary">Profili İncele</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 fw-bold">Zeynep Kaya</td>
+                        <td>Junior Geliştirici</td>
+                        <td class="exp-cell">1 Yıl</td>
+                        <td class="skills-cell">
+                            <span class="badge bg-secondary">Java</span>
+                            <span class="badge bg-secondary">SQL</span>
+                        </td>
+                        <td><span class="badge bg-warning text-dark" style="font-size: 0.9em;">%45 Uyumlu</span></td>
+                        <td class="text-end pe-4">
+                            <a asp-action="Details" asp-route-id="3" class="btn btn-sm btn-outline-primary">Profili İncele</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Frontend Filtreleme Mantığı (JavaScript) -->
+@section Scripts {
+    <script>
+        document.getElementById('filterBtn').addEventListener('click', function() {
+            // Metin ve deneyim filtrelerini al
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const expFilter = parseInt(document.getElementById('expSelect').value) || 0;
+
+            // YENİ MANTIK: İşaretlenmiş (checked) olan tüm checkbox'ları bul ve değerlerini diziye al
+            const skillCheckboxes = document.querySelectorAll('.skill-checkbox:checked');
+            const selectedSkills = Array.from(skillCheckboxes).map(cb => cb.value.toLowerCase());
+
+            // Tablodaki tüm satırları al
+            const rows = document.querySelectorAll('#candidateTableBody tr');
+
+            rows.forEach(row => {
+                // Hücrelerdeki metinleri oku
+                const name = row.cells[0].innerText.toLowerCase();
+                const position = row.cells[1].innerText.toLowerCase();
+                const expYears = parseInt(row.cells[2].innerText) || 0;
+                const skills = row.cells[3].innerText.toLowerCase();
+
+                // Eşleşme Kontrolleri
+                const matchSearch = name.includes(searchText) || position.includes(searchText);
+                const matchExp = expYears >= expFilter;
+
+                // Çoklu Yetkinlik Eşleşmesi (Seçilen her bir yetkinlik adayda var mı?)
+                const matchSkill = selectedSkills.length === 0 || selectedSkills.every(skill => skills.includes(skill));
+
+                // Tüm kurallardan geçiyorsa göster, geçmiyorsa gizle
+                if (matchSearch && matchSkill && matchExp) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+}

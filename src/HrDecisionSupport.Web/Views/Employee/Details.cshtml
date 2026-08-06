@@ -1,0 +1,263 @@
+﻿<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Çalışan Profili</h2>
+        <div>
+            <a href="/Employee/Index" class="btn btn-outline-secondary me-2">Listeye Dön</a>
+            <!-- Butonu Modal açacak şekilde güncelledik -->
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editEmployeeModal">
+                Profili Düzenle
+            </button>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <!-- Sol Taraf: Özet Kartı -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 120px; height: 120px;">
+                        <span class="fs-1 text-secondary">AE</span>
+                    </div>
+                    <!-- İsim ve Pozisyon için ID eklendi -->
+                    <h4 class="card-title fw-bold" id="empProfileName">Ahmet Erdem</h4>
+                    <p class="text-muted mb-1" id="empProfilePosition">Kıdemli Sistem Yöneticisi</p>
+                    <span class="badge bg-success mb-3">Aktif Çalışan</span>
+
+                    <ul class="list-group list-group-flush text-start mt-3">
+                        <li class="list-group-item px-0"><strong>Departman:</strong> Bilgi Teknolojileri (IT)</li>
+                        <!-- Email ve Telefon içine span ile ID eklendi -->
+                        <li class="list-group-item px-0"><strong>Email:</strong> <span id="empProfileEmail">ahmet.erdem@sirket.com</span></li>
+                        <li class="list-group-item px-0"><strong>Telefon:</strong> <span id="empProfilePhone">+90 532 987 65 43</span></li>
+                        <li class="list-group-item px-0"><strong>İşe Başlama:</strong> 15.03.2021</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- Sağ Taraf: Detay Sekmeleri (Tabs) -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+                    <ul class="nav nav-tabs" id="employeeTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-bold" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">Genel</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="deneyim-tab" data-bs-toggle="tab" data-bs-target="#deneyim" type="button" role="tab">İş Geçmişi</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="yetenek-tab" data-bs-toggle="tab" data-bs-target="#yetenek" type="button" role="tab">Beceriler</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="egitim-tab" data-bs-toggle="tab" data-bs-target="#egitim" type="button" role="tab">Eğitim</button>
+                        </li>
+                        <!-- Senin mevcut sekmelerin -->
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab">Performans</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="leave-tab" data-bs-toggle="tab" data-bs-target="#leave" type="button" role="tab">İzin Durumu</button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-body">
+                    <div class="tab-content" id="employeeTabContent">
+
+                        <!-- 1. GENEL SEKMESİ -->
+                        <div class="tab-pane fade show active" id="general" role="tabpanel">
+                            <h5 class="mb-3 text-primary">Kişisel Bilgiler</h5>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Doğum Tarihi</div>
+                                <div class="col-sm-8 fw-bold">12.08.1988</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Adres</div>
+                                <div class="col-sm-8 fw-bold">Kadıköy, İstanbul</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Acil Durum Kişisi</div>
+                                <div class="col-sm-8 fw-bold">Zeynep Erdem (Eşi) - 0555 111 22 33</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Çalışma Şekli</div>
+                                <div class="col-sm-8"><span class="badge bg-success">Uzaktan</span></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 text-muted">Yabancı Dil</div>
+                                <div class="col-sm-8 fw-bold">İngilizce (İleri)</div>
+                            </div>
+                        </div>
+
+                        <!-- 2. İŞ GEÇMİŞİ SEKMESİ -->
+                        <div class="tab-pane fade" id="deneyim" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="text-primary mb-0">Deneyimler</h5>
+                                <button class="btn btn-sm btn-outline-primary">+ Yeni Ekle</button>
+                            </div>
+
+                            <div class="border-start border-2 border-primary ps-3 mb-4">
+                                <h6 class="fw-bold mb-1">Kıdemli Sistem Yöneticisi</h6>
+                                <p class="text-muted small mb-2">Mevcut Şirket | Mart 2021 - Günümüz</p>
+                                <p class="mb-0">Kurumsal IT altyapısının yönetimi, sunucu bakımları ve bulut mimarisi geçiş süreçlerinin yürütülmesi.</p>
+                            </div>
+
+                            <div class="border-start border-2 border-secondary ps-3 mb-2">
+                                <h6 class="fw-bold mb-1">Sistem Destek Uzmanı</h6>
+                                <p class="text-muted small mb-2">Tech Solutions A.Ş. | Ocak 2017 - Şubat 2021</p>
+                                <p class="mb-0">Ağ güvenliği, kullanıcı destek hizmetleri ve sistem monitörizasyonu.</p>
+                            </div>
+                        </div>
+
+                        <!-- 3. BECERİLER SEKMESİ -->
+                        <div class="tab-pane fade" id="yetenek" role="tabpanel">
+                            <h5 class="text-primary mb-3">Teknik Beceriler</h5>
+                            <div class="mb-4">
+                                <span class="badge bg-dark fs-6 me-2 mb-2">Windows Server</span>
+                                <span class="badge bg-dark fs-6 me-2 mb-2">Linux (Ubuntu/CentOS)</span>
+                                <span class="badge bg-dark fs-6 me-2 mb-2">AWS / Azure</span>
+                                <span class="badge bg-dark fs-6 me-2 mb-2">Docker & Kubernetes</span>
+                                <span class="badge bg-dark fs-6 me-2 mb-2">Cisco Network</span>
+                            </div>
+
+                            <h5 class="text-primary mb-3">Sektörel Yetkinlikler</h5>
+                            <div>
+                                <span class="badge border border-secondary text-dark fs-6 me-2 mb-2">ITIL V4</span>
+                                <span class="badge border border-secondary text-dark fs-6 me-2 mb-2">Bilgi Güvenliği (ISO 27001)</span>
+                            </div>
+                        </div>
+
+                        <!-- 4. EĞİTİM SEKMESİ -->
+                        <div class="tab-pane fade" id="egitim" role="tabpanel">
+                            <h5 class="text-primary mb-3">Eğitim Bilgileri</h5>
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body">
+                                    <h6 class="fw-bold">Bilgisayar Mühendisliği (Lisans)</h6>
+                                    <p class="text-muted mb-0">Teknik Üniversitesi | 2012 - 2016</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. PERFORMAS SEKMESİ (Senin Tasarımın) -->
+                        <div class="tab-pane fade" id="performance" role="tabpanel">
+                            <h5 class="mb-3 text-primary">Son Değerlendirmeler</h5>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Dönem</th>
+                                        <th>Puan</th>
+                                        <th>Yönetici Notu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2023 - Q4</td>
+                                        <td>85/100</td>
+                                        <td>Proje teslimlerinde çok başarılı.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2023 - Q3</td>
+                                        <td>90/100</td>
+                                        <td>Takım çalışmasına büyük katkı sağladı.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 6. İZİN DURUMU SEKMESİ (Senin Tasarımın) -->
+                        <div class="tab-pane fade" id="leave" role="tabpanel">
+                            <div class="d-flex justify-content-between mb-3">
+                                <h5 class="text-primary">Kalan Yıllık İzin: <strong class="text-dark">14 Gün</strong></h5>
+                            </div>
+                            <table class="table table-sm text-muted">
+                                <thead>
+                                    <tr>
+                                        <th>Başlangıç</th>
+                                        <th>Bitiş</th>
+                                        <th>Tür</th>
+                                        <th>Durum</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>01.07.2023</td>
+                                        <td>07.07.2023</td>
+                                        <td>Yıllık İzin</td>
+                                        <td><span class="badge bg-secondary">Kullanıldı</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Çalışan Profili Düzenle Modalı -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold" id="editEmployeeModalLabel">Çalışan Bilgilerini Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="editEmployeeForm">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label text-muted small">Ad Soyad</label>
+                            <input type="text" id="modalEmpName" class="form-control" value="Ahmet Erdem">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small">Pozisyon</label>
+                            <input type="text" id="modalEmpPosition" class="form-control" value="Kıdemli Sistem Yöneticisi">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small">E-posta</label>
+                            <input type="email" id="modalEmpEmail" class="form-control" value="ahmet.erdem@sirket.com">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small">Telefon</label>
+                            <input type="tel" id="modalEmpPhone" class="form-control" value="+90 532 987 65 43">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveEmployeeChanges()" data-bs-dismiss="modal">Değişiklikleri Kaydet</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function saveEmployeeChanges() {
+            // 1. Modal içindeki inputlardan yeni değerleri alıyoruz
+            const newName = document.getElementById('modalEmpName').value;
+            const newPosition = document.getElementById('modalEmpPosition').value;
+            const newEmail = document.getElementById('modalEmpEmail').value;
+            const newPhone = document.getElementById('modalEmpPhone').value;
+
+            // 2. Ekranda görünen yerlere yeni değerleri yazıyoruz
+            document.getElementById('empProfileName').innerText = newName;
+            document.getElementById('empProfilePosition').innerText = newPosition;
+            document.getElementById('empProfileEmail').innerText = newEmail;
+            document.getElementById('empProfilePhone').innerText = newPhone;
+
+            // 3. İsim değiştiyse, profil fotoğrafı yerindeki baş harfleri de (Örn: "AE") güncelleyebiliriz (Bonus)
+            const initials = newName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            document.querySelector('.bg-light.rounded-circle span').innerText = initials;
+
+            // 4. Başarı mesajı
+            alert('Çalışan bilgileri başarıyla güncellendi! (Demo)');
+        }
+    </script>
+}
