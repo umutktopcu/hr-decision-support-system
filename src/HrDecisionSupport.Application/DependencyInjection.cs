@@ -5,6 +5,7 @@ using HrDecisionSupport.Application.Common.Validation;
 using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Application.Employees.Dtos;
 using HrDecisionSupport.Application.Employees.Assignments;
+using HrDecisionSupport.Application.EmployeeImports.Processing;
 using HrDecisionSupport.Application.Profiles.Certificates;
 using HrDecisionSupport.Application.Profiles.Competencies;
 using HrDecisionSupport.Application.Profiles.Education;
@@ -27,6 +28,9 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingleton<TimeProvider>(TimeProvider.System);
+        services.AddSingleton<IEmployeeImportRowNormalizer, EmployeeImportRowNormalizer>();
+        services.AddSingleton<IEmployeeImportRowValidator, EmployeeImportRowValidator>();
+        services.AddSingleton<IEmployeeImportDryRunService, EmployeeImportDryRunService>();
 
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IEmployeeAssignmentService, EmployeeAssignmentService>();
