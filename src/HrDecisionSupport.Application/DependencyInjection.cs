@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddSingleton<IEmployeeImportRowNormalizer, EmployeeImportRowNormalizer>();
         services.AddSingleton<IEmployeeImportRowValidator, EmployeeImportRowValidator>();
         services.AddSingleton<IEmployeeImportDryRunService, EmployeeImportDryRunService>();
+        services.AddSingleton<IEmployeeImportRowPersistenceHook, NoOpEmployeeImportRowPersistenceHook>();
         services.AddScoped<IEmployeeImportService, EmployeeImportService>();
 
         services.AddScoped<IEmployeeService, EmployeeService>();
