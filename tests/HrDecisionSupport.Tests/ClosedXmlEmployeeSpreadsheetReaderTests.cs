@@ -6,6 +6,8 @@ namespace HrDecisionSupport.Tests;
 
 public class ClosedXmlEmployeeSpreadsheetReaderTests
 {
+    private const string StayLabelAlias = "Kalış etiketi (0: Kısa, 1: Normal, 2: Uzun)";
+
     [Fact]
     public async Task ReadAsync_ValidWorkbook_ReadsAllHeadersAndTypedRow()
     {
@@ -53,6 +55,53 @@ public class ClosedXmlEmployeeSpreadsheetReaderTests
         Assert.Equal("EMP-002", row.AnonymousEmployeeCode);
         Assert.Equal(new DateOnly(2021, 2, 3), row.HireDate);
         Assert.DoesNotContain(result.Value.Diagnostics, diagnostic => diagnostic.Code == "unexpected_header");
+    }
+
+    [Fact]
+    public async Task ReadAsync_ExactStayLabelAlias_ResolvesToCanonicalHeaderAndReadsValues()
+    {
+        var headers = EmployeeImportSpreadsheetHeaders.Required.ToArray(); headers[^1] = StayLabelAlias;
+        using var content = CreateWorkbook(sheet =>
+        {
+            Set(sheet, 2, headers, StayLabelAlias, 0d); Set(sheet, 3, headers, StayLabelAlias, 1d); Set(sheet, 4, headers, StayLabelAlias, 2d);
+        }, headers);
+
+        var result = await Reader.ReadAsync(content);
+
+        Assert.True(result.IsSuccess); Assert.Equal(EmployeeImportSpreadsheetHeaders.Required, result.Value.Headers); Assert.Equal([0, 1, 2], result.Value.Rows.Select(x => x.StayLabel)); Assert.All(result.Value.Rows, row => Assert.Contains(EmployeeImportSpreadsheetHeaders.StayLabel, row.RawValues.Keys));
+    }
+
+    [Fact]
+    public async Task ReadAsync_CanonicalAndAliasStayLabelHeaders_ReturnDuplicateFailure()
+    {
+        var headers = EmployeeImportSpreadsheetHeaders.Required.Append(StayLabelAlias).ToArray();
+        using var content = CreateWorkbook(_ => { }, headers);
+
+        var result = await Reader.ReadAsync(content);
+
+        Assert.True(result.IsFailure); Assert.Equal("employee_spreadsheet.duplicate_header", result.Error!.Code);
+    }
+
+    [Fact]
+    public async Task ReadAsync_DuplicateStayLabelAliases_ReturnDuplicateFailure()
+    {
+        var headers = EmployeeImportSpreadsheetHeaders.Required.ToArray(); headers[^1] = StayLabelAlias; headers = headers.Append(StayLabelAlias).ToArray();
+        using var content = CreateWorkbook(_ => { }, headers);
+
+        var result = await Reader.ReadAsync(content);
+
+        Assert.True(result.IsFailure); Assert.Equal("employee_spreadsheet.duplicate_header", result.Error!.Code);
+    }
+
+    [Fact]
+    public async Task ReadAsync_UnknownSimilarStayLabelHeader_RemainsMissingRequiredHeader()
+    {
+        var headers = EmployeeImportSpreadsheetHeaders.Required.ToArray(); headers[^1] = "Kalış etiketi Kısa Normal Uzun";
+        using var content = CreateWorkbook(_ => { }, headers);
+
+        var result = await Reader.ReadAsync(content);
+
+        Assert.True(result.IsFailure); Assert.Equal("employee_spreadsheet.missing_required_header", result.Error!.Code);
     }
 
     [Fact]

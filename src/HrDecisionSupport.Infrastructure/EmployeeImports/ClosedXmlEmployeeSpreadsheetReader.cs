@@ -12,6 +12,10 @@ public sealed class ClosedXmlEmployeeSpreadsheetReader : IEmployeeSpreadsheetRea
 {
     private static readonly CultureInfo TurkishCulture = CultureInfo.GetCultureInfo("tr-TR");
     private static readonly string[] DateFormats = ["dd.MM.yyyy", "d.M.yyyy", "yyyy-MM-dd"];
+    private static readonly IReadOnlyDictionary<string, string> HeaderAliases = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["Kalış etiketi (0: Kısa, 1: Normal, 2: Uzun)"] = EmployeeImportSpreadsheetHeaders.StayLabel
+    };
 
     public async Task<Result<EmployeeImportSpreadsheetReadResult>> ReadAsync(
         Stream content,
@@ -59,8 +63,9 @@ public sealed class ClosedXmlEmployeeSpreadsheetReader : IEmployeeSpreadsheetRea
             foreach (var cell in headerRow.Cells(1, lastColumn.Value))
             {
                 var normalizedHeader = NormalizeHeader(GetVisibleText(cell));
-                headers.Add(normalizedHeader);
-                if (normalizedHeader.Length == 0)
+                var resolvedHeader = ResolveHeader(normalizedHeader);
+                headers.Add(resolvedHeader);
+                if (resolvedHeader.Length == 0)
                 {
                     schemaDiagnostics.Add(new(
                         "empty_header",
@@ -71,19 +76,19 @@ public sealed class ClosedXmlEmployeeSpreadsheetReader : IEmployeeSpreadsheetRea
                     continue;
                 }
 
-                if (!columnsByHeader.TryAdd(normalizedHeader, cell.Address.ColumnNumber))
+                if (!columnsByHeader.TryAdd(resolvedHeader, cell.Address.ColumnNumber))
                 {
                     return Result<EmployeeImportSpreadsheetReadResult>.Failure(
                         "employee_spreadsheet.duplicate_header",
-                        $"The header '{normalizedHeader}' appears more than once.");
+                        $"The header '{resolvedHeader}' appears more than once.");
                 }
 
-                if (!EmployeeImportSpreadsheetHeaders.Required.Contains(normalizedHeader, StringComparer.Ordinal))
+                if (!EmployeeImportSpreadsheetHeaders.Required.Contains(resolvedHeader, StringComparer.Ordinal))
                 {
                     schemaDiagnostics.Add(new(
                         "unexpected_header",
-                        normalizedHeader,
-                        $"The header '{normalizedHeader}' is not part of the employee import schema.",
+                        resolvedHeader,
+                        $"The header '{resolvedHeader}' is not part of the employee import schema.",
                         EmployeeImportDiagnosticSeverity.Warning,
                         null));
                 }
@@ -304,4 +309,7 @@ public sealed class ClosedXmlEmployeeSpreadsheetReader : IEmployeeSpreadsheetRea
 
     private static string NormalizeHeader(string value) =>
         Regex.Replace(value.Normalize(NormalizationForm.FormC).Trim(), "\\s+", " ");
+
+    private static string ResolveHeader(string normalizedHeader) =>
+        HeaderAliases.GetValueOrDefault(normalizedHeader, normalizedHeader);
 }

@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\HrDecisionSupport.Domain\HrDecisionSupport.Domain.csproj" />
     <ProjectReference Include="..\..\src\HrDecisionSupport.Application\HrDecisionSupport.Application.csproj" />
     <ProjectReference Include="..\..\src\HrDecisionSupport.Infrastructure\HrDecisionSupport.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\HrDecisionSupport.EmployeeImportDryRun\HrDecisionSupport.EmployeeImportDryRun.csproj" />
   </ItemGroup>
 
 </Project>
