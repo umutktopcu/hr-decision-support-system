@@ -71,12 +71,26 @@ public sealed class CandidateImportService
         // Process entities in memory
         var entitiesToAdd = new List<Person>();
         
-        var compDict = new Dictionary<string, Competency>(StringComparer.OrdinalIgnoreCase);
-        var projDict = new Dictionary<string, Project>(StringComparer.OrdinalIgnoreCase);
-        var sectorDict = new Dictionary<string, Sector>(StringComparer.OrdinalIgnoreCase);
-        var certDict = new Dictionary<string, Certificate>(StringComparer.OrdinalIgnoreCase);
-        var langDict = new Dictionary<string, Language>(StringComparer.OrdinalIgnoreCase);
-        var wmDict = new Dictionary<string, WorkMode>(StringComparer.OrdinalIgnoreCase);
+        // Load existing catalog into dictionaries
+        var comps = await _dbContext.Competencies.ToListAsync(cancellationToken);
+        var compDict = comps.ToDictionary(c => c.Code, c => c, StringComparer.OrdinalIgnoreCase);
+
+        var certs = await _dbContext.Certificates.ToListAsync(cancellationToken);
+        var certDict = certs.ToDictionary(c => c.Code, c => c, StringComparer.OrdinalIgnoreCase);
+
+        var langs = await _dbContext.Languages.ToListAsync(cancellationToken);
+        var langDict = langs.ToDictionary(c => c.Code, c => c, StringComparer.OrdinalIgnoreCase);
+
+        var secs = await _dbContext.Sectors.ToListAsync(cancellationToken);
+        var sectorDict = secs.ToDictionary(c => c.Code, c => c, StringComparer.OrdinalIgnoreCase);
+
+        var wms = await _dbContext.WorkModes.ToListAsync(cancellationToken);
+        var wmDict = wms.ToDictionary(c => c.Code, c => c, StringComparer.OrdinalIgnoreCase);
+
+        var projs = await _dbContext.Projects.ToListAsync(cancellationToken);
+        var projDict = projs
+            .GroupBy(c => c.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Id).First(), StringComparer.OrdinalIgnoreCase);
 
         foreach (var record in records)
         {
@@ -183,10 +197,10 @@ public sealed class CandidateImportService
                     return new PersonCompetency { Id = Guid.NewGuid(), PersonId = personId, Competency = comp };
                 }).ToList(),
                 PersonProjects = DelimitedEvidenceParser.Parse(record.Projects).Select(p => {
-                    var code = SharedProfileConstants.Hash(p);
-                    if (!projDict.TryGetValue(code, out var proj)) {
+                    var nameKey = p.Trim();
+                    if (!projDict.TryGetValue(nameKey, out var proj)) {
                         proj = new Project { Id = Guid.NewGuid(), Name = p };
-                        projDict[code] = proj;
+                        projDict[nameKey] = proj;
                     }
                     return new PersonProject { Id = Guid.NewGuid(), PersonId = personId, Project = proj };
                 }).ToList(),
