@@ -3,6 +3,7 @@ using System;
 using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HrDecisionSupportDbContext))]
-    partial class HrDecisionSupportDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260807085634_AddCandidateImportSchema")]
+    partial class AddCandidateImportSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

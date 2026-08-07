@@ -7,4 +7,5 @@ public class WorkMode
     public string Name { get; set; } = null!;
 
     public ICollection<PersonWorkModeExperience> PersonWorkModeExperiences { get; set; } = [];
+    public ICollection<CandidateWorkModePreference> CandidateWorkModePreferences { get; set; } = [];
 }
