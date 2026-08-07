@@ -33,7 +33,8 @@ public sealed class JobRequisitionService : IJobRequisitionService
     public async Task<Result<IReadOnlyList<JobRequisitionDto>>> ListAsync(
         CancellationToken cancellationToken = default)
     {
-        var items = await ProjectRequisitions()
+        var query = _dbContext.JobRequisitions.AsNoTracking();
+        var items = await ProjectRequisitions(query)
             .OrderByDescending(item => item.JobRequisitionStatus == JobRequisitionStatus.Open)
             .ThenByDescending(item => item.OpenedAt)
             .ThenBy(item => item.Id)
@@ -45,8 +46,9 @@ public sealed class JobRequisitionService : IJobRequisitionService
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var requisition = await ProjectRequisitions()
-            .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
+        var query = _dbContext.JobRequisitions.AsNoTracking().Where(item => item.Id == id);
+        var requisition = await ProjectRequisitions(query)
+            .SingleOrDefaultAsync(cancellationToken);
         if (requisition is null)
             return Result<JobRequisitionDetailDto>.Failure(UseCaseErrors.JobRequisitionNotFound);
 
@@ -236,10 +238,8 @@ public sealed class JobRequisitionService : IJobRequisitionService
         return await GetDtoByIdAsync(id, cancellationToken);
     }
 
-    private IQueryable<JobRequisitionDto> ProjectRequisitions() =>
-        _dbContext.JobRequisitions
-            .AsNoTracking()
-            .Select(item => new JobRequisitionDto(
+    private IQueryable<JobRequisitionDto> ProjectRequisitions(IQueryable<JobRequisition> query) =>
+        query.Select(item => new JobRequisitionDto(
                 item.Id,
                 item.RequisitionCode,
                 item.Title,
@@ -262,7 +262,8 @@ public sealed class JobRequisitionService : IJobRequisitionService
         Guid id,
         CancellationToken cancellationToken)
     {
-        var item = await ProjectRequisitions().SingleAsync(value => value.Id == id, cancellationToken);
+        var query = _dbContext.JobRequisitions.AsNoTracking().Where(item => item.Id == id);
+        var item = await ProjectRequisitions(query).SingleAsync(cancellationToken);
         return Result<JobRequisitionDto>.Success(item);
     }
 

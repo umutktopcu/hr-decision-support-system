@@ -33,6 +33,8 @@ public interface IHrDecisionSupportDbContext
     DbSet<PersonPriorPositionEvidence> PersonPriorPositionEvidences { get; }
     DbSet<EmployeeCareerFeatureSnapshot> EmployeeCareerFeatureSnapshots { get; }
     DbSet<EmployeeRetentionLabel> EmployeeRetentionLabels { get; }
+    DbSet<CandidateWorkModePreference> CandidateWorkModePreferences { get; }
+    DbSet<CandidateCareerFeatureSnapshot> CandidateCareerFeatureSnapshots { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
