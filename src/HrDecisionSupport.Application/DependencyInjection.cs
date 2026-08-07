@@ -18,6 +18,7 @@ using HrDecisionSupport.Application.Profiles.WorkModes;
 using HrDecisionSupport.Application.CandidateImports;
 using HrDecisionSupport.Application.Requisitions;
 using HrDecisionSupport.Application.Requisitions.Requirements;
+using HrDecisionSupport.Application.PreScreening;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -52,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IJobRequisitionRequirementService, JobRequisitionRequirementService>();
         services.AddScoped<ICandidateEvaluationCaseService, CandidateEvaluationCaseService>();
         services.AddScoped<CandidateImportService>();
+        services.AddScoped<ICandidatePreScreeningService, CandidatePreScreeningService>();
 
         services.AddScoped<CreateEmployeeRequestValidator>();
         services.AddScoped<IValidator<CreateEmployeeRequest>>(serviceProvider =>

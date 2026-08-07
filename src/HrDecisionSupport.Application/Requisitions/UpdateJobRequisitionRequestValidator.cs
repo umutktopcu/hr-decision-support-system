@@ -18,7 +18,11 @@ public sealed class UpdateJobRequisitionRequestValidator
             instance.PositionId,
             instance.Description,
             instance.OpeningsCount,
-            instance.OpenedAt);
+            instance.MinimumRelevantExperienceMonths,
+            instance.OpenedAt,
+            instance.MandatorySkillCoverageThreshold,
+            instance.OverallSkillCoverageThreshold);
+
         return RequestValidation.ToResult(errors);
     }
 }

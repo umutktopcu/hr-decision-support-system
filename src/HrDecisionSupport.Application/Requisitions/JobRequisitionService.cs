@@ -125,6 +125,9 @@ public sealed class JobRequisitionService : IJobRequisitionService
             PositionId = request.PositionId,
             Description = request.Description?.Trim(),
             OpeningsCount = request.OpeningsCount,
+            MinimumRelevantExperienceMonths = request.MinimumRelevantExperienceMonths,
+            MandatorySkillCoverageThreshold = request.MandatorySkillCoverageThreshold,
+            OverallSkillCoverageThreshold = request.OverallSkillCoverageThreshold,
             JobRequisitionStatus = JobRequisitionStatus.Draft,
             OpenedAt = request.OpenedAt,
             ClosedAt = null,
@@ -194,6 +197,9 @@ public sealed class JobRequisitionService : IJobRequisitionService
         entity.PositionId = request.PositionId;
         entity.Description = request.Description?.Trim();
         entity.OpeningsCount = request.OpeningsCount;
+        entity.MinimumRelevantExperienceMonths = request.MinimumRelevantExperienceMonths;
+        entity.MandatorySkillCoverageThreshold = request.MandatorySkillCoverageThreshold;
+        entity.OverallSkillCoverageThreshold = request.OverallSkillCoverageThreshold;
         entity.OpenedAt = request.OpenedAt;
         entity.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -251,9 +257,12 @@ public sealed class JobRequisitionService : IJobRequisitionService
                 item.Position.Name,
                 item.Description,
                 item.OpeningsCount,
+                item.MinimumRelevantExperienceMonths,
                 item.JobRequisitionStatus,
                 item.OpenedAt,
                 item.ClosedAt,
+                item.MandatorySkillCoverageThreshold,
+                item.OverallSkillCoverageThreshold,
                 item.CreatedAtUtc,
                 item.UpdatedAtUtc,
                 item.Requirements.Count));
@@ -326,9 +335,12 @@ public sealed class JobRequisitionService : IJobRequisitionService
             position.Name,
             entity.Description,
             entity.OpeningsCount,
+            entity.MinimumRelevantExperienceMonths,
             entity.JobRequisitionStatus,
             entity.OpenedAt,
             entity.ClosedAt,
+            entity.MandatorySkillCoverageThreshold,
+            entity.OverallSkillCoverageThreshold,
             entity.CreatedAtUtc,
             entity.UpdatedAtUtc,
             requirementCount);

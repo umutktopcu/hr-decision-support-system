@@ -19,7 +19,7 @@ class Program
     static async Task Main(string[] args)
     {
         var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "HrDecisionSupport.Web"));
-        
+
         var host = Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((hostingContext, config) =>
             {
@@ -31,7 +31,7 @@ class Program
             .ConfigureServices((context, services) =>
             {
                 services.AddApplication();
-                services.AddInfrastructure(options => 
+                services.AddInfrastructure(options =>
                 {
                     var connStr = context.Configuration.GetConnectionString("PostgreSql") ?? context.Configuration.GetConnectionString("DefaultConnection");
                     options.UseNpgsql(connStr);
@@ -55,78 +55,83 @@ class Program
             return;
         }
 
-        // Mevcut Requisition kontrolü
-        var existing = await dbContext.JobRequisitions
-            .FirstOrDefaultAsync(r => r.RequisitionCode == "BD-2026-001");
+        var csharp = await dbContext.Competencies.FirstOrDefaultAsync(c => c.Code == "C_SHARP");
+        var dotnetcore = await dbContext.Competencies.FirstOrDefaultAsync(c => c.Code == "DOTNET_CORE");
+        var aspnetcore = await dbContext.Competencies.FirstOrDefaultAsync(c => c.Code == "ASP_NET_CORE");
 
-        if (existing != null)
+        if (csharp == null || dotnetcore == null || aspnetcore == null)
         {
-            Console.WriteLine($"Zaten 'BD-2026-001' kodlu bir JobRequisition mevcut: {existing.Id} (Status: {existing.JobRequisitionStatus})");
-            if (existing.JobRequisitionStatus != JobRequisitionStatus.Open)
+            Console.WriteLine("HATA: Gerekli Competency'ler bulunamadı (C_SHARP, DOTNET_CORE, ASP_NET_CORE).");
+            return;
+        }
+
+        var dummyCode = "BD-TEST-001";
+        var existingDummy = await dbContext.JobRequisitions
+            .Include(r => r.Requirements)
+            .FirstOrDefaultAsync(r => r.RequisitionCode == dummyCode);
+
+        Guid dummyId;
+
+        if (existingDummy != null)
+        {
+            Console.WriteLine($"Zaten '{dummyCode}' kodlu bir JobRequisition mevcut: {existingDummy.Id}");
+            dummyId = existingDummy.Id;
+        }
+        else
+        {
+            Console.WriteLine("Uygun dummy Requisition bulunamadı, yenisi oluşturuluyor...");
+            var request = new CreateJobRequisitionRequest(
+                RequisitionCode: dummyCode,
+                Title: "Backend Developer (Dummy)",
+                DepartmentId: itDept.Id,
+                PositionId: backendPos.Id,
+                Description: "Dummy pre-screening requisition",
+                OpeningsCount: 1,
+                MinimumRelevantExperienceMonths: 24,
+                OpenedAt: DateOnly.FromDateTime(DateTime.Today),
+                ClosedAt: null,
+                MandatorySkillCoverageThreshold: 0.50m,
+                OverallSkillCoverageThreshold: 0.50m
+            );
+
+            var result = await reqService.CreateAsync(request);
+            if (result.IsFailure)
             {
-                Console.WriteLine("Status 'Open' değil, güncelleniyor...");
-                var statusUpdate = await reqService.ChangeStatusAsync(existing.Id, new ChangeJobRequisitionStatusRequest(JobRequisitionStatus.Open, null));
-                if (statusUpdate.IsFailure)
-                {
-                    Console.WriteLine("UYARI: Status 'Open' yapılamadı.");
-                    Report(existing.Id, existing.DepartmentId, existing.PositionId, existing.RequisitionCode, existing.JobRequisitionStatus.ToString());
-                    return;
-                }
-                Report(statusUpdate.Value.Id, statusUpdate.Value.DepartmentId, statusUpdate.Value.PositionId, statusUpdate.Value.RequisitionCode, statusUpdate.Value.JobRequisitionStatus.ToString());
+                Console.WriteLine("HATA: Dummy JobRequisition oluşturulamadı:");
+                if (result.Errors != null)
+                    foreach (var err in result.Errors) Console.WriteLine($"- {err.Code}: {err.Message}");
+                return;
             }
-            else
-            {
-                Report(existing.Id, existing.DepartmentId, existing.PositionId, existing.RequisitionCode, existing.JobRequisitionStatus.ToString());
-            }
-            return;
+            dummyId = result.Value.Id;
+
+            await reqService.ChangeStatusAsync(dummyId, new ChangeJobRequisitionStatusRequest(JobRequisitionStatus.Open, null));
+            Console.WriteLine("Dummy JobRequisition başarıyla oluşturuldu ve Open yapıldı.");
         }
 
-        // Yeni oluştur
-        Console.WriteLine("Uygun Requisition bulunamadı, yenisi oluşturuluyor...");
-        var request = new CreateJobRequisitionRequest(
-            RequisitionCode: "BD-2026-001",
-            Title: "Backend Developer",
-            DepartmentId: itDept.Id,
-            PositionId: backendPos.Id,
-            Description: "Candidate dataset development requisition",
-            OpeningsCount: 1,
-            OpenedAt: DateOnly.FromDateTime(DateTime.Today)
-        );
+        // Add Requirements idempotently
+        await EnsureRequirement(dbContext, dummyId, csharp.Id, true);
+        await EnsureRequirement(dbContext, dummyId, dotnetcore.Id, true);
+        await EnsureRequirement(dbContext, dummyId, aspnetcore.Id, false);
 
-        var result = await reqService.CreateAsync(request);
-        if (result.IsFailure)
-        {
-            Console.WriteLine("HATA: JobRequisition oluşturulamadı:");
-            if (result.Errors != null) 
-                foreach (var err in result.Errors) Console.WriteLine($"- {err.Code}: {err.Message}");
-            return;
-        }
-        
-        var created = result.Value;
-        
-        // Status Draft olarak oluşuyor, Open'a çekmemiz lazım
-        Console.WriteLine("Draft requisition oluşturuldu. Status 'Open' olarak güncelleniyor...");
-        var statusResult = await reqService.ChangeStatusAsync(created.Id, new ChangeJobRequisitionStatusRequest(JobRequisitionStatus.Open, null));
-        
-        if (statusResult.IsFailure)
-        {
-            Console.WriteLine("UYARI: Status 'Open' yapılamadı.");
-            Report(created.Id, created.DepartmentId, created.PositionId, created.RequisitionCode, created.JobRequisitionStatus.ToString());
-            return;
-        }
-
-        Console.WriteLine("JobRequisition başarıyla oluşturuldu ve Open yapıldı!");
-        Report(statusResult.Value.Id, statusResult.Value.DepartmentId, statusResult.Value.PositionId, statusResult.Value.RequisitionCode, statusResult.Value.JobRequisitionStatus.ToString());
+        Console.WriteLine("Dummy JobRequisition seeding tamamlandı.");
     }
 
-    static void Report(Guid id, Guid deptId, Guid posId, string code, string status)
+    static async Task EnsureRequirement(IHrDecisionSupportDbContext dbContext, Guid reqId, Guid compId, bool mandatory)
     {
-        Console.WriteLine("\n--- RAPOR ---");
-        Console.WriteLine($"Requisition Id : {id}");
-        Console.WriteLine($"Department Id  : {deptId}");
-        Console.WriteLine($"Position Id    : {posId}");
-        Console.WriteLine($"RequisitionCode: {code}");
-        Console.WriteLine($"Status         : {status}");
-        Console.WriteLine("-----------------\n");
+        var existingReq = await dbContext.JobRequisitionRequirements
+            .FirstOrDefaultAsync(r => r.JobRequisitionId == reqId && r.CompetencyId == compId);
+
+        if (existingReq == null)
+        {
+            dbContext.JobRequisitionRequirements.Add(new HrDecisionSupport.Domain.Entities.JobRequisitionRequirement
+            {
+                Id = Guid.NewGuid(),
+                JobRequisitionId = reqId,
+                CompetencyId = compId,
+                IsRequired = mandatory
+            });
+            await dbContext.SaveChangesAsync();
+            Console.WriteLine($"Added requirement: {compId} (Mandatory: {mandatory})");
+        }
     }
 }

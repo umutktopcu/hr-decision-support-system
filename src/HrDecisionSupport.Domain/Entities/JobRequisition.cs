@@ -11,6 +11,9 @@ public class JobRequisition
     public Guid PositionId { get; set; }
     public string? Description { get; set; }
     public int OpeningsCount { get; set; }
+    public int? MinimumRelevantExperienceMonths { get; set; }
+    public decimal? MandatorySkillCoverageThreshold { get; set; }
+    public decimal? OverallSkillCoverageThreshold { get; set; }
     public JobRequisitionStatus JobRequisitionStatus { get; set; }
     public DateOnly OpenedAt { get; set; }
     public DateOnly? ClosedAt { get; set; }
