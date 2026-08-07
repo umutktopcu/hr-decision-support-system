@@ -99,7 +99,7 @@ public class JobRequisitionServiceTests
         await context.SaveChangesAsync();
 
         var result = await Service(context).CreateAsync(
-            new("  REQ-100  ", "  Engineer  ", department.Id, position.Id, "  Notes  ", 2, new(2026, 4, 1)));
+            new("  REQ-100  ", "  Engineer  ", department.Id, position.Id, "  Notes  ", 2, null, new(2026, 4, 1), null));
 
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value.Id);
@@ -171,7 +171,7 @@ public class JobRequisitionServiceTests
     {
         await using var context = TestDatabase.CreateContext();
         var result = await Service(context).CreateAsync(
-            new("   ", "", Guid.Empty, Guid.Empty, "   ", 0, default));
+            new("   ", "", Guid.Empty, Guid.Empty, "   ", 0, null, default, null));
         Assert.False(result.IsSuccess);
         Assert.Equal(7, result.Errors.Count);
         Assert.All(result.Errors, error => Assert.Equal(ErrorType.Validation, error.Type));
@@ -190,7 +190,7 @@ public class JobRequisitionServiceTests
 
         var result = await Service(context).UpdateAsync(
             requisition.Id,
-            new("  REQ-UPDATED  ", "  Updated  ", department.Id, position.Id, "  Detail  ", 4, new(2026, 2, 1)));
+            new("  REQ-UPDATED  ", "  Updated  ", department.Id, position.Id, "  Detail  ", 4, null, new(2026, 2, 1)));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(requisition.Id, result.Value.Id);
@@ -254,7 +254,7 @@ public class JobRequisitionServiceTests
         AssertError(
             await Service(context).UpdateAsync(
                 requisition.Id,
-                new("REQ-DUPLICATE", "Updated", department.Id, position.Id, null, 1, new(2026, 1, 1))),
+                new("REQ-DUPLICATE", "Updated", department.Id, position.Id, null, 1, null, new(2026, 1, 1))),
             "job_requisition_conflict",
             ErrorType.Conflict);
         Assert.Equal("REQ-ORIGINAL", requisition.RequisitionCode);
@@ -274,7 +274,7 @@ public class JobRequisitionServiceTests
 
         var result = await Service(context).UpdateAsync(
             requisition.Id,
-            new(" ", "", Guid.Empty, Guid.Empty, " ", 0, default));
+            new(" ", "", Guid.Empty, Guid.Empty, " ", 0, null, default));
 
         Assert.True(result.IsFailure);
         Assert.All(result.Errors, error => Assert.Equal(ErrorType.Validation, error.Type));
@@ -346,7 +346,7 @@ public class JobRequisitionServiceTests
         var result = await Service(context).UpdateAsync(
             requisition.Id,
             new("REQ-SCALAR-UPDATED", "Updated title", department.Id, position.Id,
-                "Updated description", 5, new(2026, 2, 1)));
+                "Updated description", 5, null, new(2026, 2, 1)));
 
         Assert.True(result.IsSuccess);
         Assert.Equal("REQ-SCALAR-UPDATED", result.Value.RequisitionCode);
@@ -628,10 +628,10 @@ public class JobRequisitionServiceTests
             timeProvider ?? new FixedTimeProvider(FixedUtc));
 
     private static CreateJobRequisitionRequest ValidCreate(Guid departmentId, Guid positionId) =>
-        new("REQ-NEW", "Engineer", departmentId, positionId, null, 1, new(2026, 1, 1));
+        new("REQ-NEW", "Engineer", departmentId, positionId, null, 1, null, new(2026, 1, 1), null);
 
     private static UpdateJobRequisitionRequest ValidUpdate(Guid departmentId, Guid positionId) =>
-        new("REQ-UPDATED", "Engineer", departmentId, positionId, null, 1, new(2026, 1, 1));
+        new("REQ-UPDATED", "Engineer", departmentId, positionId, null, 1, null, new(2026, 1, 1));
 
     private static void AssertError(Result result, string code, ErrorType type)
     {

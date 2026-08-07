@@ -18,7 +18,10 @@ public sealed class CreateJobRequisitionRequestValidator
             instance.PositionId,
             instance.Description,
             instance.OpeningsCount,
-            instance.OpenedAt);
+            instance.MinimumRelevantExperienceMonths,
+            instance.OpenedAt,
+            instance.MandatorySkillCoverageThreshold,
+            instance.OverallSkillCoverageThreshold);
         return RequestValidation.ToResult(errors);
     }
 }
@@ -33,7 +36,10 @@ internal static class JobRequisitionValidation
         Guid positionId,
         string? description,
         int openingsCount,
-        DateOnly openedAt)
+        int? minimumRelevantExperienceMonths,
+        DateOnly openedAt,
+        decimal? mandatorySkillCoverageThreshold,
+        decimal? overallSkillCoverageThreshold)
     {
         RequestValidation.RequiredString(
             errors, requisitionCode, 50, "RequisitionCode", "requisition_code");
@@ -52,12 +58,36 @@ internal static class JobRequisitionValidation
                 "OpeningsCount"));
         }
 
+        if (minimumRelevantExperienceMonths < 0)
+        {
+            errors.Add(new(
+                "min_relevant_experience_negative",
+                "MinimumRelevantExperienceMonths cannot be negative.",
+                "MinimumRelevantExperienceMonths"));
+        }
+
         if (openedAt == default)
         {
             errors.Add(new(
                 "opened_at_required",
                 "OpenedAt must not be the default date.",
                 "OpenedAt"));
+        }
+
+        if (mandatorySkillCoverageThreshold.HasValue && (mandatorySkillCoverageThreshold.Value < 0 || mandatorySkillCoverageThreshold.Value > 1))
+        {
+            errors.Add(new(
+                "mandatory_threshold_invalid",
+                "MandatorySkillCoverageThreshold must be between 0 and 1.",
+                "MandatorySkillCoverageThreshold"));
+        }
+
+        if (overallSkillCoverageThreshold.HasValue && (overallSkillCoverageThreshold.Value < 0 || overallSkillCoverageThreshold.Value > 1))
+        {
+            errors.Add(new(
+                "overall_threshold_invalid",
+                "OverallSkillCoverageThreshold must be between 0 and 1.",
+                "OverallSkillCoverageThreshold"));
         }
     }
 

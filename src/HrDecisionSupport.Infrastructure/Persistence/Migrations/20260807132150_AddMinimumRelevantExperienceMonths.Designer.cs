@@ -3,6 +3,7 @@ using System;
 using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HrDecisionSupportDbContext))]
-    partial class HrDecisionSupportDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260807132150_AddMinimumRelevantExperienceMonths")]
+    partial class AddMinimumRelevantExperienceMonths
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -775,11 +778,6 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("job_requisition_status");
 
-                    b.Property<decimal?>("MandatorySkillCoverageThreshold")
-                        .HasPrecision(5, 4)
-                        .HasColumnType("numeric(5,4)")
-                        .HasColumnName("mandatory_skill_coverage_threshold");
-
                     b.Property<int?>("MinimumRelevantExperienceMonths")
                         .HasColumnType("integer")
                         .HasColumnName("minimum_relevant_experience_months");
@@ -791,11 +789,6 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                     b.Property<int>("OpeningsCount")
                         .HasColumnType("integer")
                         .HasColumnName("openings_count");
-
-                    b.Property<decimal?>("OverallSkillCoverageThreshold")
-                        .HasPrecision(5, 4)
-                        .HasColumnType("numeric(5,4)")
-                        .HasColumnName("overall_skill_coverage_threshold");
 
                     b.Property<Guid>("PositionId")
                         .HasColumnType("uuid")
@@ -830,13 +823,9 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_job_requisitions_closed_at_not_before_opened_at", "closed_at IS NULL OR closed_at >= opened_at");
 
-                            t.HasCheckConstraint("ck_job_requisitions_mandatory_skill_threshold", "mandatory_skill_coverage_threshold IS NULL OR (mandatory_skill_coverage_threshold >= 0 AND mandatory_skill_coverage_threshold <= 1)");
-
                             t.HasCheckConstraint("ck_job_requisitions_min_relevant_experience", "minimum_relevant_experience_months IS NULL OR minimum_relevant_experience_months >= 0");
 
                             t.HasCheckConstraint("ck_job_requisitions_openings_count", "openings_count > 0");
-
-                            t.HasCheckConstraint("ck_job_requisitions_overall_skill_threshold", "overall_skill_coverage_threshold IS NULL OR (overall_skill_coverage_threshold >= 0 AND overall_skill_coverage_threshold <= 1)");
                         });
                 });
 
