@@ -1,4 +1,5 @@
 using HrDecisionSupport.Domain.Enums;
+using System;
 
 namespace HrDecisionSupport.Application.Requisitions;
 
@@ -15,11 +16,13 @@ public sealed record JobRequisitionDto(
     string? Description,
     int OpeningsCount,
     int? MinimumRelevantExperienceMonths,
+    DegreeLevel? MinimumEducationLevel,
+    Guid? WorkModeId,
+    bool WorkModeHardFilterEnabled,
     JobRequisitionStatus JobRequisitionStatus,
     DateOnly OpenedAt,
     DateOnly? ClosedAt,
     decimal? MandatorySkillCoverageThreshold,
-    decimal? OverallSkillCoverageThreshold,
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc,
     int RequirementCount);

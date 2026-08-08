@@ -20,8 +20,7 @@ public sealed class UpdateJobRequisitionRequestValidator
             instance.OpeningsCount,
             instance.MinimumRelevantExperienceMonths,
             instance.OpenedAt,
-            instance.MandatorySkillCoverageThreshold,
-            instance.OverallSkillCoverageThreshold);
+            instance.MandatorySkillCoverageThreshold);
 
         return RequestValidation.ToResult(errors);
     }

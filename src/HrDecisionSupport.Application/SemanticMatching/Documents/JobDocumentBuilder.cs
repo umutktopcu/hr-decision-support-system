@@ -17,7 +17,7 @@ public class JobDocumentBuilder : ISemanticDocumentBuilder
 
         sb.AppendLine("JOB PROFILE");
         sb.AppendLine($"Title: {job.Title}");
-        
+
         if (job.Position != null && SemanticFormattingHelper.ShouldInclude(job.Position.Name))
         {
             sb.AppendLine($"Position: {job.Position.Name}");
@@ -38,6 +38,34 @@ public class JobDocumentBuilder : ISemanticDocumentBuilder
             sb.AppendLine();
         }
 
+        if (job.MinimumEducationLevel.HasValue)
+        {
+            sb.AppendLine("EDUCATION REQUIREMENTS");
+            sb.AppendLine($"Minimum Education Level: {job.MinimumEducationLevel.Value}");
+            sb.AppendLine();
+        }
+
+        if (job.WorkMode != null)
+        {
+            sb.AppendLine("WORK MODE");
+            sb.AppendLine($"Mode: {job.WorkMode.Name}");
+            sb.AppendLine($"Hard Requirement: {(job.WorkModeHardFilterEnabled ? "Yes" : "No")}");
+            sb.AppendLine();
+        }
+
+        if (job.LanguageRequirements != null && job.LanguageRequirements.Any())
+        {
+            sb.AppendLine("LANGUAGE REQUIREMENTS");
+            sb.AppendLine();
+            foreach (var langReq in job.LanguageRequirements.Where(x => x.Language != null).OrderBy(x => x.Language.Name))
+            {
+                sb.AppendLine($"- Language: {langReq.Language.Name}");
+                sb.AppendLine($"  Minimum Proficiency: {langReq.MinimumProficiency}");
+                sb.AppendLine($"  Hard Requirement: {(langReq.HardFilterEnabled ? "Yes" : "No")}");
+                sb.AppendLine();
+            }
+        }
+
         if (job.Requirements != null && job.Requirements.Any())
         {
             var mandatory = job.Requirements
@@ -52,6 +80,8 @@ public class JobDocumentBuilder : ISemanticDocumentBuilder
                 {
                     sb.AppendLine($"- {req.Competency.Name}");
                 }
+                sb.AppendLine();
+                sb.AppendLine($"Minimum Required Coverage: {job.MandatorySkillCoverageThreshold * 100:0}%");
                 sb.AppendLine();
             }
 

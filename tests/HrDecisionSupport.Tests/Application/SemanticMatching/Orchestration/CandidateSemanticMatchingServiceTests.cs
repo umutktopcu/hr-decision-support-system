@@ -76,7 +76,7 @@ public class CandidateSemanticMatchingServiceTests
         await using var context = TestDatabase.CreateContext();
         var sut = CreateService(context);
         var jobId = Guid.NewGuid();
-        
+
         // Add job to DB so it doesn't fail on Job Not Found
         var dep = TestDatabase.Department();
         var pos = TestDatabase.Position();
@@ -100,7 +100,7 @@ public class CandidateSemanticMatchingServiceTests
         Assert.Equal(5, result.Value.PreScreeningRejectedCount);
         Assert.Equal(0, result.Value.RetrievedCount);
         Assert.Empty(result.Value.Results);
-        
+
         // Verify retrieval service was NEVER called
         _retrievalMock.Verify(x => x.RetrieveTopCandidatesAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -111,11 +111,11 @@ public class CandidateSemanticMatchingServiceTests
         await using var context = TestDatabase.CreateContext();
         var sut = CreateService(context);
         var jobId = Guid.NewGuid();
-        
-        var batchResult = new CandidatePreScreeningBatchResult(jobId, 5, 1, 4, new[] { 
+
+        var batchResult = new CandidatePreScreeningBatchResult(jobId, 5, 1, 4, new[] {
             CreateMockResult(Guid.NewGuid(), jobId, true)
         });
-        
+
         _preScreeningMock.Setup(x => x.EvaluateApplicantsForJobAsync(jobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<CandidatePreScreeningBatchResult>.Success(batchResult));
 
@@ -133,7 +133,7 @@ public class CandidateSemanticMatchingServiceTests
         await using var context = TestDatabase.CreateContext();
         var sut = CreateService(context);
         var jobId = Guid.NewGuid();
-        
+
         var dep = TestDatabase.Department();
         var pos = TestDatabase.Position();
         var job = TestDatabase.JobRequisition(dep, pos);
@@ -144,10 +144,10 @@ public class CandidateSemanticMatchingServiceTests
         await context.SaveChangesAsync();
 
         var candidateId = Guid.NewGuid();
-        var batchResult = new CandidatePreScreeningBatchResult(jobId, 1, 1, 0, new[] { 
+        var batchResult = new CandidatePreScreeningBatchResult(jobId, 1, 1, 0, new[] {
             CreateMockResult(candidateId, jobId, true)
         });
-        
+
         _preScreeningMock.Setup(x => x.EvaluateApplicantsForJobAsync(jobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<CandidatePreScreeningBatchResult>.Success(batchResult));
 
@@ -172,20 +172,20 @@ public class CandidateSemanticMatchingServiceTests
         job.Id = jobId;
         context.Departments.Add(dep);
         context.Positions.Add(pos);
-        
+
         var person = TestDatabase.Person("ANON-01");
         var candidate = TestDatabase.Candidate(person);
         candidate.Id = candidateId;
         candidate.Person = person;
-        
+
         context.JobRequisitions.Add(job);
         context.Candidates.Add(candidate);
         await context.SaveChangesAsync();
 
-        var batchResult = new CandidatePreScreeningBatchResult(jobId, 1, 1, 0, new[] { 
+        var batchResult = new CandidatePreScreeningBatchResult(jobId, 1, 1, 0, new[] {
             CreateMockResult(candidateId, jobId, true)
         });
-        
+
         _preScreeningMock.Setup(x => x.EvaluateApplicantsForJobAsync(jobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<CandidatePreScreeningBatchResult>.Success(batchResult));
 
@@ -210,7 +210,7 @@ public class CandidateSemanticMatchingServiceTests
         job.Id = jobId;
         context.Departments.Add(dep);
         context.Positions.Add(pos);
-        
+
         var eligibleCandidateId = Guid.NewGuid();
         var rejectedCandidateId = Guid.NewGuid();
         var person1 = TestDatabase.Person("ANON-01");
@@ -218,7 +218,7 @@ public class CandidateSemanticMatchingServiceTests
         candidate1.Id = eligibleCandidateId;
         candidate1.ProfessionalTitle = "Title1";
         candidate1.Person = person1;
-        
+
         var person2 = TestDatabase.Person("ANON-02");
         var candidate2 = TestDatabase.Candidate(person2);
         candidate2.Id = rejectedCandidateId;
@@ -230,11 +230,11 @@ public class CandidateSemanticMatchingServiceTests
         context.Candidates.Add(candidate2);
         await context.SaveChangesAsync();
 
-        var batchResult = new CandidatePreScreeningBatchResult(jobId, 2, 1, 1, new[] { 
+        var batchResult = new CandidatePreScreeningBatchResult(jobId, 2, 1, 1, new[] {
             CreateMockResult(eligibleCandidateId, jobId, true),
             CreateMockResult(rejectedCandidateId, jobId, false)
         });
-        
+
         _preScreeningMock.Setup(x => x.EvaluateApplicantsForJobAsync(jobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<CandidatePreScreeningBatchResult>.Success(batchResult));
 
@@ -245,7 +245,7 @@ public class CandidateSemanticMatchingServiceTests
 
         _retrievalMock.Setup(x => x.RetrieveTopCandidatesAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), 5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<IReadOnlyList<SemanticRetrievalResult>>.Success(expectedRetrievalResult))
-            .Callback<string, IReadOnlyList<SemanticCandidateDocument>, int, CancellationToken>((jDoc, cDocs, n, c) => 
+            .Callback<string, IReadOnlyList<SemanticCandidateDocument>, int, CancellationToken>((jDoc, cDocs, n, c) =>
             {
                 // Verify ONLY eligible candidate was sent
                 Assert.Single(cDocs);
@@ -266,7 +266,7 @@ public class CandidateSemanticMatchingServiceTests
         Assert.Single(result.Value.Results);
         Assert.Equal(eligibleCandidateId, result.Value.Results[0].CandidateId);
     }
-    
+
     [Fact]
     public async Task MatchApplicantsForJobAsync_LoadsRequiredCandidateNavigationProperties()
     {
@@ -282,12 +282,12 @@ public class CandidateSemanticMatchingServiceTests
         job.Id = jobId;
         context.Departments.Add(dep);
         context.Positions.Add(pos);
-        
+
         var person = TestDatabase.Person("ANON-03");
         var candidate = TestDatabase.Candidate(person);
         candidate.Id = candidateId;
         candidate.Person = person;
-        
+
         // Add one of each required navigation to verify it is loaded
         var competency = new Competency { Id = Guid.NewGuid(), Name = "C#", Code = "C#" };
         person.PersonCompetencies.Add(new PersonCompetency { Competency = competency, ExperienceMonths = 12 });
@@ -296,24 +296,24 @@ public class CandidateSemanticMatchingServiceTests
         person.PersonCertificates.Add(new PersonCertificate { Certificate = new Certificate { Id = Guid.NewGuid(), Name = "AWS", Code = "AWS" } });
         person.PersonLanguages.Add(new PersonLanguage { Language = new Language { Id = Guid.NewGuid(), Name = "English", Code = "EN" }, IsNative = true });
         person.PersonSectorExperiences.Add(new PersonSectorExperience { Sector = new Sector { Id = Guid.NewGuid(), Name = "IT", Code = "IT" } });
-        
+
         context.JobRequisitions.Add(job);
         context.Candidates.Add(candidate);
         await context.SaveChangesAsync();
-        
+
         // Detach all so the service has to query them
         context.ChangeTracker.Clear();
 
-        var batchResult = new CandidatePreScreeningBatchResult(jobId, 1, 1, 0, new[] { 
+        var batchResult = new CandidatePreScreeningBatchResult(jobId, 1, 1, 0, new[] {
             CreateMockResult(candidateId, jobId, true)
         });
-        
+
         _preScreeningMock.Setup(x => x.EvaluateApplicantsForJobAsync(jobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<CandidatePreScreeningBatchResult>.Success(batchResult));
 
         _retrievalMock.Setup(x => x.RetrieveTopCandidatesAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), 5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<IReadOnlyList<SemanticRetrievalResult>>.Success(new List<SemanticRetrievalResult>()))
-            .Callback<string, IReadOnlyList<SemanticCandidateDocument>, int, CancellationToken>((jDoc, cDocs, n, c) => 
+            .Callback<string, IReadOnlyList<SemanticCandidateDocument>, int, CancellationToken>((jDoc, cDocs, n, c) =>
             {
                 var text = cDocs[0].Text;
                 // Assert that the document text contains values from the navigations,
@@ -336,12 +336,14 @@ public class CandidateSemanticMatchingServiceTests
             CandidateId: candidateId,
             JobRequisitionId: jobId,
             MandatorySkillResult: new SkillEvaluationResult(1, 1, 100.0m, EvaluationStatus.Pass, true, Array.Empty<Guid>(), Array.Empty<Guid>()),
-            OverallSkillResult: new SkillEvaluationResult(1, 1, 100.0m, EvaluationStatus.Pass, true, Array.Empty<Guid>(), Array.Empty<Guid>()),
+            PreferredSkillResult: new SkillEvaluationResult(1, 1, 100.0m, EvaluationStatus.Pass, true, Array.Empty<Guid>(), Array.Empty<Guid>()),
             ExperienceResult: new ExperienceEvaluationResult(12, 12, EvaluationStatus.Pass, true),
+            EducationResult: new EducationEvaluationResult(null, null, EvaluationStatus.NotApplicable, true),
+            WorkModeResult: new WorkModeEvaluationResult(null, false, true, EvaluationStatus.NotApplicable, true),
+            LanguageResults: new List<LanguageEvaluationResult>(),
             EligibleForSemanticEvaluation: isEligible,
             FailureReasons: new List<PreScreeningFailureReason>(),
-            MandatorySkillThresholdUsed: 100,
-            OverallSkillThresholdUsed: 100
+            MandatorySkillThresholdUsed: 100
         );
     }
 }

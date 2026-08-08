@@ -10,5 +10,4 @@ public sealed record CreateJobRequisitionRequest(
     int? MinimumRelevantExperienceMonths,
     DateOnly OpenedAt,
     DateOnly? ClosedAt,
-    decimal? MandatorySkillCoverageThreshold = null,
-    decimal? OverallSkillCoverageThreshold = null);
+    decimal? MandatorySkillCoverageThreshold = null);

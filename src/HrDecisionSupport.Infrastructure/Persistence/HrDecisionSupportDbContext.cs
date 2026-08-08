@@ -42,6 +42,8 @@ public class HrDecisionSupportDbContext : DbContext, IHrDecisionSupportDbContext
     public DbSet<JobRequisition> JobRequisitions => Set<JobRequisition>();
     public DbSet<JobRequisitionRequirement> JobRequisitionRequirements =>
         Set<JobRequisitionRequirement>();
+    public DbSet<JobLanguageRequirement> JobLanguageRequirements =>
+        Set<JobLanguageRequirement>();
     public DbSet<CandidateEvaluationCase> CandidateEvaluationCases =>
         Set<CandidateEvaluationCase>();
     public DbSet<CandidateWorkModePreference> CandidateWorkModePreferences =>

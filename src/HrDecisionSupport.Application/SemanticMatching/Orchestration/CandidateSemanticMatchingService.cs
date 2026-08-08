@@ -38,8 +38,8 @@ public class CandidateSemanticMatchingService : ICandidateSemanticMatchingServic
     }
 
     public async Task<Result<CandidateSemanticMatchingBatchResult>> MatchApplicantsForJobAsync(
-        Guid jobRequisitionId, 
-        int topN, 
+        Guid jobRequisitionId,
+        int topN,
         CancellationToken cancellationToken = default)
     {
         if (topN <= 0)
@@ -139,9 +139,9 @@ public class CandidateSemanticMatchingService : ICandidateSemanticMatchingServic
 
         // 8. Run semantic retrieval
         var retrievalResult = await _retrievalService.RetrieveTopCandidatesAsync(
-            jobDocumentText, 
-            semanticCandidates, 
-            topN, 
+            jobDocumentText,
+            semanticCandidates,
+            topN,
             cancellationToken);
 
         if (retrievalResult.IsFailure)
@@ -160,16 +160,19 @@ public class CandidateSemanticMatchingService : ICandidateSemanticMatchingServic
                     new Error("missing_prescreening_metadata", $"Candidate {r.CandidateId} returned by retrieval but missing pre-screening metadata.", ErrorType.Failure));
             }
 
+            var preferredRequired = ps.PreferredSkillResult.TotalRequired;
+            var preferredMatched = ps.PreferredSkillResult.TotalMatched;
+
             int mandReq = ps.MandatorySkillResult.TotalRequired;
             int mandMat = ps.MandatorySkillResult.TotalMatched;
-            int overallReq = ps.OverallSkillResult.TotalRequired;
-            int overallMat = ps.OverallSkillResult.TotalMatched;
+            int prefReq = preferredRequired;
+            int prefMat = preferredMatched;
 
-            int prefReq = overallReq - mandReq;
-            int prefMat = overallMat - mandMat;
+            int overallReq = mandReq + prefReq;
+            int overallMat = mandMat + prefMat;
 
             // Validate invariants
-            if (overallReq < mandReq || overallMat < mandMat || prefReq < 0 || prefMat < 0 || prefMat > prefReq)
+            if (prefReq < 0 || prefMat < 0 || prefMat > prefReq)
             {
                 return Result<CandidateSemanticMatchingBatchResult>.Failure(
                     new Error("invalid_skill_metrics", $"Skill metrics invariant violated for Candidate {r.CandidateId}.", ErrorType.Failure));
