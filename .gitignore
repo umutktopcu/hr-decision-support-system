@@ -12,6 +12,7 @@ ml/**/*.pyo
 
 ## Python virtual environments (benchmark envs)
 .venv/
+venv/
 
 ## Benchmark / analysis outputs
 *.json.bak

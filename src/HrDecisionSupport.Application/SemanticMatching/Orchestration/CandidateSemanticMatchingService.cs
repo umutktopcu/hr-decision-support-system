@@ -84,7 +84,7 @@ public class CandidateSemanticMatchingService : ICandidateSemanticMatchingServic
                 RequestedTopN: topN,
                 RetrievedCount: 0,
                 JobDocumentText: jobDocumentText,
-                Results: Array.Empty<SemanticRetrievalResult>()
+                Results: Array.Empty<CandidateSemanticMatchingResult>()
             ));
         }
 
@@ -149,8 +149,48 @@ public class CandidateSemanticMatchingService : ICandidateSemanticMatchingServic
             return Result<CandidateSemanticMatchingBatchResult>.Failure(retrievalResult.Error!);
         }
 
-        // 9. Construct final result
-        var finalResults = retrievalResult.Value;
+        // 9. Map final results with skill metrics
+        var preScreeningDict = batch.Results.ToDictionary(r => r.CandidateId);
+        var finalResults = new List<CandidateSemanticMatchingResult>(retrievalResult.Value.Count);
+        foreach (var r in retrievalResult.Value)
+        {
+            if (!preScreeningDict.TryGetValue(r.CandidateId, out var ps))
+            {
+                return Result<CandidateSemanticMatchingBatchResult>.Failure(
+                    new Error("missing_prescreening_metadata", $"Candidate {r.CandidateId} returned by retrieval but missing pre-screening metadata.", ErrorType.Failure));
+            }
+
+            int mandReq = ps.MandatorySkillResult.TotalRequired;
+            int mandMat = ps.MandatorySkillResult.TotalMatched;
+            int overallReq = ps.OverallSkillResult.TotalRequired;
+            int overallMat = ps.OverallSkillResult.TotalMatched;
+
+            int prefReq = overallReq - mandReq;
+            int prefMat = overallMat - mandMat;
+
+            // Validate invariants
+            if (overallReq < mandReq || overallMat < mandMat || prefReq < 0 || prefMat < 0 || prefMat > prefReq)
+            {
+                return Result<CandidateSemanticMatchingBatchResult>.Failure(
+                    new Error("invalid_skill_metrics", $"Skill metrics invariant violated for Candidate {r.CandidateId}.", ErrorType.Failure));
+            }
+
+            decimal mandCov = mandReq == 0 ? 1.0m : (decimal)mandMat / mandReq;
+            decimal prefCov = prefReq == 0 ? 1.0m : (decimal)prefMat / prefReq;
+
+            finalResults.Add(new CandidateSemanticMatchingResult(
+                r.CandidateId,
+                r.CosineSimilarityScore,
+                r.CandidateDocumentText,
+                mandMat,
+                mandReq,
+                mandCov,
+                prefMat,
+                prefReq,
+                prefCov
+            ));
+        }
+
         var batchResult = new CandidateSemanticMatchingBatchResult(
             JobRequisitionId: jobRequisitionId,
             TotalApplicants: batch.TotalApplicants,

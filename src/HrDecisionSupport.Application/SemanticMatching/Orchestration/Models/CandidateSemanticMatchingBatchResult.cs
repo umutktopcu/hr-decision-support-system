@@ -12,5 +12,5 @@ public record CandidateSemanticMatchingBatchResult(
     int RequestedTopN,
     int RetrievedCount,
     string JobDocumentText,
-    IReadOnlyList<SemanticRetrievalResult> Results
+    IReadOnlyList<CandidateSemanticMatchingResult> Results
 );
