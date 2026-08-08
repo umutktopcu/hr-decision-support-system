@@ -7,11 +7,13 @@ namespace HrDecisionSupport.Tests;
 
 public class JobRequisitionValidatorTests
 {
+    private static CreateJobRequisitionRequest ValidCreate() =>
+        new("R", "T", Guid.NewGuid(), Guid.NewGuid(), null, 1, null, new(2026, 1, 1), null, 0.5m, null, Guid.NewGuid(), true, new[] { new JobRequirementModel(Guid.NewGuid(), null, null, true, null) });
+
     [Fact]
     public void CreateValidator_ValidRequest_IsValid()
     {
-        var result = new CreateJobRequisitionRequestValidator().Validate(
-            new("R", "T", Guid.NewGuid(), Guid.NewGuid(), null, 1, null, new(2026, 1, 1), null));
+        var result = new CreateJobRequisitionRequestValidator().Validate(ValidCreate());
         Assert.True(result.IsValid);
     }
 
@@ -28,7 +30,9 @@ public class JobRequisitionValidatorTests
             ("department_id_required", "DepartmentId"),
             ("position_id_required", "PositionId"),
             ("openings_count_invalid", "OpeningsCount"),
-            ("opened_at_required", "OpenedAt"));
+            ("opened_at_required", "OpenedAt"),
+            ("work_mode_required", "WorkModeId"),
+            ("mandatory_skill_required", "Requirements"));
     }
 
     [Theory]
@@ -37,7 +41,7 @@ public class JobRequisitionValidatorTests
     public void CreateValidator_RequisitionCodeLengthHonorsConfigurationBoundary(int length, bool valid)
     {
         var result = new CreateJobRequisitionRequestValidator().Validate(
-            new(new string('R', length), "T", Guid.NewGuid(), Guid.NewGuid(), null, 1, null, new(2026, 1, 1), null));
+            ValidCreate() with { RequisitionCode = new string('R', length) });
         Assert.Equal(valid, result.IsValid);
         if (!valid) Assert.Contains(result.Errors, error => error.Code == "requisition_code_max_length");
     }
@@ -52,8 +56,63 @@ public class JobRequisitionValidatorTests
         var title = length <= 251 ? new string('T', length) : "T";
         var description = length >= 2000 ? new string('D', length) : null;
         var result = new CreateJobRequisitionRequestValidator().Validate(
-            new("R", title, Guid.NewGuid(), Guid.NewGuid(), description, 1, null, new(2026, 1, 1), null));
+            ValidCreate() with { Title = title, Description = description });
         Assert.Equal(valid, result.IsValid);
+    }
+
+    [Fact]
+    public void CreateValidator_DuplicateLanguageRequirements_ReturnsValidationError()
+    {
+        var languageId = Guid.NewGuid();
+        var request = ValidCreate() with
+        {
+            LanguageRequirements = new[]
+            {
+                new JobLanguageRequirementModel(languageId, LanguageProficiencyLevel.B2, true),
+                new JobLanguageRequirementModel(languageId, LanguageProficiencyLevel.C1, false)
+            }
+        };
+
+        var result = new CreateJobRequisitionRequestValidator().Validate(request);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Code == "duplicate_language_requirement");
+    }
+
+    [Fact]
+    public void UpdateValidator_DuplicateLanguageRequirements_ReturnsValidationError()
+    {
+        var languageId = Guid.NewGuid();
+        var request = new UpdateJobRequisitionRequest(
+            "REQ-UPDATED", "Title", Guid.NewGuid(), Guid.NewGuid(), null, 1, null, new DateOnly(2026, 1, 1),
+            null, null, Guid.NewGuid(), true,
+            new[] { new JobRequirementModel(Guid.NewGuid(), null, null, true, null) },
+            new[]
+            {
+                new JobLanguageRequirementModel(languageId, LanguageProficiencyLevel.B2, true),
+                new JobLanguageRequirementModel(languageId, LanguageProficiencyLevel.C1, false)
+            });
+
+        var result = new UpdateJobRequisitionRequestValidator().Validate(request);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Code == "duplicate_language_requirement");
+    }
+
+    [Fact]
+    public void CreateValidator_DifferentLanguageRequirements_IsValid()
+    {
+        var request = ValidCreate() with
+        {
+            LanguageRequirements = new[]
+            {
+                new JobLanguageRequirementModel(Guid.NewGuid(), LanguageProficiencyLevel.B2, true),
+                new JobLanguageRequirementModel(Guid.NewGuid(), LanguageProficiencyLevel.C1, false)
+            }
+        };
+
+        var result = new CreateJobRequisitionRequestValidator().Validate(request);
+        Assert.True(result.IsValid);
     }
 
     [Fact]

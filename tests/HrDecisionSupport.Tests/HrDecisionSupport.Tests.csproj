@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -26,6 +26,10 @@
     <ProjectReference Include="..\..\src\HrDecisionSupport.Application\HrDecisionSupport.Application.csproj" />
     <ProjectReference Include="..\..\src\HrDecisionSupport.Infrastructure\HrDecisionSupport.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\HrDecisionSupport.EmployeeImportDryRun\HrDecisionSupport.EmployeeImportDryRun.csproj" />
+    <ProjectReference Include="..\..\src\HrDecisionSupport.Web\HrDecisionSupport.Web.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
 </Project>

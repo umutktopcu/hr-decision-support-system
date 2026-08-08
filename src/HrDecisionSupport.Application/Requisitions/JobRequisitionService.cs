@@ -71,6 +71,20 @@ public sealed class JobRequisitionService : IJobRequisitionService
                 item.Notes))
             .ToListAsync(cancellationToken);
 
+        var languageRequirements = await _dbContext.JobLanguageRequirements
+            .AsNoTracking()
+            .Where(item => item.JobRequisitionId == id)
+            .OrderByDescending(item => item.HardFilterEnabled)
+            .ThenBy(item => item.Language.Name)
+            .Select(item => new JobLanguageRequirementDto(
+                item.Id,
+                item.JobRequisitionId,
+                item.LanguageId,
+                item.Language.Name,
+                item.MinimumProficiency,
+                item.HardFilterEnabled))
+            .ToListAsync(cancellationToken);
+
         return Result<JobRequisitionDetailDto>.Success(new(
             requisition.Id,
             requisition.RequisitionCode,
@@ -83,13 +97,19 @@ public sealed class JobRequisitionService : IJobRequisitionService
             requisition.PositionName,
             requisition.Description,
             requisition.OpeningsCount,
+            requisition.MinimumRelevantExperienceMonths,
+            requisition.MinimumEducationLevel,
+            requisition.WorkModeId,
+            requisition.WorkModeHardFilterEnabled,
             requisition.JobRequisitionStatus,
             requisition.OpenedAt,
             requisition.ClosedAt,
+            requisition.MandatorySkillCoverageThreshold,
             requisition.CreatedAtUtc,
             requisition.UpdatedAtUtc,
             requisition.RequirementCount,
-            requirements));
+            requirements,
+            languageRequirements));
     }
 
     public async Task<Result<JobRequisitionDto>> CreateAsync(
@@ -104,6 +124,9 @@ public sealed class JobRequisitionService : IJobRequisitionService
         var references = await ValidateReferencesAsync(
             request.DepartmentId,
             request.PositionId,
+            request.WorkModeId,
+            request.Requirements,
+            request.LanguageRequirements,
             cancellationToken);
         if (references.Error is not null)
             return Result<JobRequisitionDto>.Failure(references.Error);
@@ -127,11 +150,46 @@ public sealed class JobRequisitionService : IJobRequisitionService
             OpeningsCount = request.OpeningsCount,
             MinimumRelevantExperienceMonths = request.MinimumRelevantExperienceMonths,
             MandatorySkillCoverageThreshold = request.MandatorySkillCoverageThreshold,
+            MinimumEducationLevel = request.MinimumEducationLevel,
+            WorkModeId = request.WorkModeId,
+            WorkModeHardFilterEnabled = request.WorkModeHardFilterEnabled,
             JobRequisitionStatus = JobRequisitionStatus.Draft,
             OpenedAt = request.OpenedAt,
             ClosedAt = null,
             CreatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime
         };
+
+        if (request.Requirements != null)
+        {
+            foreach (var req in request.Requirements)
+            {
+                entity.Requirements.Add(new JobRequisitionRequirement
+                {
+                    Id = Guid.NewGuid(),
+                    JobRequisitionId = entity.Id,
+                    CompetencyId = req.CompetencyId,
+                    MinimumExperienceMonths = req.MinimumExperienceMonths,
+                    MinimumProficiencyLevel = req.MinimumProficiencyLevel,
+                    IsRequired = req.IsRequired,
+                    Notes = req.Notes
+                });
+            }
+        }
+
+        if (request.LanguageRequirements != null)
+        {
+            foreach (var req in request.LanguageRequirements)
+            {
+                entity.LanguageRequirements.Add(new JobLanguageRequirement
+                {
+                    Id = Guid.NewGuid(),
+                    JobRequisitionId = entity.Id,
+                    LanguageId = req.LanguageId,
+                    MinimumProficiency = req.MinimumProficiency,
+                    HardFilterEnabled = req.HardFilterEnabled
+                });
+            }
+        }
 
         await _dbContext.JobRequisitions.AddAsync(entity, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -145,6 +203,8 @@ public sealed class JobRequisitionService : IJobRequisitionService
     {
         ArgumentNullException.ThrowIfNull(request);
         var entity = await _dbContext.JobRequisitions
+            .Include(item => item.Requirements)
+            .Include(item => item.LanguageRequirements)
             .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
         if (entity is null)
             return Result<JobRequisitionDto>.Failure(UseCaseErrors.JobRequisitionNotFound);
@@ -177,6 +237,9 @@ public sealed class JobRequisitionService : IJobRequisitionService
         var references = await ValidateReferencesAsync(
             request.DepartmentId,
             request.PositionId,
+            request.WorkModeId,
+            request.Requirements,
+            request.LanguageRequirements,
             cancellationToken);
         if (references.Error is not null)
             return Result<JobRequisitionDto>.Failure(references.Error);
@@ -198,8 +261,48 @@ public sealed class JobRequisitionService : IJobRequisitionService
         entity.OpeningsCount = request.OpeningsCount;
         entity.MinimumRelevantExperienceMonths = request.MinimumRelevantExperienceMonths;
         entity.MandatorySkillCoverageThreshold = request.MandatorySkillCoverageThreshold;
+        entity.MinimumEducationLevel = request.MinimumEducationLevel;
+        entity.WorkModeId = request.WorkModeId;
+        entity.WorkModeHardFilterEnabled = request.WorkModeHardFilterEnabled;
         entity.OpenedAt = request.OpenedAt;
         entity.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
+
+        if (request.Requirements != null)
+        {
+            _dbContext.JobRequisitionRequirements.RemoveRange(entity.Requirements);
+            entity.Requirements.Clear();
+            foreach (var req in request.Requirements)
+            {
+                entity.Requirements.Add(new JobRequisitionRequirement
+                {
+                    Id = Guid.NewGuid(),
+                    JobRequisitionId = entity.Id,
+                    CompetencyId = req.CompetencyId,
+                    MinimumExperienceMonths = req.MinimumExperienceMonths,
+                    MinimumProficiencyLevel = req.MinimumProficiencyLevel,
+                    IsRequired = req.IsRequired,
+                    Notes = req.Notes
+                });
+            }
+        }
+
+        if (request.LanguageRequirements != null)
+        {
+            var languageSet = _dbContext.JobLanguageRequirements;
+            languageSet.RemoveRange(entity.LanguageRequirements);
+            entity.LanguageRequirements.Clear();
+            foreach (var req in request.LanguageRequirements)
+            {
+                entity.LanguageRequirements.Add(new JobLanguageRequirement
+                {
+                    Id = Guid.NewGuid(),
+                    JobRequisitionId = entity.Id,
+                    LanguageId = req.LanguageId,
+                    MinimumProficiency = req.MinimumProficiency,
+                    HardFilterEnabled = req.HardFilterEnabled
+                });
+            }
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return await GetDtoByIdAsync(id, cancellationToken);
@@ -279,6 +382,9 @@ public sealed class JobRequisitionService : IJobRequisitionService
     private async Task<ReferenceValidation> ValidateReferencesAsync(
         Guid departmentId,
         Guid positionId,
+        Guid? workModeId,
+        IEnumerable<JobRequirementModel>? requirements,
+        IEnumerable<JobLanguageRequirementModel>? languageRequirements,
         CancellationToken cancellationToken)
     {
         var department = await _dbContext.Departments.AsNoTracking()
@@ -298,6 +404,35 @@ public sealed class JobRequisitionService : IJobRequisitionService
             return new(UseCaseErrors.PositionNotFound, null, null);
         if (!position.IsActive)
             return new(UseCaseErrors.PositionInactive, null, null);
+
+        if (workModeId.HasValue)
+        {
+            if (!await _dbContext.WorkModes.AnyAsync(w => w.Id == workModeId.Value, cancellationToken))
+                return new(UseCaseErrors.WorkModeNotFound, null, null);
+        }
+
+        if (requirements != null)
+        {
+            var competencyIds = requirements.Select(r => r.CompetencyId).Distinct().ToList();
+            if (competencyIds.Count > 0)
+            {
+                var existingCount = await _dbContext.Competencies.CountAsync(c => competencyIds.Contains(c.Id), cancellationToken);
+                if (existingCount != competencyIds.Count)
+                    return new(UseCaseErrors.CompetencyNotFound, null, null);
+            }
+        }
+
+        if (languageRequirements != null)
+        {
+            var languageIds = languageRequirements.Select(l => l.LanguageId).Distinct().ToList();
+            if (languageIds.Count > 0)
+            {
+                var existingCount = await _dbContext.Languages.CountAsync(l => languageIds.Contains(l.Id), cancellationToken);
+                if (existingCount != languageIds.Count)
+                    return new(UseCaseErrors.LanguageNotFound, null, null);
+            }
+        }
+
         return new(null, department, position);
     }
 

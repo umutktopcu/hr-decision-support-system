@@ -12,10 +12,23 @@ public class JobRequisitionServiceTests
     private static readonly DateTimeOffset FixedUtc =
         new(2026, 6, 15, 10, 30, 0, TimeSpan.Zero);
 
+    private static HrDecisionSupportDbContext CreateServiceContext()
+    {
+        var context = TestDatabase.CreateContext();
+        var workMode = TestDatabase.WorkMode();
+        workMode.Id = TestDatabase.DefaultWorkModeId;
+        var competency = TestDatabase.Competency();
+        competency.Id = TestDatabase.DefaultCompetencyId;
+        context.AddRange(workMode, competency);
+        context.SaveChanges();
+        return context;
+    }
+
     [Fact]
     public async Task List_EmptyDatabase_ReturnsSuccessfulEmptyListWithoutTracking()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
+        context.ChangeTracker.Clear();
         var result = await Service(context).ListAsync();
         Assert.True(result.IsSuccess);
         Assert.Empty(result.Value);
@@ -25,7 +38,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task List_ProjectsReferencesAndRequirementCountAndOrdersDeterministically()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var competency = TestDatabase.Competency();
@@ -58,7 +71,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Get_ExistingRequisition_ReturnsOrderedRequirementsWithoutTracking()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(department, position);
@@ -82,7 +95,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Get_MissingRequisition_ReturnsNotFound()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         AssertError(
             await Service(context).GetByIdAsync(Guid.NewGuid()),
             "job_requisition_not_found",
@@ -92,14 +105,14 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Create_ValidRequest_TrimsStringsUsesDraftAndCreatesOnlyRequisition()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         context.AddRange(department, position);
         await context.SaveChangesAsync();
 
         var result = await Service(context).CreateAsync(
-            new("  REQ-100  ", "  Engineer  ", department.Id, position.Id, "  Notes  ", 2, null, new(2026, 4, 1), null));
+            new("  REQ-100  ", "  Engineer  ", department.Id, position.Id, "  Notes  ", 2, null, new(2026, 4, 1), null, 0.5m, null, TestDatabase.DefaultWorkModeId, true, new[] { new JobRequirementModel(TestDatabase.DefaultCompetencyId, null, null, true, null) }));
 
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value.Id);
@@ -123,7 +136,7 @@ public class JobRequisitionServiceTests
         string code,
         ErrorType type)
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         if (!missingDepartment) context.Departments.Add(department);
@@ -141,7 +154,7 @@ public class JobRequisitionServiceTests
         bool inactivePosition,
         string code)
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department(!inactiveDepartment);
         var position = TestDatabase.Position(!inactivePosition);
         context.AddRange(department, position);
@@ -155,7 +168,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Create_DuplicateCode_ReturnsConflict()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         context.AddRange(department, position, TestDatabase.JobRequisition(department, position, "REQ-NEW"));
@@ -169,28 +182,35 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Create_InvalidRequest_ReturnsAllValidationErrorsBeforeDatabaseQueries()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var result = await Service(context).CreateAsync(
-            new("   ", "", Guid.Empty, Guid.Empty, "   ", 0, null, default, null));
+            new("   ", "", Guid.Empty, Guid.Empty, "   ", 0, null, default, null, -1m, null, null, false, null));
         Assert.False(result.IsSuccess);
-        Assert.Equal(7, result.Errors.Count);
+        Assert.Equal(10, result.Errors.Count); // Updated to 10
         Assert.All(result.Errors, error => Assert.Equal(ErrorType.Validation, error.Type));
+        var errorCodes = result.Errors.Select(e => e.Code).ToList();
+        Assert.Contains("requisition_code_required", errorCodes);
+        Assert.Contains("title_required", errorCodes);
+        Assert.Contains("work_mode_required", errorCodes);
+        Assert.Contains("mandatory_skill_required", errorCodes);
     }
 
     [Fact]
     public async Task Update_ValidRequest_PreservesIdAndStatusAndReturnsCurrentProjection()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(
             department, position, status: JobRequisitionStatus.Open);
-        context.AddRange(department, position, requisition);
+        var competency = TestDatabase.Competency();
+        var requirement = TestDatabase.JobRequisitionRequirement(requisition, competency);
+        context.AddRange(department, position, requisition, competency, requirement);
         await context.SaveChangesAsync();
 
         var result = await Service(context).UpdateAsync(
             requisition.Id,
-            new("  REQ-UPDATED  ", "  Updated  ", department.Id, position.Id, "  Detail  ", 4, null, new(2026, 2, 1)));
+            new("  REQ-UPDATED  ", "  Updated  ", department.Id, position.Id, "  Detail  ", 4, null, new(2026, 2, 1), 0.5m, null, TestDatabase.DefaultWorkModeId, true, null));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(requisition.Id, result.Value.Id);
@@ -205,7 +225,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Update_MissingRequisition_ReturnsNotFound()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         AssertError(
             await Service(context).UpdateAsync(Guid.NewGuid(), ValidUpdate(Guid.NewGuid(), Guid.NewGuid())),
             "job_requisition_not_found",
@@ -220,7 +240,7 @@ public class JobRequisitionServiceTests
         bool missingPosition,
         string expectedCode)
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(department, position);
@@ -243,7 +263,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Update_DuplicateRequisitionCode_ReturnsConflictWithoutMutation()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(department, position, "REQ-ORIGINAL");
@@ -254,7 +274,7 @@ public class JobRequisitionServiceTests
         AssertError(
             await Service(context).UpdateAsync(
                 requisition.Id,
-                new("REQ-DUPLICATE", "Updated", department.Id, position.Id, null, 1, null, new(2026, 1, 1))),
+                new("REQ-DUPLICATE", "Updated", department.Id, position.Id, null, 1, null, new(2026, 1, 1), 0.5m, null, TestDatabase.DefaultWorkModeId, true, null)),
             "job_requisition_conflict",
             ErrorType.Conflict);
         Assert.Equal("REQ-ORIGINAL", requisition.RequisitionCode);
@@ -263,7 +283,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Update_InvalidRequest_ReturnsValidationWithoutMutation()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(department, position, "REQ-UNCHANGED");
@@ -274,9 +294,10 @@ public class JobRequisitionServiceTests
 
         var result = await Service(context).UpdateAsync(
             requisition.Id,
-            new(" ", "", Guid.Empty, Guid.Empty, " ", 0, null, default));
+            new(" ", "", Guid.Empty, Guid.Empty, " ", 0, null, default, -1m, null, null, false, null));
 
         Assert.True(result.IsFailure);
+        Assert.Equal(8, result.Errors.Count); // Updated to 8
         Assert.All(result.Errors, error => Assert.Equal(ErrorType.Validation, error.Type));
         Assert.Equal("REQ-UNCHANGED", requisition.RequisitionCode);
         Assert.Equal(originalTitle, requisition.Title);
@@ -290,7 +311,7 @@ public class JobRequisitionServiceTests
     [InlineData(JobRequisitionStatus.Cancelled)]
     public async Task Update_TerminalRequisition_ReturnsLocked(JobRequisitionStatus status)
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(
@@ -306,7 +327,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Update_WithLinkedEvaluationCase_BlocksDepartmentOrPositionChange()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var newDepartment = TestDatabase.Department();
         var position = TestDatabase.Position();
@@ -335,18 +356,20 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Update_WithLinkedEvaluationCase_AllowsScalarChangesWhenReferencesStayTheSame()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(department, position, "REQ-SCALAR");
-        context.AddRange(department, position, requisition);
+        var competency = TestDatabase.Competency();
+        var requirement = TestDatabase.JobRequisitionRequirement(requisition, competency);
+        context.AddRange(department, position, requisition, competency, requirement);
         AddEvaluationCase(context, requisition, "SCALAR");
         await context.SaveChangesAsync();
 
         var result = await Service(context).UpdateAsync(
             requisition.Id,
             new("REQ-SCALAR-UPDATED", "Updated title", department.Id, position.Id,
-                "Updated description", 5, null, new(2026, 2, 1)));
+                "Updated description", 5, null, new(2026, 2, 1), 0.5m, null, TestDatabase.DefaultWorkModeId, true, null));
 
         Assert.True(result.IsSuccess);
         Assert.Equal("REQ-SCALAR-UPDATED", result.Value.RequisitionCode);
@@ -361,7 +384,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task Update_WithLinkedEvaluationCase_BlocksPositionChangeWithoutMutation()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var newPosition = TestDatabase.Position();
@@ -391,7 +414,7 @@ public class JobRequisitionServiceTests
         JobRequisitionStatus next,
         DateOnly? requestedClosedAt)
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(
@@ -425,7 +448,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task ChangeStatus_SameStatus_ReturnsNoChangeConflict()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(department, position);
@@ -446,7 +469,7 @@ public class JobRequisitionServiceTests
         JobRequisitionStatus current,
         JobRequisitionStatus next)
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         DateOnly? closedAt = current is JobRequisitionStatus.Closed or JobRequisitionStatus.Cancelled
@@ -470,7 +493,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task ChangeStatus_MissingRequisition_ReturnsNotFound()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         AssertError(
             await Service(context).ChangeStatusAsync(
                 Guid.NewGuid(), new(JobRequisitionStatus.Open, null)),
@@ -481,7 +504,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task ChangeStatus_InvalidEnum_ReturnsValidationWithoutMutation()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(department, position);
@@ -503,7 +526,7 @@ public class JobRequisitionServiceTests
     public async Task ChangeStatus_TerminalTargetWithoutClosedAt_ReturnsValidationWithoutMutation(
         JobRequisitionStatus target)
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(
@@ -526,7 +549,7 @@ public class JobRequisitionServiceTests
     public async Task ChangeStatus_NonTerminalTargetWithClosedAt_ReturnsValidationWithoutMutation(
         JobRequisitionStatus target)
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(
@@ -546,7 +569,7 @@ public class JobRequisitionServiceTests
     [Fact]
     public async Task ChangeStatus_ClosedDateBeforeOpenedDate_ReturnsValidation()
     {
-        await using var context = TestDatabase.CreateContext();
+        await using var context = CreateServiceContext();
         var department = TestDatabase.Department();
         var position = TestDatabase.Position();
         var requisition = TestDatabase.JobRequisition(
@@ -628,10 +651,10 @@ public class JobRequisitionServiceTests
             timeProvider ?? new FixedTimeProvider(FixedUtc));
 
     private static CreateJobRequisitionRequest ValidCreate(Guid departmentId, Guid positionId) =>
-        new("REQ-NEW", "Engineer", departmentId, positionId, null, 1, null, new(2026, 1, 1), null);
+        new("REQ-NEW", "Engineer", departmentId, positionId, null, 1, null, new(2026, 1, 1), null, 0.5m, null, TestDatabase.DefaultWorkModeId, true, new[] { new JobRequirementModel(TestDatabase.DefaultCompetencyId, null, null, true, null) });
 
     private static UpdateJobRequisitionRequest ValidUpdate(Guid departmentId, Guid positionId) =>
-        new("REQ-UPDATED", "Engineer", departmentId, positionId, null, 1, null, new(2026, 1, 1));
+        new("REQ-UPDATED", "Engineer", departmentId, positionId, null, 1, null, new(2026, 1, 1), 0.5m, null, TestDatabase.DefaultWorkModeId, true, null);
 
     private static void AssertError(Result result, string code, ErrorType type)
     {
