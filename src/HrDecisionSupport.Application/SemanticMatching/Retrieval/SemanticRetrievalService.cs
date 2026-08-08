@@ -43,26 +43,25 @@ public class SemanticRetrievalService : ISemanticRetrievalService
                 return Result<IReadOnlyList<SemanticRetrievalResult>>.Failure("Validation", $"Duplicate candidate ID found: {candidate.CandidateId}");
         }
 
-        // Batch all documents: [0] is job, [1..N] are candidates
-        var texts = new List<string>(candidates.Count + 1) { jobDocument };
-        texts.AddRange(candidates.Select(c => c.Text));
+        // Job document is encoded as a query (model may apply query-specific instructions)
+        var queryResult = await _embeddingProvider.GenerateQueryEmbeddingAsync(jobDocument, cancellationToken);
+        if (queryResult.IsFailure)
+            return Result<IReadOnlyList<SemanticRetrievalResult>>.Failure(queryResult.Error ?? Error.Failure("Unknown", "Query embedding generation failed."));
 
-        var embeddingsResult = await _embeddingProvider.GenerateEmbeddingsAsync(texts, cancellationToken);
-        if (embeddingsResult.IsFailure)
+        // Candidate documents are encoded as documents (no query instruction)
+        var candidateTexts = candidates.Select(c => c.Text).ToList().AsReadOnly();
+        var documentResult = await _embeddingProvider.GenerateDocumentEmbeddingsAsync(candidateTexts, cancellationToken);
+        if (documentResult.IsFailure)
+            return Result<IReadOnlyList<SemanticRetrievalResult>>.Failure(documentResult.Error ?? Error.Failure("Unknown", "Document embedding generation failed."));
+
+        var candidateVectors = documentResult.Value;
+        if (candidateVectors.Count != candidates.Count)
         {
-            // Propagate the error
-            return Result<IReadOnlyList<SemanticRetrievalResult>>.Failure(embeddingsResult.Error ?? Error.Failure("Unknown", "Embedding generation failed."));
+            return Result<IReadOnlyList<SemanticRetrievalResult>>.Failure("Validation",
+                $"Embedding provider returned {candidateVectors.Count} vectors, expected {candidates.Count}.");
         }
 
-        var embeddings = embeddingsResult.Value;
-        if (embeddings.Count != texts.Count)
-        {
-            return Result<IReadOnlyList<SemanticRetrievalResult>>.Failure("Validation", $"Embedding provider returned {embeddings.Count} vectors, expected {texts.Count}.");
-        }
-
-        var jobVector = embeddings[0];
-        var candidateVectors = embeddings.Skip(1).ToList();
-
+        var jobVector = queryResult.Value;
         var results = new List<SemanticRetrievalResult>(candidates.Count);
 
         for (int i = 0; i < candidates.Count; i++)

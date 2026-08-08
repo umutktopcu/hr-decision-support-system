@@ -8,12 +8,21 @@ namespace HrDecisionSupport.Application.SemanticMatching.Embeddings;
 public interface IEmbeddingProvider
 {
     /// <summary>
-    /// Generates embeddings for a batch of text documents.
+    /// Generates an embedding for a single query text.
+    /// Implementations may apply model-specific query instructions internally.
+    /// The returned vector is expected to be normalized.
+    /// </summary>
+    Task<Result<float[]>> GenerateQueryEmbeddingAsync(
+        string queryText,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generates embeddings for a batch of document texts.
     /// Empty documents should not be passed to this method.
     /// The returned list will have the same count and order as the input list.
-    /// Vectors are not guaranteed to be normalized.
+    /// Vectors are expected to be normalized.
     /// </summary>
-    Task<Result<IReadOnlyList<float[]>>> GenerateEmbeddingsAsync(
-        IReadOnlyList<string> texts,
+    Task<Result<IReadOnlyList<float[]>>> GenerateDocumentEmbeddingsAsync(
+        IReadOnlyList<string> documentTexts,
         CancellationToken cancellationToken = default);
 }
