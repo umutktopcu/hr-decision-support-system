@@ -18,6 +18,8 @@ using HrDecisionSupport.Application.Profiles.WorkModes;
 using HrDecisionSupport.Application.CandidateImports;
 using HrDecisionSupport.Application.Requisitions;
 using HrDecisionSupport.Application.Requisitions.Requirements;
+using HrDecisionSupport.Application.MatchingExecution;
+using HrDecisionSupport.Application.MatchingExecution.Models;
 using HrDecisionSupport.Application.PreScreening;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -50,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<IPersonSectorExperienceService, PersonSectorExperienceService>();
         services.AddScoped<IPersonWorkModeExperienceService, PersonWorkModeExperienceService>();
         services.AddScoped<IJobRequisitionService, JobRequisitionService>();
+        services.AddScoped<IJobMatchingExecutionService, JobMatchingExecutionService>();
         services.AddScoped<IJobRequisitionRequirementService, JobRequisitionRequirementService>();
         services.AddScoped<ICandidateEvaluationCaseService, CandidateEvaluationCaseService>();
         services.AddScoped<CandidateImportService>();
@@ -97,6 +100,7 @@ public static class DependencyInjection
         AddValidator<ChangeJobRequisitionStatusRequest, ChangeJobRequisitionStatusRequestValidator>(services);
         AddValidator<CreateJobRequisitionRequirementRequest, CreateJobRequisitionRequirementRequestValidator>(services);
         AddValidator<UpdateJobRequisitionRequirementRequest, UpdateJobRequisitionRequirementRequestValidator>(services);
+        AddValidator<JobMatchingRequest, JobMatchingRequestValidator>(services);
         AddValidator<CreateCandidateEvaluationCaseRequest, CreateCandidateEvaluationCaseRequestValidator>(services);
         AddValidator<UpdateCandidateEvaluationCaseRequest, UpdateCandidateEvaluationCaseRequestValidator>(services);
         AddValidator<ChangeCandidateEvaluationCaseStatusRequest, ChangeCandidateEvaluationCaseStatusRequestValidator>(services);

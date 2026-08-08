@@ -8,6 +8,8 @@ using HrDecisionSupport.Application.SemanticMatching.Orchestration;
 using HrDecisionSupport.Application.SemanticMatching.Orchestration.Models;
 using HrDecisionSupport.Application.SemanticMatching.Reranking;
 using HrDecisionSupport.Application.SemanticMatching.Reranking.Models;
+using HrDecisionSupport.Application.PreScreening.Models;
+using HrDecisionSupport.Domain.Enums;
 using Moq;
 using Xunit;
 
@@ -54,12 +56,13 @@ public class CandidateJobFitRankingServiceTests
 
         var b3Result = new CandidateSemanticMatchingBatchResult(
             JobRequisitionId: jobId,
-            TotalApplicants: 5,
+            TotalApplicants: 10,
             PreScreeningEligibleCount: 5,
-            PreScreeningRejectedCount: 0,
+            PreScreeningRejectedCount: 5,
             RequestedTopN: 10,
             RetrievedCount: 0,
-            JobDocumentText: "Job Doc",
+            JobDocumentText: "Test Job",
+            PreScreeningResults: Array.Empty<CandidatePreScreeningResult>(),
             Results: Array.Empty<CandidateSemanticMatchingResult>()
         );
 
@@ -93,6 +96,7 @@ public class CandidateJobFitRankingServiceTests
             RequestedTopN: 10,
             RetrievedCount: 3,
             JobDocumentText: "Job Doc",
+            PreScreeningResults: Array.Empty<CandidatePreScreeningResult>(),
             Results: new[] { 
                 new CandidateSemanticMatchingResult(c1, 0.9, "Doc", 1, 2, 0.5m, 1, 1, 1.0m),
                 new CandidateSemanticMatchingResult(c2, 0.8, "Doc", 2, 2, 1.0m, 0, 1, 0.0m),
@@ -156,8 +160,9 @@ public class CandidateJobFitRankingServiceTests
             PreScreeningEligibleCount: 2,
             PreScreeningRejectedCount: 0,
             RequestedTopN: 10,
-            RetrievedCount: 2,
+            RetrievedCount: 4,
             JobDocumentText: "Job Doc",
+            PreScreeningResults: Array.Empty<CandidatePreScreeningResult>(),
             Results: new[] { 
                 new CandidateSemanticMatchingResult(c1, 0.9, "Doc", 2, 2, 1.0m, 1, 1, 1.0m),
                 new CandidateSemanticMatchingResult(c2, 0.8, "Doc", 2, 2, 1.0m, 1, 1, 1.0m),
@@ -206,6 +211,7 @@ public class CandidateJobFitRankingServiceTests
             RequestedTopN: 10,
             RetrievedCount: 2,
             JobDocumentText: "Job Doc",
+            PreScreeningResults: Array.Empty<CandidatePreScreeningResult>(),
             Results: new[] { 
                 new CandidateSemanticMatchingResult(c1, 0.9, "Doc", 2, 2, 1.0m, 1, 1, 1.0m),
                 new CandidateSemanticMatchingResult(c2, 0.8, "Doc", 2, 2, 1.0m, 1, 1, 1.0m),
