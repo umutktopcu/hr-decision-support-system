@@ -20,8 +20,7 @@ public sealed class CreateJobRequisitionRequestValidator
             instance.OpeningsCount,
             instance.MinimumRelevantExperienceMonths,
             instance.OpenedAt,
-            instance.MandatorySkillCoverageThreshold,
-            instance.OverallSkillCoverageThreshold);
+            instance.MandatorySkillCoverageThreshold);
         return RequestValidation.ToResult(errors);
     }
 }
@@ -38,8 +37,7 @@ internal static class JobRequisitionValidation
         int openingsCount,
         int? minimumRelevantExperienceMonths,
         DateOnly openedAt,
-        decimal? mandatorySkillCoverageThreshold,
-        decimal? overallSkillCoverageThreshold)
+        decimal? mandatorySkillCoverageThreshold)
     {
         RequestValidation.RequiredString(
             errors, requisitionCode, 50, "RequisitionCode", "requisition_code");
@@ -80,14 +78,6 @@ internal static class JobRequisitionValidation
                 "mandatory_threshold_invalid",
                 "MandatorySkillCoverageThreshold must be between 0 and 1.",
                 "MandatorySkillCoverageThreshold"));
-        }
-
-        if (overallSkillCoverageThreshold.HasValue && (overallSkillCoverageThreshold.Value < 0 || overallSkillCoverageThreshold.Value > 1))
-        {
-            errors.Add(new(
-                "overall_threshold_invalid",
-                "OverallSkillCoverageThreshold must be between 0 and 1.",
-                "OverallSkillCoverageThreshold"));
         }
     }
 

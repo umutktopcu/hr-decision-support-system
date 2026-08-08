@@ -54,6 +54,10 @@ public static class DependencyInjection
         services.AddScoped<ICandidateEvaluationCaseService, CandidateEvaluationCaseService>();
         services.AddScoped<CandidateImportService>();
         services.AddScoped<ICandidatePreScreeningService, CandidatePreScreeningService>();
+        services.AddScoped<HrDecisionSupport.Application.SemanticMatching.Orchestration.ICandidateSemanticMatchingService, HrDecisionSupport.Application.SemanticMatching.Orchestration.CandidateSemanticMatchingService>();
+        services.AddScoped<HrDecisionSupport.Application.SemanticMatching.Reranking.ICandidateJobFitRankingService, HrDecisionSupport.Application.SemanticMatching.Reranking.CandidateJobFitRankingService>();
+        services.AddScoped<HrDecisionSupport.Application.SemanticMatching.Documents.CandidateDocumentBuilder>();
+        services.AddScoped<HrDecisionSupport.Application.SemanticMatching.Documents.JobDocumentBuilder>();
 
         services.AddScoped<CreateEmployeeRequestValidator>();
         services.AddScoped<IValidator<CreateEmployeeRequest>>(serviceProvider =>

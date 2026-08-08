@@ -22,9 +22,6 @@ public class JobRequisitionConfiguration : IEntityTypeConfiguration<JobRequisiti
             table.HasCheckConstraint(
                 "ck_job_requisitions_mandatory_skill_threshold",
                 "mandatory_skill_coverage_threshold IS NULL OR (mandatory_skill_coverage_threshold >= 0 AND mandatory_skill_coverage_threshold <= 1)");
-            table.HasCheckConstraint(
-                "ck_job_requisitions_overall_skill_threshold",
-                "overall_skill_coverage_threshold IS NULL OR (overall_skill_coverage_threshold >= 0 AND overall_skill_coverage_threshold <= 1)");
         });
         builder.HasKey(requisition => requisition.Id);
 
@@ -37,7 +34,6 @@ public class JobRequisitionConfiguration : IEntityTypeConfiguration<JobRequisiti
         builder.Property(requisition => requisition.OpeningsCount).IsRequired();
         builder.Property(requisition => requisition.MinimumRelevantExperienceMonths).IsRequired(false);
         builder.Property(requisition => requisition.MandatorySkillCoverageThreshold).HasPrecision(5, 4).IsRequired(false);
-        builder.Property(requisition => requisition.OverallSkillCoverageThreshold).HasPrecision(5, 4).IsRequired(false);
         builder.Property(requisition => requisition.JobRequisitionStatus)
             .HasConversion<int>()
             .IsRequired();
@@ -50,18 +46,39 @@ public class JobRequisitionConfiguration : IEntityTypeConfiguration<JobRequisiti
             .HasColumnType("timestamp with time zone")
             .IsRequired(false);
 
+        builder.Property(requisition => requisition.MinimumEducationLevel).IsRequired(false);
+        builder.Property(requisition => requisition.WorkModeId).IsRequired(false);
+        builder.Property(requisition => requisition.WorkModeHardFilterEnabled).IsRequired();
+
         builder.HasIndex(requisition => requisition.RequisitionCode).IsUnique();
         builder.HasIndex(requisition => requisition.DepartmentId);
         builder.HasIndex(requisition => requisition.PositionId);
 
+        // Foreign keys and relationships
         builder.HasOne(requisition => requisition.Department)
             .WithMany(department => department.JobRequisitions)
             .HasForeignKey(requisition => requisition.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(requisition => requisition.Position)
             .WithMany(position => position.JobRequisitions)
             .HasForeignKey(requisition => requisition.PositionId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(requisition => requisition.WorkMode)
+            .WithMany()
+            .HasForeignKey(requisition => requisition.WorkModeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(requisition => requisition.Requirements)
+            .WithOne(requirement => requirement.JobRequisition)
+            .HasForeignKey(requirement => requirement.JobRequisitionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(requisition => requisition.LanguageRequirements)
+            .WithOne(requirement => requirement.JobRequisition)
+            .HasForeignKey(requirement => requirement.JobRequisitionId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.UseSnakeCaseColumns();
     }

@@ -76,16 +76,21 @@ class Program
         {
             Console.WriteLine($"Zaten '{dummyCode}' kodlu bir JobRequisition mevcut: {existingDummy.Id}");
             dummyId = existingDummy.Id;
+            existingDummy.Title = "Backend Developer";
+            existingDummy.Description = "C# ve .NET Core kullanarak backend servisleri ve API'ler geliştirecek bir Backend Developer arıyoruz. Adayın sürdürülebilir backend uygulamaları geliştirmesi, mevcut servislerin geliştirilmesine katkı sağlaması ve yazılım geliştirme süreçlerinde ekip ile birlikte çalışması beklenmektedir. ASP.NET Core deneyimi tercih sebebidir.";
+            existingDummy.MinimumRelevantExperienceMonths = 24;
+            await dbContext.SaveChangesAsync();
+            Console.WriteLine("Dummy JobRequisition semantic alanları başarıyla güncellendi.");
         }
         else
         {
             Console.WriteLine("Uygun dummy Requisition bulunamadı, yenisi oluşturuluyor...");
             var request = new CreateJobRequisitionRequest(
                 RequisitionCode: dummyCode,
-                Title: "Backend Developer (Dummy)",
+                Title: "Backend Developer",
                 DepartmentId: itDept.Id,
                 PositionId: backendPos.Id,
-                Description: "Dummy pre-screening requisition",
+                Description: "C# ve .NET Core kullanarak backend servisleri ve API'ler geliştirecek bir Backend Developer arıyoruz. Adayın sürdürülebilir backend uygulamaları geliştirmesi, mevcut servislerin geliştirilmesine katkı sağlaması ve yazılım geliştirme süreçlerinde ekip ile birlikte çalışması beklenmektedir. ASP.NET Core deneyimi tercih sebebidir.",
                 OpeningsCount: 1,
                 MinimumRelevantExperienceMonths: 24,
                 OpenedAt: DateOnly.FromDateTime(DateTime.Today),
