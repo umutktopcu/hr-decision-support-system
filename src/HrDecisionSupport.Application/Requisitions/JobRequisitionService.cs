@@ -33,11 +33,11 @@ public sealed class JobRequisitionService : IJobRequisitionService
     public async Task<Result<IReadOnlyList<JobRequisitionDto>>> ListAsync(
         CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.JobRequisitions.AsNoTracking();
-        var items = await ProjectRequisitions(query)
+        var query = _dbContext.JobRequisitions.AsNoTracking()
             .OrderByDescending(item => item.JobRequisitionStatus == JobRequisitionStatus.Open)
             .ThenByDescending(item => item.OpenedAt)
-            .ThenBy(item => item.Id)
+            .ThenBy(item => item.Id);
+        var items = await ProjectRequisitions(query)
             .ToListAsync(cancellationToken);
         return Result<IReadOnlyList<JobRequisitionDto>>.Success(items);
     }
@@ -275,7 +275,6 @@ public sealed class JobRequisitionService : IJobRequisitionService
             {
                 entity.Requirements.Add(new JobRequisitionRequirement
                 {
-                    Id = Guid.NewGuid(),
                     JobRequisitionId = entity.Id,
                     CompetencyId = req.CompetencyId,
                     MinimumExperienceMonths = req.MinimumExperienceMonths,
@@ -295,7 +294,6 @@ public sealed class JobRequisitionService : IJobRequisitionService
             {
                 entity.LanguageRequirements.Add(new JobLanguageRequirement
                 {
-                    Id = Guid.NewGuid(),
                     JobRequisitionId = entity.Id,
                     LanguageId = req.LanguageId,
                     MinimumProficiency = req.MinimumProficiency,
