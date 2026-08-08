@@ -3,6 +3,7 @@ using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Application.PreScreening.Evaluators;
 using HrDecisionSupport.Application.PreScreening.Models;
 using HrDecisionSupport.Application.PreScreening.Policy;
+using HrDecisionSupport.Domain.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace HrDecisionSupport.Application.PreScreening;
@@ -152,10 +153,7 @@ public sealed class CandidatePreScreeningService : ICandidatePreScreeningService
         // V1 Mapping: Backend Experience mapping only for BACKEND_DEVELOPER
         if (job.Position.Code == "BACKEND_DEVELOPER")
         {
-            var latestSnapshot = candidate.CareerFeatureSnapshots
-                .OrderByDescending(s => Version.TryParse(s.FeatureSchemaVersion, out var v) ? v : new Version(0, 0))
-                .ThenByDescending(s => s.CalculatedAtUtc)
-                .FirstOrDefault();
+            var latestSnapshot = candidate.GetLatestFeatureSnapshot();
 
             if (latestSnapshot is not null)
             {
