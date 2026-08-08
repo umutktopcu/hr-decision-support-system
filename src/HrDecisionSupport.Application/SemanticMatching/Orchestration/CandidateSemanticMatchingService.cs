@@ -84,6 +84,7 @@ public class CandidateSemanticMatchingService : ICandidateSemanticMatchingServic
                 RequestedTopN: topN,
                 RetrievedCount: 0,
                 JobDocumentText: jobDocumentText,
+                PreScreeningResults: batch.Results,
                 Results: Array.Empty<CandidateSemanticMatchingResult>()
             ));
         }
@@ -202,6 +203,7 @@ public class CandidateSemanticMatchingService : ICandidateSemanticMatchingServic
             RequestedTopN: topN,
             RetrievedCount: finalResults.Count,
             JobDocumentText: jobDocumentText,
+            PreScreeningResults: batch.Results,
             Results: finalResults
         );
 

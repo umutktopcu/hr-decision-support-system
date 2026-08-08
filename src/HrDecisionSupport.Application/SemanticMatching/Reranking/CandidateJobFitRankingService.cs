@@ -51,6 +51,7 @@ public class CandidateJobFitRankingService : ICandidateJobFitRankingService
                 RequestedFinalTopN: finalTopN,
                 FinalCandidateCount: 0,
                 JobDocumentText: batch.JobDocumentText,
+                PreScreeningResults: batch.PreScreeningResults,
                 Results: Array.Empty<CandidateJobFitRankingResult>()
             ));
         }
@@ -148,6 +149,7 @@ public class CandidateJobFitRankingService : ICandidateJobFitRankingService
             RequestedFinalTopN: finalTopN,
             FinalCandidateCount: sortedResults.Count,
             JobDocumentText: batch.JobDocumentText,
+            PreScreeningResults: batch.PreScreeningResults,
             Results: sortedResults
         );
 
