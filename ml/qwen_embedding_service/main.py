@@ -20,6 +20,8 @@ This service does NOT:
 
 import os
 import logging
+import hashlib
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
@@ -53,6 +55,44 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _model: SentenceTransformer | None = None
+
+# Bounded LRU Cache for Embeddings
+# Limit is set to 10,000 entries. Since a 1024-dimension float array is ~4KB,
+# 10,000 entries take about 40MB of memory which is negligible and comfortably
+# covers thousands of candidate CVs along with job queries.
+CACHE_LIMIT = int(os.getenv("QWEN_EMBEDDING_CACHE_LIMIT", "10000"))
+
+class LRUCache:
+    def __init__(self, capacity: int):
+        self.cache = OrderedDict()
+        self.capacity = capacity
+        self.hits = 0
+        self.misses = 0
+
+    def get(self, key: str):
+        if key not in self.cache:
+            self.misses += 1
+            return None
+        self.cache.move_to_end(key)
+        self.hits += 1
+        return self.cache[key]
+
+    def put(self, key: str, value: list[float]):
+        self.cache[key] = value
+        self.cache.move_to_end(key)
+        if len(self.cache) > self.capacity:
+            self.cache.popitem(last=False)
+
+    def clear(self):
+        self.cache.clear()
+        self.hits = 0
+        self.misses = 0
+
+    @property
+    def entries(self):
+        return len(self.cache)
+
+_embedding_cache = LRUCache(CACHE_LIMIT)
 
 
 @asynccontextmanager
@@ -99,11 +139,19 @@ class HealthResponse(BaseModel):
     model: str
     device: str
     dimension: int
+    cacheEntries: int = 0
+    cacheHits: int = 0
+    cacheMisses: int = 0
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _generate_cache_key(text: str, input_type: str) -> str:
+    """Generate a deterministic SHA-256 cache key including all inference-relevant inputs."""
+    key_input = f"{input_type}::{text}".encode("utf-8")
+    return hashlib.sha256(key_input).hexdigest()
 
 
 def _validate_vectors(vectors: list[list[float]], expected_dim: int) -> None:
@@ -161,6 +209,9 @@ def health() -> HealthResponse:
         model=MODEL_ID,
         device=DEVICE,
         dimension=EMBEDDING_DIMENSION,
+        cacheEntries=_embedding_cache.entries,
+        cacheHits=_embedding_cache.hits,
+        cacheMisses=_embedding_cache.misses
     )
 
 
@@ -175,7 +226,42 @@ def embeddings(request: EmbeddingRequest) -> EmbeddingResponse:
     prompt = QUERY_INSTRUCTION if request.input_type == "query" else None
 
     try:
-        vecs = _encode(request.texts, prompt=prompt)
+        keys = [_generate_cache_key(t, request.input_type) for t in request.texts]
+
+        miss_texts = []
+        miss_indices = []
+        vecs = [None] * len(request.texts)
+
+        for i, (key, text) in enumerate(zip(keys, request.texts)):
+            cached_vec = _embedding_cache.get(key)
+            if cached_vec is not None:
+                vecs[i] = cached_vec
+            else:
+                # Handle duplicate texts within the same batch
+                if text not in miss_texts:
+                    miss_texts.append(text)
+                    miss_indices.append([i])
+                else:
+                    idx = miss_texts.index(text)
+                    miss_indices[idx].append(i)
+
+        if miss_texts:
+            miss_vecs = _encode(miss_texts, prompt=prompt)
+            for i, text_vec in enumerate(miss_vecs):
+                key = _generate_cache_key(miss_texts[i], request.input_type)
+                _embedding_cache.put(key, text_vec)
+                for orig_idx in miss_indices[i]:
+                    vecs[orig_idx] = text_vec
+
+        # Log telemetry
+        logger.info(
+            "Embedding inference complete: inputs=%d, cache_hits=%d, cache_misses=%d, inference_count=%d",
+            len(request.texts),
+            len(request.texts) - len(miss_texts),
+            len(miss_texts),
+            len(miss_texts)
+        )
+
     except Exception as exc:
         logger.exception("Embedding inference failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"Inference error: {exc}") from exc
