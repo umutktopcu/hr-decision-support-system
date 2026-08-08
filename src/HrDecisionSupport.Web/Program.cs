@@ -1,4 +1,5 @@
 using HrDecisionSupport.Application;
+using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddApplication();
+builder.Services.AddHttpClient<IMlPredictionService, HrDecisionSupport.Infrastructure.MlPredictionService>();
 builder.Services.AddInfrastructure(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("PostgreSql")

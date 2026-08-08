@@ -1,4 +1,5 @@
-﻿@{
+﻿@model IReadOnlyList<HrDecisionSupport.Application.Employees.Dtos.EmployeeListItemDto>
+@{
     ViewData["Title"] = "Çalışan Yönetimi";
 }
 
@@ -12,34 +13,48 @@
 <!-- Filtreleme Alanı -->
 <div class="card section-card shadow-sm mb-4">
     <div class="card-body bg-light">
-        <form class="row g-3 align-items-end" onsubmit="event.preventDefault(); filterEmployees();">
+        
+        <!-- method="get" ve action="/Employee/Index" eklenerek Controller'a bağlandı -->
+        <form method="get" action="/Employee/Index" class="row g-3 align-items-end">
+            
             <div class="col-md-4">
                 <label class="form-label text-muted small">İsim veya Pozisyon Ara</label>
-                <!-- EKLENDİ: id="searchInput" -->
-                <input type="text" id="searchInput" class="form-control" placeholder="Örn: Ahmet Yılmaz...">
+                <!-- name="search" eklendi -->
+                <input type="text" name="search" class="form-control" placeholder="Örn: Ahmet Yılmaz...">
             </div>
+            
             <div class="col-md-3">
                 <label class="form-label text-muted small">Departman</label>
-                <select id="departmentSelect" class="form-select">
-                    <option value="">Tümü</option>
+                <!-- name="department" eklendi -->
+                <select name="department" class="form-select">
+                    <option value="Tümü">Tümü</option>
                     <option value="Yazılım">Yazılım</option>
                     <option value="İnsan Kaynakları">İnsan Kaynakları</option>
                     <option value="Satış & Pazarlama">Satış & Pazarlama</option>
                 </select>
             </div>
+            
             <div class="col-md-3">
-                <label class="form-label text-muted small">Çalışma Şekli</label>
-                <select id="workTypeSelect" class="form-select">
-                    <option value="">Tümü</option>
-                    <option value="Uzaktan">Uzaktan (Remote)</option>
-                    <option value="Hibrit">Hibrit</option>
-                    <option value="Ofis">Ofis</option>
-                </select>
-            </div>
+    <label class="form-label text-muted small mb-1">Çalışma Durumu</label>
+    <select name="status" class="form-select">
+        <!-- Eğer URL'de bir şey yoksa veya 'Tümü' varsa bu seçili kalır -->
+        <option value="Tümü" selected="@(Context.Request.Query["status"] == "Tümü" || string.IsNullOrEmpty(Context.Request.Query["status"]))">Tümü</option>
+        
+        <!-- Eğer URL'de 'Aktif' varsa bu seçili kalır -->
+        <option value="Aktif" selected="@(Context.Request.Query["status"] == "Aktif")">Aktif Çalışanlar</option>
+        
+        <!-- Eğer URL'de 'Eski' varsa bu seçili kalır -->
+        <option value="Eski" selected="@(Context.Request.Query["status"] == "Eski")">Eski Çalışanlar</option>
+    </select>
+</div>
+            
             <div class="col-md-2">
-                <button type="button" class="btn btn-primary" onclick="filterEmployees()">Ara</button>
+                <!-- type="button" yerine type="submit" yapıldı ve JS kodları silindi -->
+                <button type="submit" class="btn btn-primary w-100">Ara</button>
             </div>
+            
         </form>
+        
     </div>
 </div>
 
@@ -47,45 +62,48 @@
 <div class="card section-card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="table table-hover align-middle mt-4">
+                <thead>
                     <tr>
-                        <th class="ps-4">Çalışan Adı</th>
+                        <th>Çalışma Adı</th>
                         <th>Departman</th>
                         <th>Unvan</th>
-                        <th>Çalışma Şekli</th>
-                        <th class="text-end pe-4">İşlemler</th>
+                        <!-- Başlıklar ortalandı -->
+                        <th class="text-center">Çalışma Durumu</th>
+                        <th class="text-center">İşlemler</th>
                     </tr>
                 </thead>
-                <!-- EKLENDİ: id="employeeTableBody" -->
-                <tbody id="employeeTableBody">
-                    <tr>
-                        <td class="ps-4 fw-bold">Mehmet Öz</td>
-                        <td>Yazılım</td>
-                        <td>Kıdemli Backend Geliştirici</td>
-                        <td><span class="badge bg-info text-dark">Uzaktan</span></td>
-                        <td class="text-end pe-4">
-                            <a asp-action="Details" asp-route-id="1" class="btn btn-sm btn-outline-primary">Detay</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="ps-4 fw-bold">Elif Yılmaz</td>
-                        <td>İnsan Kaynakları</td>
-                        <td>İK Uzmanı</td>
-                        <td><span class="badge bg-secondary">Hibrit</span></td>
-                        <td class="text-end pe-4">
-                            <a asp-action="Details" asp-route-id="2" class="btn btn-sm btn-outline-primary">Detay</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="ps-4 fw-bold">Ayşe Demir</td>
-                        <td>Satış & Pazarlama</td>
-                        <td>Bölge Satış Müdürü</td>
-                        <td><span class="badge bg-success">Ofis</span></td>
-                        <td class="text-end pe-4">
-                            <a asp-action="Details" asp-route-id="3" class="btn btn-sm btn-outline-primary">Detay</a>
-                        </td>
-                    </tr>
+                <tbody>
+                    @foreach (var employee in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@(employee.FirstName != null ? $"{employee.FirstName} {employee.LastName}" : $"Çalışan ({employee.EmployeeCode})")</strong><br>
+                                <small style="color: #6c757d;">Gizli / Anonim Profil</small>
+                            </td>
+
+                            <td>@(employee.CurrentDepartmentName ?? "-")</td>
+
+                            <td>@(employee.CurrentPositionName ?? "-")</td>
+
+                            <!-- Durum Sütunu Ortalandı ve Türkçeleştirildi -->
+                            <td class="text-center">
+                                @if (employee.EmploymentStatus.ToString() == "Active")
+                                {
+                                    <span class="badge" style="background-color: #17a2b8; color: white; padding: 5px 10px; border-radius: 5px;">Aktif Çalışan</span>
+                                }
+                                else
+                                {
+                                    <span class="badge" style="background-color: #6c757d; color: white; padding: 5px 10px; border-radius: 5px;">Eski Çalışan</span>
+                                }
+                            </td>
+
+                            <!-- İşlemler Butonu Ortalandı -->
+                            <td class="text-center">
+                                <a href="/Employee/Details/@employee.Id" class="btn btn-outline-primary btn-sm" style="border: 1px solid #007bff; padding: 4px 15px; border-radius: 4px; text-decoration: none;">Detay</a>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
