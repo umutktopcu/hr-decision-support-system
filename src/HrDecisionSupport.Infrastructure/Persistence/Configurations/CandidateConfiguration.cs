@@ -16,6 +16,15 @@ public class CandidateConfiguration : IEntityTypeConfiguration<Candidate>
         builder.Property(candidate => candidate.CandidateCode).HasMaxLength(50).IsRequired();
         builder.Property(candidate => candidate.CandidateSource).HasConversion<int>().IsRequired();
         builder.Property(candidate => candidate.ExternalCandidateId).HasMaxLength(200).IsRequired(false);
+        builder.Property(candidate => candidate.ProfessionalTitle).HasMaxLength(200).IsRequired(false);
+        builder.Property(candidate => candidate.AvailabilityDays).IsRequired(false);
+
+        builder.ToTable(table =>
+        {
+            table.HasCheckConstraint(
+                "ck_candidates_availability_days_non_negative",
+                "availability_days IS NULL OR availability_days >= 0");
+        });
 
         builder.HasIndex(candidate => candidate.PersonId).IsUnique();
         builder.HasIndex(candidate => candidate.CandidateCode).IsUnique();

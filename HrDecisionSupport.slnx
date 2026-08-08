@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/HrDecisionSupport.Application/HrDecisionSupport.Application.csproj" />
+    <Project Path="src/HrDecisionSupport.CandidateImportRunner/HrDecisionSupport.CandidateImportRunner.csproj" />
     <Project Path="src/HrDecisionSupport.Domain/HrDecisionSupport.Domain.csproj" />
     <Project Path="src/HrDecisionSupport.Infrastructure/HrDecisionSupport.Infrastructure.csproj" />
     <Project Path="src/HrDecisionSupport.EmployeeImportDryRun/HrDecisionSupport.EmployeeImportDryRun.csproj" />

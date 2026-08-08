@@ -29,6 +29,10 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<int?>("AvailabilityDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("availability_days");
+
                     b.Property<string>("CandidateCode")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -48,6 +52,11 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("person_id");
 
+                    b.Property<string>("ProfessionalTitle")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("professional_title");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CandidateCode")
@@ -56,7 +65,80 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                     b.HasIndex("PersonId")
                         .IsUnique();
 
-                    b.ToTable("candidates", (string)null);
+                    b.ToTable("candidates", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_candidates_availability_days_non_negative", "availability_days IS NULL OR availability_days >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.CandidateCareerFeatureSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("BackendExperienceMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("backend_experience_months");
+
+                    b.Property<DateTime>("CalculatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("calculated_at_utc");
+
+                    b.Property<Guid>("CandidateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("candidate_id");
+
+                    b.Property<int?>("CompanyChangeCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_change_count");
+
+                    b.Property<string>("FeatureSchemaVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("feature_schema_version");
+
+                    b.Property<decimal?>("JobChangeRate")
+                        .HasPrecision(12, 6)
+                        .HasColumnType("numeric(12,6)")
+                        .HasColumnName("job_change_rate");
+
+                    b.Property<int?>("LastPreviousCompanyStayMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_previous_company_stay_months");
+
+                    b.Property<int?>("LongestPreviousJobMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("longest_previous_job_months");
+
+                    b.Property<decimal?>("PreviousCompanyAverageStayMonths")
+                        .HasPrecision(6, 1)
+                        .HasColumnType("numeric(6,1)")
+                        .HasColumnName("previous_company_average_stay_months");
+
+                    b.Property<int?>("ShortestPreviousJobMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("shortest_previous_job_months");
+
+                    b.Property<int?>("TotalExperienceMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_experience_months");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CandidateId", "FeatureSchemaVersion")
+                        .IsUnique();
+
+                    b.ToTable("candidate_career_feature_snapshots", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_candidate_career_feature_snapshots_non_negative", "(total_experience_months IS NULL OR total_experience_months >= 0) AND (backend_experience_months IS NULL OR backend_experience_months >= 0) AND (previous_company_average_stay_months IS NULL OR previous_company_average_stay_months >= 0) AND (shortest_previous_job_months IS NULL OR shortest_previous_job_months >= 0) AND (longest_previous_job_months IS NULL OR longest_previous_job_months >= 0) AND (last_previous_company_stay_months IS NULL OR last_previous_company_stay_months >= 0) AND (company_change_count IS NULL OR company_change_count >= 0) AND (job_change_rate IS NULL OR job_change_rate >= 0)");
+
+                            t.HasCheckConstraint("ck_candidate_feature_backend_lte_total", "backend_experience_months IS NULL OR total_experience_months IS NULL OR backend_experience_months <= total_experience_months");
+
+                            t.HasCheckConstraint("ck_candidate_feature_shortest_lte_longest", "shortest_previous_job_months IS NULL OR longest_previous_job_months IS NULL OR shortest_previous_job_months <= longest_previous_job_months");
+                        });
                 });
 
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.CandidateEvaluationCase", b =>
@@ -108,6 +190,31 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("candidate_evaluation_cases", (string)null);
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.CandidateWorkModePreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CandidateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("candidate_id");
+
+                    b.Property<Guid>("WorkModeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_mode_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkModeId");
+
+                    b.HasIndex("CandidateId", "WorkModeId")
+                        .IsUnique();
+
+                    b.ToTable("candidate_work_mode_preferences", (string)null);
                 });
 
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.Certificate", b =>
@@ -668,6 +775,15 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("job_requisition_status");
 
+                    b.Property<decimal?>("MandatorySkillCoverageThreshold")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)")
+                        .HasColumnName("mandatory_skill_coverage_threshold");
+
+                    b.Property<int?>("MinimumRelevantExperienceMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("minimum_relevant_experience_months");
+
                     b.Property<DateOnly>("OpenedAt")
                         .HasColumnType("date")
                         .HasColumnName("opened_at");
@@ -675,6 +791,11 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                     b.Property<int>("OpeningsCount")
                         .HasColumnType("integer")
                         .HasColumnName("openings_count");
+
+                    b.Property<decimal?>("OverallSkillCoverageThreshold")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)")
+                        .HasColumnName("overall_skill_coverage_threshold");
 
                     b.Property<Guid>("PositionId")
                         .HasColumnType("uuid")
@@ -709,7 +830,13 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_job_requisitions_closed_at_not_before_opened_at", "closed_at IS NULL OR closed_at >= opened_at");
 
+                            t.HasCheckConstraint("ck_job_requisitions_mandatory_skill_threshold", "mandatory_skill_coverage_threshold IS NULL OR (mandatory_skill_coverage_threshold >= 0 AND mandatory_skill_coverage_threshold <= 1)");
+
+                            t.HasCheckConstraint("ck_job_requisitions_min_relevant_experience", "minimum_relevant_experience_months IS NULL OR minimum_relevant_experience_months >= 0");
+
                             t.HasCheckConstraint("ck_job_requisitions_openings_count", "openings_count > 0");
+
+                            t.HasCheckConstraint("ck_job_requisitions_overall_skill_threshold", "overall_skill_coverage_threshold IS NULL OR (overall_skill_coverage_threshold >= 0 AND overall_skill_coverage_threshold <= 1)");
                         });
                 });
 
@@ -1225,6 +1352,17 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                     b.Navigation("Person");
                 });
 
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.CandidateCareerFeatureSnapshot", b =>
+                {
+                    b.HasOne("HrDecisionSupport.Domain.Entities.Candidate", "Candidate")
+                        .WithMany("CareerFeatureSnapshots")
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Candidate");
+                });
+
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.CandidateEvaluationCase", b =>
                 {
                     b.HasOne("HrDecisionSupport.Domain.Entities.Candidate", "Candidate")
@@ -1242,6 +1380,25 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
                     b.Navigation("Candidate");
 
                     b.Navigation("JobRequisition");
+                });
+
+            modelBuilder.Entity("HrDecisionSupport.Domain.Entities.CandidateWorkModePreference", b =>
+                {
+                    b.HasOne("HrDecisionSupport.Domain.Entities.Candidate", "Candidate")
+                        .WithMany("WorkModePreferences")
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HrDecisionSupport.Domain.Entities.WorkMode", "WorkMode")
+                        .WithMany("CandidateWorkModePreferences")
+                        .HasForeignKey("WorkModeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Candidate");
+
+                    b.Navigation("WorkMode");
                 });
 
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.EducationRecord", b =>
@@ -1525,7 +1682,11 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.Candidate", b =>
                 {
+                    b.Navigation("CareerFeatureSnapshots");
+
                     b.Navigation("EvaluationCases");
+
+                    b.Navigation("WorkModePreferences");
                 });
 
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.Certificate", b =>
@@ -1629,6 +1790,8 @@ namespace HrDecisionSupport.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HrDecisionSupport.Domain.Entities.WorkMode", b =>
                 {
+                    b.Navigation("CandidateWorkModePreferences");
+
                     b.Navigation("PersonWorkModeExperiences");
                 });
 #pragma warning restore 612, 618

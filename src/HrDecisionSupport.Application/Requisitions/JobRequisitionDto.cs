@@ -14,9 +14,12 @@ public sealed record JobRequisitionDto(
     string PositionName,
     string? Description,
     int OpeningsCount,
+    int? MinimumRelevantExperienceMonths,
     JobRequisitionStatus JobRequisitionStatus,
     DateOnly OpenedAt,
     DateOnly? ClosedAt,
+    decimal? MandatorySkillCoverageThreshold,
+    decimal? OverallSkillCoverageThreshold,
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc,
     int RequirementCount);

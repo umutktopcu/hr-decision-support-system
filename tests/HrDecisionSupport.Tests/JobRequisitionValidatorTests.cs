@@ -11,7 +11,7 @@ public class JobRequisitionValidatorTests
     public void CreateValidator_ValidRequest_IsValid()
     {
         var result = new CreateJobRequisitionRequestValidator().Validate(
-            new("R", "T", Guid.NewGuid(), Guid.NewGuid(), null, 1, new(2026, 1, 1)));
+            new("R", "T", Guid.NewGuid(), Guid.NewGuid(), null, 1, null, new(2026, 1, 1), null));
         Assert.True(result.IsValid);
     }
 
@@ -19,7 +19,7 @@ public class JobRequisitionValidatorTests
     public void CreateValidator_MultipleInvalidFields_ReturnsMachineReadableErrorsAndProperties()
     {
         var result = new CreateJobRequisitionRequestValidator().Validate(
-            new(" ", "", Guid.Empty, Guid.Empty, " ", 0, default));
+            new(" ", "", Guid.Empty, Guid.Empty, " ", 0, null, default, null));
         AssertErrors(
             result.Errors,
             ("requisition_code_required", "RequisitionCode"),
@@ -37,7 +37,7 @@ public class JobRequisitionValidatorTests
     public void CreateValidator_RequisitionCodeLengthHonorsConfigurationBoundary(int length, bool valid)
     {
         var result = new CreateJobRequisitionRequestValidator().Validate(
-            new(new string('R', length), "T", Guid.NewGuid(), Guid.NewGuid(), null, 1, new(2026, 1, 1)));
+            new(new string('R', length), "T", Guid.NewGuid(), Guid.NewGuid(), null, 1, null, new(2026, 1, 1), null));
         Assert.Equal(valid, result.IsValid);
         if (!valid) Assert.Contains(result.Errors, error => error.Code == "requisition_code_max_length");
     }
@@ -52,7 +52,7 @@ public class JobRequisitionValidatorTests
         var title = length <= 251 ? new string('T', length) : "T";
         var description = length >= 2000 ? new string('D', length) : null;
         var result = new CreateJobRequisitionRequestValidator().Validate(
-            new("R", title, Guid.NewGuid(), Guid.NewGuid(), description, 1, new(2026, 1, 1)));
+            new("R", title, Guid.NewGuid(), Guid.NewGuid(), description, 1, null, new(2026, 1, 1), null));
         Assert.Equal(valid, result.IsValid);
     }
 

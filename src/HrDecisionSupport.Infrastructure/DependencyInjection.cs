@@ -1,6 +1,8 @@
 using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Application.EmployeeImports.Spreadsheet;
+using HrDecisionSupport.Application.CandidateImports.Spreadsheet;
 using HrDecisionSupport.Infrastructure.EmployeeImports;
+using HrDecisionSupport.Infrastructure.CandidateImports;
 using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<IHrDecisionSupportDbContext>(serviceProvider =>
             serviceProvider.GetRequiredService<HrDecisionSupportDbContext>());
         services.AddSingleton<IEmployeeSpreadsheetReader, ClosedXmlEmployeeSpreadsheetReader>();
+        services.AddSingleton<ICandidateImportSourceReader, ClosedXmlCandidateSpreadsheetReader>();
         services.AddScoped<IEmployeeImportTransactionRunner, EmployeeImportTransactionRunner>();
 
         return services;

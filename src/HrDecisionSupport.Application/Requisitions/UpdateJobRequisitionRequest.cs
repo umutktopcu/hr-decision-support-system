@@ -7,4 +7,7 @@ public sealed record UpdateJobRequisitionRequest(
     Guid PositionId,
     string? Description,
     int OpeningsCount,
-    DateOnly OpenedAt);
+    int? MinimumRelevantExperienceMonths,
+    DateOnly OpenedAt,
+    decimal? MandatorySkillCoverageThreshold = null,
+    decimal? OverallSkillCoverageThreshold = null);

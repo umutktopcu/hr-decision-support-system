@@ -44,6 +44,10 @@ public class HrDecisionSupportDbContext : DbContext, IHrDecisionSupportDbContext
         Set<JobRequisitionRequirement>();
     public DbSet<CandidateEvaluationCase> CandidateEvaluationCases =>
         Set<CandidateEvaluationCase>();
+    public DbSet<CandidateWorkModePreference> CandidateWorkModePreferences =>
+        Set<CandidateWorkModePreference>();
+    public DbSet<CandidateCareerFeatureSnapshot> CandidateCareerFeatureSnapshots =>
+        Set<CandidateCareerFeatureSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

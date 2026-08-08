@@ -33,7 +33,8 @@ public sealed class JobRequisitionService : IJobRequisitionService
     public async Task<Result<IReadOnlyList<JobRequisitionDto>>> ListAsync(
         CancellationToken cancellationToken = default)
     {
-        var items = await ProjectRequisitions()
+        var query = _dbContext.JobRequisitions.AsNoTracking();
+        var items = await ProjectRequisitions(query)
             .OrderByDescending(item => item.JobRequisitionStatus == JobRequisitionStatus.Open)
             .ThenByDescending(item => item.OpenedAt)
             .ThenBy(item => item.Id)
@@ -45,8 +46,9 @@ public sealed class JobRequisitionService : IJobRequisitionService
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var requisition = await ProjectRequisitions()
-            .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
+        var query = _dbContext.JobRequisitions.AsNoTracking().Where(item => item.Id == id);
+        var requisition = await ProjectRequisitions(query)
+            .SingleOrDefaultAsync(cancellationToken);
         if (requisition is null)
             return Result<JobRequisitionDetailDto>.Failure(UseCaseErrors.JobRequisitionNotFound);
 
@@ -123,6 +125,9 @@ public sealed class JobRequisitionService : IJobRequisitionService
             PositionId = request.PositionId,
             Description = request.Description?.Trim(),
             OpeningsCount = request.OpeningsCount,
+            MinimumRelevantExperienceMonths = request.MinimumRelevantExperienceMonths,
+            MandatorySkillCoverageThreshold = request.MandatorySkillCoverageThreshold,
+            OverallSkillCoverageThreshold = request.OverallSkillCoverageThreshold,
             JobRequisitionStatus = JobRequisitionStatus.Draft,
             OpenedAt = request.OpenedAt,
             ClosedAt = null,
@@ -192,6 +197,9 @@ public sealed class JobRequisitionService : IJobRequisitionService
         entity.PositionId = request.PositionId;
         entity.Description = request.Description?.Trim();
         entity.OpeningsCount = request.OpeningsCount;
+        entity.MinimumRelevantExperienceMonths = request.MinimumRelevantExperienceMonths;
+        entity.MandatorySkillCoverageThreshold = request.MandatorySkillCoverageThreshold;
+        entity.OverallSkillCoverageThreshold = request.OverallSkillCoverageThreshold;
         entity.OpenedAt = request.OpenedAt;
         entity.UpdatedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -236,10 +244,8 @@ public sealed class JobRequisitionService : IJobRequisitionService
         return await GetDtoByIdAsync(id, cancellationToken);
     }
 
-    private IQueryable<JobRequisitionDto> ProjectRequisitions() =>
-        _dbContext.JobRequisitions
-            .AsNoTracking()
-            .Select(item => new JobRequisitionDto(
+    private IQueryable<JobRequisitionDto> ProjectRequisitions(IQueryable<JobRequisition> query) =>
+        query.Select(item => new JobRequisitionDto(
                 item.Id,
                 item.RequisitionCode,
                 item.Title,
@@ -251,9 +257,12 @@ public sealed class JobRequisitionService : IJobRequisitionService
                 item.Position.Name,
                 item.Description,
                 item.OpeningsCount,
+                item.MinimumRelevantExperienceMonths,
                 item.JobRequisitionStatus,
                 item.OpenedAt,
                 item.ClosedAt,
+                item.MandatorySkillCoverageThreshold,
+                item.OverallSkillCoverageThreshold,
                 item.CreatedAtUtc,
                 item.UpdatedAtUtc,
                 item.Requirements.Count));
@@ -262,7 +271,8 @@ public sealed class JobRequisitionService : IJobRequisitionService
         Guid id,
         CancellationToken cancellationToken)
     {
-        var item = await ProjectRequisitions().SingleAsync(value => value.Id == id, cancellationToken);
+        var query = _dbContext.JobRequisitions.AsNoTracking().Where(item => item.Id == id);
+        var item = await ProjectRequisitions(query).SingleAsync(cancellationToken);
         return Result<JobRequisitionDto>.Success(item);
     }
 
@@ -325,9 +335,12 @@ public sealed class JobRequisitionService : IJobRequisitionService
             position.Name,
             entity.Description,
             entity.OpeningsCount,
+            entity.MinimumRelevantExperienceMonths,
             entity.JobRequisitionStatus,
             entity.OpenedAt,
             entity.ClosedAt,
+            entity.MandatorySkillCoverageThreshold,
+            entity.OverallSkillCoverageThreshold,
             entity.CreatedAtUtc,
             entity.UpdatedAtUtc,
             requirementCount);

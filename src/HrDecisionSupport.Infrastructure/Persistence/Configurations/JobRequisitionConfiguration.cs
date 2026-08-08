@@ -16,6 +16,15 @@ public class JobRequisitionConfiguration : IEntityTypeConfiguration<JobRequisiti
             table.HasCheckConstraint(
                 "ck_job_requisitions_closed_at_not_before_opened_at",
                 "closed_at IS NULL OR closed_at >= opened_at");
+            table.HasCheckConstraint(
+                "ck_job_requisitions_min_relevant_experience",
+                "minimum_relevant_experience_months IS NULL OR minimum_relevant_experience_months >= 0");
+            table.HasCheckConstraint(
+                "ck_job_requisitions_mandatory_skill_threshold",
+                "mandatory_skill_coverage_threshold IS NULL OR (mandatory_skill_coverage_threshold >= 0 AND mandatory_skill_coverage_threshold <= 1)");
+            table.HasCheckConstraint(
+                "ck_job_requisitions_overall_skill_threshold",
+                "overall_skill_coverage_threshold IS NULL OR (overall_skill_coverage_threshold >= 0 AND overall_skill_coverage_threshold <= 1)");
         });
         builder.HasKey(requisition => requisition.Id);
 
@@ -26,6 +35,9 @@ public class JobRequisitionConfiguration : IEntityTypeConfiguration<JobRequisiti
         builder.Property(requisition => requisition.PositionId).IsRequired();
         builder.Property(requisition => requisition.Description).HasMaxLength(2000).IsRequired(false);
         builder.Property(requisition => requisition.OpeningsCount).IsRequired();
+        builder.Property(requisition => requisition.MinimumRelevantExperienceMonths).IsRequired(false);
+        builder.Property(requisition => requisition.MandatorySkillCoverageThreshold).HasPrecision(5, 4).IsRequired(false);
+        builder.Property(requisition => requisition.OverallSkillCoverageThreshold).HasPrecision(5, 4).IsRequired(false);
         builder.Property(requisition => requisition.JobRequisitionStatus)
             .HasConversion<int>()
             .IsRequired();
