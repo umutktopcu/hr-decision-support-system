@@ -1,0 +1,390 @@
+@{
+    ViewData["Title"] = "Yeni Gereksinim Oluştur";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Yeni İş Gereksinimi Oluştur</h2>
+    <a asp-controller="JobRequisition" asp-action="Index" class="btn btn-outline-secondary">
+        ← Listeye Dön
+    </a>
+</div>
+
+<div id="formAlert"></div>
+<div id="formLoadingSpinner" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Seçenekler yükleniyor...</span>
+    </div>
+    <p class="text-muted mt-2">Form seçenekleri yükleniyor...</p>
+</div>
+
+<form id="createForm" class="d-none" novalidate>
+
+    <!-- ── Section 1: Basic Info ────────────────────────────── -->
+    <div class="card section-card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">Temel Bilgiler</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Gereksinim Kodu *</label>
+                    <input type="text" id="requisitionCode" class="form-control" placeholder="Örn: REQ-2026-001" required>
+                    <div class="invalid-feedback">Gereksinim kodu zorunludur.</div>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label text-muted small">Başlık *</label>
+                    <input type="text" id="title" class="form-control" placeholder="Örn: Kıdemli Backend Geliştirici" required>
+                    <div class="invalid-feedback">Başlık zorunludur.</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Departman *</label>
+                    <select id="departmentId" class="form-select" required>
+                        <option value="">— Departman Seçin —</option>
+                    </select>
+                    <div class="invalid-feedback">Departman zorunludur.</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Pozisyon *</label>
+                    <select id="positionId" class="form-select" required>
+                        <option value="">— Pozisyon Seçin —</option>
+                    </select>
+                    <div class="invalid-feedback">Pozisyon zorunludur.</div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Açık Pozisyon Sayısı *</label>
+                    <input type="number" id="openingsCount" class="form-control" value="1" min="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Açılış Tarihi</label>
+                    <input type="date" id="openedAt" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Kapanış Tarihi</label>
+                    <input type="date" id="closedAt" class="form-control">
+                </div>
+                <div class="col-12">
+                    <label class="form-label text-muted small">Açıklama</label>
+                    <textarea id="description" class="form-control" rows="3" placeholder="Pozisyon hakkında kısa açıklama..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Section 2: Filter Configuration ─────────────────── -->
+    <div class="card section-card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">Filtre Yapılandırması</div>
+        <div class="card-body">
+            <div class="row g-3">
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Min. Deneyim (Ay)</label>
+                    <input type="number" id="minimumRelevantExperienceMonths" class="form-control" min="0" placeholder="Örn: 24">
+                    <div class="form-text">Boş bırakılırsa deneyim filtresi uygulanmaz.</div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Min. Eğitim Seviyesi</label>
+                    <select id="minimumEducationLevel" class="form-select">
+                        <option value="">— Seçiniz (isteğe bağlı) —</option>
+                    </select>
+                    <div class="form-text">Seçilirse bu seviyenin altındaki adaylar filtrelenir.</div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Zorunlu Yetkinlik Eşiği (%)</label>
+                    <div class="input-group">
+                        <input type="number" id="mandatorySkillCoverageThreshold" class="form-control"
+                               min="0" max="100" placeholder="Örn: 50">
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <div class="form-text">Adayın karşılaması gereken min. zorunlu yetkinlik oranı. Boş = filtre yok.</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Çalışma Modu</label>
+                    <select id="workModeId" class="form-select">
+                        <option value="">— Seçiniz (isteğe bağlı) —</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="workModeHardFilterEnabled">
+                        <label class="form-check-label" for="workModeHardFilterEnabled">
+                            <strong>Çalışma Modu Sert Filtre</strong>
+                        </label>
+                        <div class="form-text">İşaretlenirse, seçili çalışma modunu desteklemeyen adaylar elenecektir.</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Section 3: Skills ─────────────────────────────────── -->
+    <div class="card section-card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">Yetkinlikler</div>
+        <div class="card-body">
+            <div class="row g-4">
+
+                <!-- Mandatory Skills -->
+                <div class="col-md-6" data-skills-container>
+                    <h6 class="fw-bold">Zorunlu Yetkinlikler</h6>
+                    <div data-skills-alert></div>
+                    <div class="input-group mb-2">
+                        <select id="mandatorySkillSelect" class="form-select">
+                            <option value="">— Yetkinlik Seçin —</option>
+                        </select>
+                        <button type="button" id="addMandatorySkill" class="btn btn-outline-primary">Ekle</button>
+                    </div>
+                    <div id="mandatorySkillList" class="mt-2"></div>
+                </div>
+
+                <!-- Preferred Skills -->
+                <div class="col-md-6" data-skills-container>
+                    <h6 class="fw-bold">Tercih Edilen Yetkinlikler</h6>
+                    <div data-skills-alert></div>
+                    <div class="input-group mb-2">
+                        <select id="preferredSkillSelect" class="form-select">
+                            <option value="">— Yetkinlik Seçin —</option>
+                        </select>
+                        <button type="button" id="addPreferredSkill" class="btn btn-outline-secondary">Ekle</button>
+                    </div>
+                    <div id="preferredSkillList" class="mt-2"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Section 4: Language Requirements ──────────────────── -->
+    <div class="card section-card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">Dil Gereksinimleri</div>
+        <div class="card-body">
+            <div class="row g-3 align-items-end mb-3">
+                <div class="col-md-4">
+                    <label class="form-label text-muted small">Dil</label>
+                    <select id="langSelect" class="form-select">
+                        <option value="">— Dil Seçin —</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Min. Yeterlilik</label>
+                    <select id="langProfSelect" class="form-select"></select>
+                </div>
+                <div class="col-md-3 d-flex align-items-center">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="langHardFilter">
+                        <label class="form-check-label" for="langHardFilter">
+                            <strong>Sert Filtre</strong>
+                        </label>
+                        <div class="form-text">Bu yeterliliğin altındakiler elenecek.</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" id="addLangBtn" class="btn btn-outline-info w-100">Ekle</button>
+                </div>
+            </div>
+            <div id="languageList"></div>
+        </div>
+    </div>
+
+    <!-- ── Submit ─────────────────────────────────────────────── -->
+    <div class="d-flex justify-content-end gap-2 mb-5">
+        <a asp-controller="JobRequisition" asp-action="Index" class="btn btn-outline-secondary">İptal</a>
+        <button type="submit" id="saveBtn" class="btn btn-primary">
+            <span id="saveBtnText">Gereksinimi Kaydet</span>
+            <span id="saveBtnSpinner" class="spinner-border spinner-border-sm ms-1 d-none" role="status"></span>
+        </button>
+    </div>
+
+</form>
+
+@section Scripts {
+    <script src="~/js/job-requisition.js" asp-append-version="true"></script>
+    <script>
+        // Stores for skill pickers
+        const mandatoryStore = [];
+        const preferredStore = [];
+        const languageStore  = [];
+
+        (async function () {
+            const formLoadingEl = document.getElementById('formLoadingSpinner');
+            const formEl        = document.getElementById('createForm');
+            const formAlertEl   = document.getElementById('formAlert');
+
+            // ── Load options ────────────────────────────────────
+            let opts;
+            try {
+                const res = await fetch('/api/job-requisitions/options');
+                if (!res.ok) {
+                    const msg = await parseApiError(res);
+                    showAlert(formAlertEl, `Seçenekler yüklenemedi: ${msg}`, 'danger');
+                    formLoadingEl.classList.add('d-none');
+                    return;
+                }
+                opts = await res.json();
+            } catch (err) {
+                showAlert(formAlertEl, `Bağlantı hatası: ${err.message}`, 'danger');
+                formLoadingEl.classList.add('d-none');
+                return;
+            }
+
+            // ── Populate dropdowns ───────────────────────────────
+            populateSelect('departmentId', opts.departments, 'id', 'name', '— Departman Seçin —');
+            populateSelect('positionId', opts.positions, 'id', 'name', '— Pozisyon Seçin —');
+            populateSelect('workModeId', opts.workModes, 'id', 'name', '— Seçiniz (isteğe bağlı) —');
+
+            // DegreeLevel
+            const eduSel = document.getElementById('minimumEducationLevel');
+            opts.degreeLevels.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.value;
+                opt.textContent = degreeLevelLabel(d.value);
+                eduSel.appendChild(opt);
+            });
+
+            // Language proficiency
+            const profSel = document.getElementById('langProfSelect');
+            opts.languageProficiencyLevels.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.value;
+                opt.textContent = p.name;
+                profSel.appendChild(opt);
+            });
+
+            // Languages
+            const langSel = document.getElementById('langSelect');
+            opts.languages.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l.id;
+                opt.textContent = l.name;
+                langSel.appendChild(opt);
+            });
+
+            // ── Skill pickers ────────────────────────────────────
+            initSkillPicker({
+                selectEl: document.getElementById('mandatorySkillSelect'),
+                addBtn:   document.getElementById('addMandatorySkill'),
+                listEl:   document.getElementById('mandatorySkillList'),
+                store:    mandatoryStore,
+                isRequired: true,
+                otherStore: preferredStore,
+                competencies: opts.competencies
+            });
+            initSkillPicker({
+                selectEl: document.getElementById('preferredSkillSelect'),
+                addBtn:   document.getElementById('addPreferredSkill'),
+                listEl:   document.getElementById('preferredSkillList'),
+                store:    preferredStore,
+                isRequired: false,
+                otherStore: mandatoryStore,
+                competencies: opts.competencies
+            });
+
+            // ── Language picker ──────────────────────────────────
+            initLanguagePicker({
+                langSelectEl:             langSel,
+                profSelectEl:             profSel,
+                hardFilterEl:             document.getElementById('langHardFilter'),
+                addBtn:                   document.getElementById('addLangBtn'),
+                listEl:                   document.getElementById('languageList'),
+                store:                    languageStore,
+                languageProficiencyLevels: opts.languageProficiencyLevels
+            });
+
+            // Set today as default for openedAt
+            document.getElementById('openedAt').value = new Date().toISOString().substring(0, 10);
+
+            // Show form
+            formLoadingEl.classList.add('d-none');
+            formEl.classList.remove('d-none');
+
+            // ── Form submit ──────────────────────────────────────
+            formEl.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert(formAlertEl);
+
+                if (!formEl.checkValidity()) {
+                    formEl.classList.add('was-validated');
+                    return;
+                }
+
+                const saveBtn     = document.getElementById('saveBtn');
+                const saveBtnText = document.getElementById('saveBtnText');
+                const spinner     = document.getElementById('saveBtnSpinner');
+
+                saveBtn.disabled       = true;
+                saveBtnText.textContent = 'Kaydediliyor...';
+                spinner.classList.remove('d-none');
+
+                // Build payload matching CreateJobRequisitionRequest
+                const thresholdRaw = document.getElementById('mandatorySkillCoverageThreshold').value;
+                const eduVal       = document.getElementById('minimumEducationLevel').value;
+                const expVal       = document.getElementById('minimumRelevantExperienceMonths').value;
+                const workModeVal  = document.getElementById('workModeId').value;
+                const openedAtVal  = document.getElementById('openedAt').value;
+                const closedAtVal  = document.getElementById('closedAt').value;
+
+                const payload = {
+                    requisitionCode: document.getElementById('requisitionCode').value.trim(),
+                    title:           document.getElementById('title').value.trim(),
+                    departmentId:    document.getElementById('departmentId').value,
+                    positionId:      document.getElementById('positionId').value,
+                    description:     document.getElementById('description').value.trim() || null,
+                    openingsCount:   parseInt(document.getElementById('openingsCount').value, 10),
+                    openedAt:        openedAtVal || new Date().toISOString().substring(0, 10),
+                    closedAt:        closedAtVal || null,
+                    minimumRelevantExperienceMonths: expVal !== '' ? parseInt(expVal, 10) : null,
+                    minimumEducationLevel:           eduVal !== '' ? parseInt(eduVal, 10) : null,
+                    workModeId:                      workModeVal || null,
+                    workModeHardFilterEnabled:       document.getElementById('workModeHardFilterEnabled').checked,
+                    mandatorySkillCoverageThreshold: thresholdRaw !== '' ? displayToThreshold(thresholdRaw) : null,
+                    requirements: [
+                        ...mandatoryStore.map(s => ({ competencyId: s.competencyId, isRequired: true,  minimumExperienceMonths: null, minimumProficiencyLevel: null, notes: null })),
+                        ...preferredStore.map(s => ({ competencyId: s.competencyId, isRequired: false, minimumExperienceMonths: null, minimumProficiencyLevel: null, notes: null }))
+                    ],
+                    languageRequirements: languageStore.map(l => ({
+                        languageId:         l.languageId,
+                        minimumProficiency: l.minimumProficiency,
+                        hardFilterEnabled:  l.hardFilterEnabled
+                    }))
+                };
+
+                try {
+                    const res = await fetch('/api/job-requisitions', {
+                        method:  'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body:    JSON.stringify(payload)
+                    });
+
+                    if (res.status === 201 || res.status === 200) {
+                        const created = await res.json();
+                        window.location.href = `/JobRequisition/Details/${created.id}`;
+                        return;
+                    }
+
+                    const errMsg = await parseApiError(res);
+                    showAlert(formAlertEl, errMsg, 'danger');
+
+                } catch (err) {
+                    showAlert(formAlertEl, `Bağlantı hatası: ${err.message}`, 'danger');
+                } finally {
+                    saveBtn.disabled        = false;
+                    saveBtnText.textContent = 'Gereksinimi Kaydet';
+                    spinner.classList.add('d-none');
+                }
+            });
+
+        })();
+
+        function populateSelect(selectId, items, idKey, nameKey, placeholder) {
+            const sel = document.getElementById(selectId);
+            sel.innerHTML = `<option value="">${placeholder}</option>`;
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item[idKey];
+                opt.textContent = item[nameKey];
+                sel.appendChild(opt);
+            });
+        }
+    </script>
+}
