@@ -56,3 +56,12 @@ Aday eşleştirme ve semantik arama özelliklerinin çalışması için bu servi
 3. API sunucusunu başlatın:
    ```bash
    python -m uvicorn ml_api:app --reload --port 8000
+   
+### 5. Web Uygulamasını Başlatma (C#)
+1. Visual Studio'da HrDecisionSupport.slnx çözüm dosyasını açın.
+
+2. HrDecisionSupport.Web projesini Başlangıç Projesi (Startup Project) olarak ayarlayın.
+
+3. F5 tuşuna basarak projeyi derleyip çalıştırın.
+
+4. Tarayıcınızda açılan İK Karar Destek Sistemi üzerinden tüm özellikleri test edebilirsiniz!
