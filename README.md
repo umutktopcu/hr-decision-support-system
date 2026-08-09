@@ -1,63 +1,58 @@
-# hr-decision-support-system
-ERP-ready HR decision support system built with ASP.NET Core MVC, Entity Framework Core and PostgreSQL.
+# 🚀 İK Karar Destek Sistemi (HR Decision Support System)
 
-## PostgreSQL integration tests
+Bu proje, İnsan Kaynakları süreçlerini dijitalleştirmek, aday eşleştirmelerini yapay zeka destekli anlamsal (semantik) arama ile optimize etmek ve mevcut çalışanların şirkette kalıcılık (retention) sürelerini tahmin etmek amacıyla geliştirilmiş kapsamlı bir kurumsal web uygulamasıdır. 
 
-The normal test suite does not require PostgreSQL. To enable the opt-in integration tests, set a dedicated test-database connection string before running them. The database name must contain `test`, `integration`, or `hrds_test`; production connection strings are rejected.
+Sistem, .NET Core Clean Architecture (Temiz Mimari) backend yapısı ile çoklu Python ML (Makine Öğrenmesi) mikroservislerinin entegrasyonuyla kurgulanmıştır.
 
-```powershell
-$env:HRDS_TEST_POSTGRES_CONNECTION="Host=127.0.0.1;Port=5432;Database=hrds_test;Username=postgres;Password=..."
-dotnet test --filter "Category=PostgreSqlIntegration"
-```
+---
 
-The fixture applies the existing EF migrations to that test database and resets application tables with `TRUNCATE ... RESTART IDENTITY CASCADE` between tests. It preserves `__EFMigrationsHistory`. Docker and Testcontainers are not required; a local PostgreSQL instance is sufficient. Do not use a production database or commit secrets.
+## 📂 Proje Klasör Yapısı
 
-## Local employee-import dry run
+*   **`src/` & `tests/`:** Projenin ana omurgası. ASP.NET Core tabanlı Backend, Web arayüzü ve Birim Testlerini içerir.
+*   **`ml/`:** Semantik eşleştirme işlemlerini yapan doğal dil işleme (NLP) servisleridir. Qwen Embedding (`qwen_embedding_service`) ve Reranker (`qwen_reranker_service`) modellerini barındırır.
+*   **`ML2/`:** Çalışan kalıcılık/risk tahmini (Retention) yapan bağımsız makine öğrenmesi servisidir. FastAPI üzerinden hizmet verir (`ml_api.py`, `train_model.py`).
+*   **`database/`:** Projenin veritabanı şemaları, yedekleri veya yapılandırma dosyalarını içerir.
 
-The dry-run runner uses only the spreadsheet reader, normalizer, and validator; it does not register a DbContext or import persistence service. It never writes import data to a database. Keep the workbook outside the repository.
+---
 
-```powershell
-$env:HRDS_EMPLOYEE_IMPORT_FILE="C:\path\to\employee-import.xlsx"
-dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- dry-run
-```
+## 🏗️ Sistem Mimarisi ve Kullanılan Teknolojiler
 
-Optional: add `--observation-date 2025-01-01`. Reports are written outside the repository under `%LOCALAPPDATA%\HrDecisionSupport\employee-import-dry-run\` (`summary.json`, `diagnostics.csv`, `invalid-rows.csv`, and `warning-rows.csv`). Set `HRDS_EMPLOYEE_IMPORT_OUTPUT` to use another local directory; repository-local `artifacts-local/` is ignored if explicitly used.
+*   **Backend & Arayüz:** C# 12, ASP.NET Core MVC, Entity Framework Core, PostgreSQL.
+*   **NLP ve Semantik Arama (AI):** Python, Qwen Modelleri (Özgeçmişler ve iş ilanları arasındaki anlamsal bağı kurar).
+*   **Tahmin Modeli (AI):** Python, Scikit-Learn (Random Forest vb.), FastAPI, Uvicorn (Personel verilerinden yola çıkarak şirkette kalma riskini hesaplar).
 
-## Controlled employee-import persistence runner (development/test only)
+### ⚙️ İş Akışı
+1. Kullanıcı arayüzden bir işlem başlattığında (Örn: Aday Eşleştirme veya Çalışan Detayı görüntüleme), C# (Web/Application) katmanındaki servisler tetiklenir.
+2. İşlem özgeçmiş eşleştirme ise; sistem `ml` klasöründeki Qwen servislerine HTTP isteği atarak metinlerin anlamsal vektörlerini (embedding) ve sıralamalarını (rerank) alır.
+3. İşlem çalışan riski tahmini ise; sistem çalışanın geçmiş deneyim sürelerini PostgreSQL veritabanından çeker ve `ML2` klasöründe çalışan FastAPI servisine iletir.
+4. Python servislerinden dönen yapay zeka analiz sonuçları, kullanıcının ekranında dinamik raporlar ve rozetler olarak gösterilir.
 
-Keep the workbook outside the repository. This runner uses the existing `EmployeeImportService`; it performs a dry-run preflight, checks database reachability/migrations/model state and duplicate file hash, then requires an explicit row-count confirmation before writing anything. It never logs the connection string. Production import is intentionally locked in this runner.
+---
 
-1. Start a dedicated development or test PostgreSQL database and ensure migrations are already applied. Do **not** run a database update from the runner workflow.
-2. Check for pending model changes:
+## 🚀 Projeyi Bilgisayarda Başlatma (Kurulum Rehberi)
 
-```powershell
-dotnet ef migrations has-pending-model-changes --no-build --project src/HrDecisionSupport.Infrastructure --startup-project src/HrDecisionSupport.Web --context HrDecisionSupportDbContext
-```
+Projeyi tam kapasiteyle (Yapay zeka servisleri dahil) yerel ortamınızda ayağa kaldırmak için aşağıdaki adımları sırasıyla izleyin.
 
-3. Configure the workbook, a development/test connection string, and the environment explicitly:
+### 1. Gereksinimler
+*   .NET 8.0+ SDK
+*   Python 3.9+
+*   PostgreSQL Sunucusu
 
-```powershell
-$env:HRDS_EMPLOYEE_IMPORT_FILE="C:\path\to\employee-import.xlsx"
-$env:ConnectionStrings__PostgreSql="Host=127.0.0.1;Database=hrds_dev;Username=postgres;Password=..."
-$env:ASPNETCORE_ENVIRONMENT="Development"
-```
+### 2. Veritabanı Kurulumu
+1. `src` altındaki projenin `appsettings.json` dosyasını açın.
+2. `ConnectionStrings` bölümündeki PostgreSQL bağlantı bilgilerini kendi bilgisayarınıza göre düzenleyin.
+3. Terminal üzerinden veritabanını oluşturmak için EF Core migration komutunu çalıştırın:
+   `dotnet ef database update`
 
-4. Run the non-persistent dry-run first:
+### 3. NLP Servislerini Başlatma (`ml` Klasörü)
+Aday eşleştirme ve semantik arama özelliklerinin çalışması için bu servislerin aktif olması gerekir.
+1. Terminalde `ml/qwen_embedding_service` klasörüne gidin, kütüphaneleri yükleyin (`pip install -r requirements.txt`) ve servisi ayağa kaldırın.
+2. Aynı işlemi `ml/qwen_reranker_service` klasörü için de tekrarlayın.
 
-```powershell
-dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- dry-run --observation-date 2026-08-06
-```
-
-5. Start the import preview. The interactive prompt requires the exact text shown, for example `IMPORT 6800`:
-
-```powershell
-dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- import --observation-date 2026-08-06
-```
-
-For a non-interactive **development/test** operator run, the row count must still be explicit:
-
-```powershell
-dotnet run --project src/HrDecisionSupport.EmployeeImportDryRun -- import --observation-date 2026-08-06 --confirm-import 6800
-```
-
-The runner prints a batch-scoped verification summary after a successful import. Re-running the same byte-identical workbook is rejected by its SHA-256 file hash; it does not create a duplicate batch. Production import is not a target of this runner at this stage.
+### 4. Tahmin Servisini Başlatma (`ML2` Klasörü)
+Çalışanların kalıcılık (retention) risk tahminlerinin çalışabilmesi için bu ML API'sinin başlatılması gerekir.
+1. Yeni bir terminal açıp `ML2` klasörüne gidin.
+2. Gerekli paketleri yükleyin: `pip install fastapi uvicorn scikit-learn pandas` (veya `requirements.txt` varsa onu kullanın).
+3. API sunucusunu başlatın:
+   ```bash
+   python -m uvicorn ml_api:app --reload --port 8000
