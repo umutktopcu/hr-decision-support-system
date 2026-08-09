@@ -542,7 +542,9 @@
                     <td>${fmtPct(c.mandatorySkillCoverage)}</td>
                     <td>${fmtPct(c.preferredSkillCoverage)}</td>
                     <td class="text-muted small">${fmtScore(c.embeddingScore, 4)}</td>
-                    <td><span class="badge bg-primary">${fmtScore(c.jobFitScore, 4)}</span></td>`;
+        <td><span class="badge bg-primary">${fmtScore(c.jobFitScore, 4)}</span></td>
+        <td><span id="${mlBadgeId}" class="badge bg-secondary">Hesaplanıyor...</span></td>
+    `;
                 tbody.appendChild(tr);
             });
         }
