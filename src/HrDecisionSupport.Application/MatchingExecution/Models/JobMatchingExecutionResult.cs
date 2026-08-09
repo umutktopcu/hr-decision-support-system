@@ -48,4 +48,6 @@ public sealed record JobMatchingCandidateResult(
     decimal PreferredSkillCoverage,
     double? EmbeddingScore,
     double? CrossEncoderRawScore,
-    double JobFitScore);
+    double JobFitScore,
+    int? ShortestJobMonths = null,
+    int? LongestJobMonths = null);

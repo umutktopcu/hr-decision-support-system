@@ -130,7 +130,7 @@ public class JobMatchingExecutionService : IJobMatchingExecutionService
 
         // 6. Fetch Candidates Info
         var candidateIdsToFetch = batch.Results.Select(r => r.CandidateId).ToList();
-        var candidatesInfo = new Dictionary<Guid, (string? Code, string DisplayName)>();
+        var candidatesInfo = new Dictionary<Guid, (string? Code, string DisplayName, int? Short, int? Long)>();
 
         if (candidateIdsToFetch.Any())
         {
@@ -142,7 +142,9 @@ public class JobMatchingExecutionService : IJobMatchingExecutionService
                     c.Id,
                     c.CandidateCode,
                     c.Person.FirstName,
-                    c.Person.LastName
+                    c.Person.LastName,
+                    ShortestJobMonths = c.CareerFeatureSnapshots.OrderByDescending(s => s.CalculatedAtUtc).Select(s => s.ShortestPreviousJobMonths).FirstOrDefault(),
+                    LongestJobMonths = c.CareerFeatureSnapshots.OrderByDescending(s => s.CalculatedAtUtc).Select(s => s.LongestPreviousJobMonths).FirstOrDefault()
                 })
                 .ToListAsync(cancellationToken);
 
@@ -151,13 +153,13 @@ public class JobMatchingExecutionService : IJobMatchingExecutionService
                 var displayName = string.IsNullOrWhiteSpace(c.FirstName) && string.IsNullOrWhiteSpace(c.LastName)
                     ? "Unknown Candidate"
                     : $"{c.FirstName} {c.LastName}".Trim();
-                candidatesInfo[c.Id] = (c.CandidateCode, displayName);
+                candidatesInfo[c.Id] = (c.CandidateCode, displayName, c.ShortestJobMonths, c.LongestJobMonths);
             }
         }
 
         var candidateResults = batch.Results.Select(r =>
         {
-            var info = candidatesInfo.GetValueOrDefault(r.CandidateId, (null, "Unknown Candidate"));
+            var info = candidatesInfo.GetValueOrDefault(r.CandidateId, (null, "Unknown Candidate", null, null));
             return new JobMatchingCandidateResult(
                 CandidateId: r.CandidateId,
                 CandidateCode: info.Code,
@@ -167,7 +169,9 @@ public class JobMatchingExecutionService : IJobMatchingExecutionService
                 PreferredSkillCoverage: r.PreferredSkillCoverage,
                 EmbeddingScore: r.CosineSimilarityScore,
                 CrossEncoderRawScore: r.CrossEncoderRawScore,
-                JobFitScore: r.JobFitScore
+                JobFitScore: r.JobFitScore,
+                ShortestJobMonths: info.Short,
+                LongestJobMonths: info.Long
             );
         }).ToList();
 

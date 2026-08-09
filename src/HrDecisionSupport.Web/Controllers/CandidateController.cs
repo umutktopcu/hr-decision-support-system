@@ -1,4 +1,4 @@
-﻿using HrDecisionSupport.Application.Candidates;
+using HrDecisionSupport.Application.Candidates;
 using HrDecisionSupport.Application.Employees;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -49,20 +49,24 @@ namespace HrDecisionSupport.Web.Controllers
             // 2. ML (Yapay Zeka) Modelimizi çalıştırıyoruz
             try
             {
-                // Adayın gerçek süreleri DTO'ya eklenene kadar test amaçlı örnek veriler gönderiyoruz
-                double ornekEnKisaIs = 14.0;
-                double ornekEnUzunIs = 44.0;
-
-                int tahminSonucu = await _mlPredictionService.PredictStayAsync(ornekEnKisaIs, ornekEnUzunIs);
-
-                // Python'dan dönen 0, 1, 2 sonucunu metne çevirip arayüze taşıyoruz
-                ViewBag.MlPrediction = tahminSonucu switch
+                // Adayın gerçek sürelerini DTO'dan alıyoruz
+                if (candidate.ShortestJobMonths > 0 && candidate.LongestJobMonths > 0)
                 {
-                    0 => "Kısa Süreli Kalıcı (Riskli)",
-                    1 => "Normal Süreli Kalıcı",
-                    2 => "Uzun Süreli Kalıcı (Güvenli)",
-                    _ => "Tahmin Yapılamadı"
-                };
+                    int tahminSonucu = await _mlPredictionService.PredictStayAsync(candidate.ShortestJobMonths.Value, candidate.LongestJobMonths.Value);
+
+                    // Python'dan dönen 0, 1, 2 sonucunu metne çevirip arayüze taşıyoruz
+                    ViewBag.MlPrediction = tahminSonucu switch
+                    {
+                        0 => "Kısa Süreli Kalıcı (Riskli)",
+                        1 => "Normal Süreli Kalıcı",
+                        2 => "Uzun Süreli Kalıcı (Güvenli)",
+                        _ => "Tahmin Yapılamadı"
+                    };
+                }
+                else
+                {
+                    ViewBag.MlPrediction = "Yetersiz Veri (Tahmin Yapılamadı)";
+                }
             }
             catch
             {
