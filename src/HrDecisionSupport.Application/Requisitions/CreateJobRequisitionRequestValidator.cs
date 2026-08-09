@@ -1,5 +1,6 @@
 using HrDecisionSupport.Application.Common;
 using HrDecisionSupport.Application.Common.Validation;
+using System.Linq;
 
 namespace HrDecisionSupport.Application.Requisitions;
 
@@ -21,7 +22,20 @@ public sealed class CreateJobRequisitionRequestValidator
             instance.MinimumRelevantExperienceMonths,
             instance.OpenedAt,
             instance.MandatorySkillCoverageThreshold,
-            instance.OverallSkillCoverageThreshold);
+            instance.MinimumEducationLevel);
+
+        if (!instance.WorkModeId.HasValue || instance.WorkModeId == Guid.Empty)
+        {
+            errors.Add(new("work_mode_required", "WorkMode is required for new jobs.", "WorkModeId"));
+        }
+
+        if (instance.Requirements == null || !instance.Requirements.Any(r => r.IsRequired))
+        {
+            errors.Add(new("mandatory_skill_required", "At least one mandatory skill is required.", "Requirements"));
+        }
+
+        JobRequisitionValidation.ValidateLanguageRequirements(errors, instance.LanguageRequirements);
+
         return RequestValidation.ToResult(errors);
     }
 }
@@ -39,7 +53,7 @@ internal static class JobRequisitionValidation
         int? minimumRelevantExperienceMonths,
         DateOnly openedAt,
         decimal? mandatorySkillCoverageThreshold,
-        decimal? overallSkillCoverageThreshold)
+        Domain.Enums.DegreeLevel? minimumEducationLevel)
     {
         RequestValidation.RequiredString(
             errors, requisitionCode, 50, "RequisitionCode", "requisition_code");
@@ -82,12 +96,9 @@ internal static class JobRequisitionValidation
                 "MandatorySkillCoverageThreshold"));
         }
 
-        if (overallSkillCoverageThreshold.HasValue && (overallSkillCoverageThreshold.Value < 0 || overallSkillCoverageThreshold.Value > 1))
+        if (minimumEducationLevel.HasValue && !Enum.IsDefined(minimumEducationLevel.Value))
         {
-            errors.Add(new(
-                "overall_threshold_invalid",
-                "OverallSkillCoverageThreshold must be between 0 and 1.",
-                "OverallSkillCoverageThreshold"));
+            errors.Add(new("education_level_invalid", "Invalid MinimumEducationLevel.", "MinimumEducationLevel"));
         }
     }
 
@@ -99,5 +110,25 @@ internal static class JobRequisitionValidation
     {
         if (value == Guid.Empty)
             errors.Add(new(code, $"{propertyName} must not be empty.", propertyName));
+    }
+
+    internal static void ValidateLanguageRequirements(
+        ICollection<ValidationError> errors,
+        IEnumerable<JobLanguageRequirementModel>? languageRequirements)
+    {
+        if (languageRequirements == null)
+            return;
+
+        var seenLanguageIds = new HashSet<Guid>();
+        foreach (var req in languageRequirements)
+        {
+            if (!seenLanguageIds.Add(req.LanguageId))
+            {
+                errors.Add(new(
+                    "duplicate_language_requirement",
+                    $"Duplicate language requirement found for LanguageId: {req.LanguageId}.",
+                    "LanguageRequirements"));
+            }
+        }
     }
 }

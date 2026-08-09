@@ -1,101 +1,555 @@
-﻿@model HrDecisionSupport.Application.Requisitions.JobRequisitionDetailDto
-
 @{
-    ViewData["Title"] = "İlan Detayı";
+    ViewData["Title"] = "Gereksinim Detayı";
+    var requisitionId = ViewData["RequisitionId"]?.ToString() ?? "";
 }
 
-<div class="card shadow-sm">
-    <div class="card-header bg-secondary text-white">
-        <h5 class="mb-0">Eşleşen ve Puanlanan Adaylar (Pipeline Sonucu)</h5>
+<!-- Back + Action Bar -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a asp-controller="JobRequisition" asp-action="Index" class="btn btn-outline-secondary me-2">← Listeye Dön</a>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Aday Kodu</th>
-                        <th>Pozisyon</th>
-                        <th>Yapay Zeka Kalıcılık Tahmini</th>
-                        <th class="text-end pe-4">İşlemler</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (ViewBag.EvaluationCases != null && ((IReadOnlyList<HrDecisionSupport.Application.CandidateEvaluations.CandidateEvaluationCaseDto>)ViewBag.EvaluationCases).Any())
-                    {
-                        @foreach (var item in (IReadOnlyList<HrDecisionSupport.Application.CandidateEvaluations.CandidateEvaluationCaseDto>)ViewBag.EvaluationCases)
-                        {
-                            <tr>
-                                <td class="ps-4 fw-bold">@item.CandidateCode</td>
-                                <td>@item.PositionName</td>
-                                <td>
-                                    <span class="badge bg-success">Durum: @item.Status</span>
-                                </td>
-                                <td class="text-end pe-4">
-                                    <a asp-controller="Candidate" asp-action="Details" asp-route-id="@item.CandidateId" class="btn btn-sm btn-outline-primary">Profili İncele</a>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-4">Bu ilan için henüz aday değerlendirilmemiş.</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    <div id="detailActionBar" class="d-none">
+        <a id="editBtn" href="#" class="btn btn-outline-primary me-2">Gereksinimleri Düzenle</a>
+        <button type="button" id="statusBtn" class="btn btn-outline-warning me-2 d-none">Durum Değiştir</button>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-header bg-secondary text-white">
-        <h5 class="mb-0">Eşleşen ve Puanlanan Adaylar (Pipeline Sonucu)</h5>
+<div id="detailAlert"></div>
+
+<!-- Loading -->
+<div id="detailLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-muted mt-2">Yükleniyor...</p>
+</div>
+
+<!-- Detail content (hidden until loaded) -->
+<div id="detailContent" class="d-none">
+
+    <!-- ── Header Card ──────────────────────────────────────── -->
+    <div class="card section-card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 id="detTitle" class="mb-1"></h3>
+                    <div class="text-muted">
+                        Kod: <strong id="detCode"></strong>
+                        &nbsp;·&nbsp; Pozisyon: <strong id="detPosition"></strong>
+                        &nbsp;·&nbsp; Departman: <strong id="detDepartment"></strong>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div id="detStatus" class="mb-1"></div>
+                    <small class="text-muted">
+                        Açılış: <span id="detOpenedAt"></span>
+                        &nbsp;|&nbsp; Kapanış: <span id="detClosedAt">—</span>
+                    </small>
+                    <div class="mt-1">
+                        <small class="text-muted">Açık Pozisyon: <strong id="detOpenings"></strong></small>
+                    </div>
+                </div>
+            </div>
+            <div id="detDescription" class="mt-3 text-muted small d-none"></div>
+        </div>
     </div>
-    <div class="card-body">
-        <p class="text-muted">Burada arkadaşının pipeline'ından süzülüp gelen adaylar ve senin yapay zeka kalıcılık skorların listelenecek.</p>
-        <div class="card shadow-sm">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0">Eşleşen ve Puanlanan Adaylar (Pipeline Sonucu)</h5>
+
+    <!-- ── Filter Config ────────────────────────────────────── -->
+    <div class="card section-card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">Filtre Yapılandırması</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="text-muted small">Min. Deneyim</div>
+                    <div id="detMinExp" class="fw-bold">—</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Min. Eğitim Seviyesi</div>
+                    <div id="detMinEdu" class="fw-bold">—</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Çalışma Modu</div>
+                    <div id="detWorkMode" class="fw-bold">—</div>
+                    <small id="detWorkModeFilter" class="text-muted"></small>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Zorunlu Yetkinlik Eşiği</div>
+                    <div id="detThreshold" class="fw-bold">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Skills ────────────────────────────────────────────── -->
+    <div class="card section-card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">Yetkinlikler</div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h6 class="fw-bold">Zorunlu Yetkinlikler</h6>
+                    <div id="detMandatorySkills">
+                        <span class="text-muted small">Yok</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold">Tercih Edilen Yetkinlikler</h6>
+                    <div id="detPreferredSkills">
+                        <span class="text-muted small">Yok</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Language Requirements ─────────────────────────────── -->
+    <div class="card section-card shadow-sm mb-4" id="langSection">
+        <div class="card-header bg-white fw-bold">Dil Gereksinimleri</div>
+        <div class="card-body">
+            <div id="detLanguages"><span class="text-muted small">Yok</span></div>
+        </div>
+    </div>
+
+    <!-- ── Matching Panel ────────────────────────────────────── -->
+    <div class="card section-card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+            <span>Aday Eşleştirme</span>
+            <small class="text-muted fw-normal">"Eşleştir" tuşuna basıldığında AI modeli çalışır</small>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 align-items-end mb-3">
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Retrieval Top N</label>
+                    <input type="number" id="retrievalTopN" class="form-control" value="100" min="1">
+                    <div class="form-text">Embedding'den kaç aday geri alınsın?</div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small">Final Sonuç Sayısı</label>
+                    <input type="number" id="finalTopN" class="form-control" value="10" min="1">
+                    <div class="form-text">Kaç aday sıralanarak dönsün?</div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end gap-2">
+                    <button type="button" id="matchBtn" class="btn btn-success">
+                        <span id="matchBtnText">Adayları Eşleştir</span>
+                        <span id="matchSpinner" class="spinner-border spinner-border-sm ms-1 d-none" role="status"></span>
+                    </button>
+                    <div id="matchStatusText" class="text-muted small d-none">
+                        Adaylar değerlendiriliyor. Bu birkaç saniye sürebilir...
+                    </div>
+                </div>
+            </div>
+            <div id="matchAlert"></div>
+        </div>
+    </div>
+
+    <!-- ── Matching Results (shown after matching) ──────────── -->
+    <div id="matchingResults" class="d-none">
+
+        <!-- Pipeline Telemetry -->
+        <div class="card section-card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold">Eşleştirme Hattı</div>
+            <div class="card-body">
+                <div class="row g-3 text-center mb-3" id="pipelineCards"></div>
+                <div class="text-muted small d-flex gap-2 justify-content-center" id="evalCasesInfo"></div>
+            </div>
+        </div>
+
+        <!-- Hard Filter Breakdown -->
+        <div class="card section-card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                <span>Sert Filtre Detayı</span>
+                <a id="editFromMatchBtn" href="#" class="btn btn-sm btn-outline-primary">
+                    Gereksinimleri Düzenle
+                </a>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    <em>Bir aday birden fazla filtreye takılabilir. Toplamlar bağımsız olarak hesaplanmıştır.</em>
+                </p>
+                <div class="row g-3" id="hardFilterBreakdown"></div>
+            </div>
+        </div>
+
+        <!-- Ranked Candidates -->
+        <div class="card section-card shadow-sm mb-5">
+            <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                <span>Sıralı Adaylar</span>
+                <small class="text-muted fw-normal" id="rankedCandidatesCount"></small>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th class="ps-4">Aday Kodu</th>
-                                <th>Pozisyon</th>
-                                <th>Yapay Zeka Kalıcılık Tahmini</th>
-                                <th class="text-end pe-4">İşlemler</th>
+                                <th class="ps-3">Sıra</th>
+                                <th>Aday</th>
+                                <th>Kod</th>
+                                <th>
+                                    Yetkinlik Kademesi
+                                    <span class="text-muted small fw-normal ms-1"
+                                          title="Sıralama; önce zorunlu yetkinlik kapsamı, sonra tercih edilen kapsam, ardından semantik uyum skoru dikkate alınarak yapılır.">ⓘ</span>
+                                </th>
+                                <th>Zorunlu Kapsam</th>
+                                <th>Tercih Kapsamı</th>
+                                <th>Embedding Skoru</th>
+                                <th>İş Uyum Skoru</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @if (ViewBag.EvaluationCases != null && ((IReadOnlyList<HrDecisionSupport.Application.CandidateEvaluations.CandidateEvaluationCaseDto>)ViewBag.EvaluationCases).Any())
-                            {
-                                @foreach (var req in (IReadOnlyList<HrDecisionSupport.Application.CandidateEvaluations.CandidateEvaluationCaseDto>)ViewBag.EvaluationCases)
-                                {
-                                    <tr>
-                                        <td class="ps-4 fw-bold">@req.CandidateCode</td>
-                                        <td>@req.PositionName</td>
-                                        <td>
-                                            <span class="badge bg-success">Durum: @req.Status</span>
-                                        </td>
-                                        <td class="text-end pe-4">
-                                            <a asp-controller="Candidate" asp-action="Details" asp-route-id="@req.CandidateId" class="btn btn-sm btn-outline-primary">Profili İncele</a>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">Bu ilan için henüz aday değerlendirilmemiş.</td>
-                                </tr>
-                            }
-                        </tbody>
+                        <tbody id="rankedCandidatesBody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
+
+    </div><!-- /matchingResults -->
+
+</div><!-- /detailContent -->
+
+<!-- Status Change Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="statusModalLabel">Durum Değiştir</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="statusModalAlert"></div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Yeni Durum</label>
+                    <select id="newStatusSelect" class="form-select">
+                        <option value="1">Draft</option>
+                        <option value="2">Open</option>
+                        <option value="3">On Hold</option>
+                        <option value="4">Closed</option>
+                        <option value="5">Cancelled</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="closedAtGroup" style="display:none">
+                    <label class="form-label text-muted small">Kapanış Tarihi</label>
+                    <input type="date" id="statusClosedAt" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" id="confirmStatusBtn" class="btn btn-warning">Değiştir</button>
+            </div>
+        </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/job-requisition.js" asp-append-version="true"></script>
+    <script>
+        const REQUISITION_ID = '@requisitionId';
+        let workModeMap = {}; // id -> name, populated from options
+
+        (async function () {
+            const alertEl   = document.getElementById('detailAlert');
+            const loadingEl = document.getElementById('detailLoading');
+            const contentEl = document.getElementById('detailContent');
+
+            // Load detail + options in parallel
+            let detail, opts;
+            try {
+                const [detRes, optsRes] = await Promise.all([
+                    fetch(`/api/job-requisitions/${REQUISITION_ID}`),
+                    fetch('/api/job-requisitions/options')
+                ]);
+
+                if (!detRes.ok) {
+                    const msg = await parseApiError(detRes);
+                    showAlert(alertEl, `Gereksinim yüklenemedi: ${msg}`, 'danger');
+                    loadingEl.classList.add('d-none');
+                    return;
+                }
+                detail = await detRes.json();
+                if (optsRes.ok) {
+                    opts = await optsRes.json();
+                    opts.workModes.forEach(w => { workModeMap[w.id] = w.name; });
+                }
+            } catch (err) {
+                showAlert(alertEl, `Bağlantı hatası: ${err.message}`, 'danger');
+                loadingEl.classList.add('d-none');
+                return;
+            }
+
+            loadingEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+
+            // ── Populate header ──────────────────────────────────
+            document.getElementById('detTitle').textContent      = detail.title;
+            document.getElementById('detCode').textContent       = detail.requisitionCode;
+            document.getElementById('detPosition').textContent   = detail.positionName;
+            document.getElementById('detDepartment').textContent = detail.departmentName;
+            document.getElementById('detStatus').innerHTML       = statusBadge(detail.jobRequisitionStatus);
+            document.getElementById('detOpenedAt').textContent   = fmtDate(detail.openedAt);
+            document.getElementById('detClosedAt').textContent   = detail.closedAt ? fmtDate(detail.closedAt) : '—';
+            document.getElementById('detOpenings').textContent   = detail.openingsCount;
+
+            if (detail.description) {
+                const descEl = document.getElementById('detDescription');
+                descEl.textContent = detail.description;
+                descEl.classList.remove('d-none');
+            }
+
+            // ── Filter config ────────────────────────────────────
+            document.getElementById('detMinExp').textContent =
+                detail.minimumRelevantExperienceMonths != null
+                    ? `${detail.minimumRelevantExperienceMonths} ay` : '—';
+
+            document.getElementById('detMinEdu').textContent =
+                detail.minimumEducationLevel != null
+                    ? degreeLevelLabel(detail.minimumEducationLevel) : '—';
+
+            if (detail.workModeId) {
+                document.getElementById('detWorkMode').textContent   = workModeMap[detail.workModeId] || detail.workModeId;
+                document.getElementById('detWorkModeFilter').textContent =
+                    detail.workModeHardFilterEnabled ? '(Sert Filtre aktif)' : '(Yumuşak filtre)';
+            }
+
+            document.getElementById('detThreshold').textContent =
+                detail.mandatorySkillCoverageThreshold != null
+                    ? `${Math.round(detail.mandatorySkillCoverageThreshold * 100)}%` : '—';
+
+            // ── Skills ───────────────────────────────────────────
+            const mandatory  = (detail.requirements || []).filter(r => r.isRequired);
+            const preferred  = (detail.requirements || []).filter(r => !r.isRequired);
+
+            renderSkillBadges('detMandatorySkills', mandatory, 'bg-primary');
+            renderSkillBadges('detPreferredSkills', preferred, 'bg-secondary');
+
+            // ── Languages ────────────────────────────────────────
+            renderLanguageBadges('detLanguages', detail.languageRequirements || []);
+
+            // ── Action bar ───────────────────────────────────────
+            document.getElementById('editBtn').href = `/JobRequisition/Edit/${REQUISITION_ID}`;
+            document.getElementById('editFromMatchBtn').href = `/JobRequisition/Edit/${REQUISITION_ID}`;
+            document.getElementById('detailActionBar').classList.remove('d-none');
+
+            // Status button wiring
+            const statusBtn = document.getElementById('statusBtn');
+            statusBtn.classList.remove('d-none');
+            statusBtn.addEventListener('click', () => {
+                document.getElementById('newStatusSelect').value = detail.jobRequisitionStatus;
+                toggleClosedAtGroup();
+                new bootstrap.Modal(document.getElementById('statusModal')).show();
+            });
+            document.getElementById('newStatusSelect').addEventListener('change', toggleClosedAtGroup);
+
+            document.getElementById('confirmStatusBtn').addEventListener('click', async () => {
+                const statusModalAlertEl = document.getElementById('statusModalAlert');
+                clearAlert(statusModalAlertEl);
+
+                const newStatus    = parseInt(document.getElementById('newStatusSelect').value, 10);
+                const closedAtVal  = document.getElementById('statusClosedAt').value || null;
+
+                try {
+                    const res = await fetch(`/api/job-requisitions/${REQUISITION_ID}/status`, {
+                        method:  'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body:    JSON.stringify({ status: newStatus, closedAt: closedAtVal })
+                    });
+                    if (res.ok) {
+                        window.location.reload();
+                    } else {
+                        const msg = await parseApiError(res);
+                        showAlert(statusModalAlertEl, msg, 'danger');
+                    }
+                } catch (err) {
+                    showAlert(statusModalAlertEl, err.message, 'danger');
+                }
+            });
+
+            // ── Match button ─────────────────────────────────────
+            document.getElementById('matchBtn').addEventListener('click', runMatching);
+        })();
+
+        function toggleClosedAtGroup() {
+            const val = document.getElementById('newStatusSelect').value;
+            const grp = document.getElementById('closedAtGroup');
+            grp.style.display = (val === '4' || val === '5') ? '' : 'none';
+        }
+
+        function renderSkillBadges(containerId, skills, badgeClass) {
+            const el = document.getElementById(containerId);
+            if (!skills || skills.length === 0) {
+                el.innerHTML = '<span class="text-muted small">Yok</span>';
+                return;
+            }
+            el.innerHTML = skills.map(s => `<span class="badge ${badgeClass} me-1 mb-1">${escHtml(s.competencyName)}</span>`).join('');
+        }
+
+        function renderLanguageBadges(containerId, langs) {
+            const el = document.getElementById(containerId);
+            if (!langs || langs.length === 0) {
+                el.innerHTML = '<span class="text-muted small">Yok</span>';
+                return;
+            }
+            el.innerHTML = langs.map(l => `
+                <span class="badge bg-info text-dark me-1 mb-1">${escHtml(l.languageName)}</span>
+                <span class="text-muted small me-2">Min: ${escHtml(l.minimumProficiency?.toString() || '')}</span>
+                ${l.hardFilterEnabled ? '<span class="badge bg-danger me-2 mb-1">Sert Filtre</span>' : '<span class="badge bg-secondary me-2 mb-1">Yumuşak</span>'}
+            `).join('<br class="d-md-none">');
+        }
+
+        async function runMatching() {
+            const matchAlertEl   = document.getElementById('matchAlert');
+            const matchBtn       = document.getElementById('matchBtn');
+            const matchBtnText   = document.getElementById('matchBtnText');
+            const matchSpinner   = document.getElementById('matchSpinner');
+            const matchStatusTxt = document.getElementById('matchStatusText');
+            const matchingRes    = document.getElementById('matchingResults');
+            const retrievalTopN  = document.getElementById('retrievalTopN');
+            const finalTopN      = document.getElementById('finalTopN');
+
+            clearAlert(matchAlertEl);
+
+            // Client validation
+            const rn = parseInt(retrievalTopN.value, 10);
+            const fn = parseInt(finalTopN.value, 10);
+            if (isNaN(rn) || rn < 1) { showAlert(matchAlertEl, 'Retrieval Top N en az 1 olmalıdır.', 'warning'); return; }
+            if (isNaN(fn) || fn < 1) { showAlert(matchAlertEl, 'Final Sonuç Sayısı en az 1 olmalıdır.', 'warning'); return; }
+            if (fn > rn)             { showAlert(matchAlertEl, 'Final Sonuç Sayısı, Retrieval Top N değerinden büyük olamaz.', 'warning'); return; }
+
+            // Lock controls
+            matchBtn.disabled     = true;
+            retrievalTopN.disabled = true;
+            finalTopN.disabled     = true;
+            matchBtnText.textContent = 'Eşleştiriliyor...';
+            matchSpinner.classList.remove('d-none');
+            matchStatusTxt.classList.remove('d-none');
+            matchingRes.classList.add('d-none');
+
+            try {
+                const res = await fetch(`/api/job-requisitions/${REQUISITION_ID}/matching`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ retrievalTopN: rn, finalTopN: fn })
+                });
+
+                if (!res.ok) {
+                    const msg = await parseApiError(res);
+                    showAlert(matchAlertEl, `Eşleştirme hatası: ${msg}`, 'danger');
+                    return;
+                }
+
+                const result = await res.json();
+                renderMatchingResults(result);
+                matchingRes.classList.remove('d-none');
+                matchingRes.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (err) {
+                showAlert(matchAlertEl, `Bağlantı hatası: ${err.message}`, 'danger');
+            } finally {
+                matchBtn.disabled     = false;
+                retrievalTopN.disabled = false;
+                finalTopN.disabled     = false;
+                matchBtnText.textContent = 'Adayları Eşleştir';
+                matchSpinner.classList.add('d-none');
+                matchStatusTxt.classList.add('d-none');
+            }
+        }
+
+        function renderMatchingResults(result) {
+            const s = result.statistics;
+
+            // ── Pipeline cards ───────────────────────────────────
+            const pipelineEl = document.getElementById('pipelineCards');
+            const pipelineSteps = [
+                { label: 'Aday Havuzu',       value: s.candidatePoolCount,        icon: '👥', cls: 'bg-primary text-white' },
+                { label: 'Sert Filtre Geçen', value: s.eligibleAfterHardFilters,  icon: '✅', cls: 'bg-success text-white' },
+                { label: 'Embedding Girdi',   value: s.embeddingInputCount,       icon: '🔍', cls: 'bg-info text-dark' },
+                { label: 'Embedding Alınan',  value: s.embeddingRetrievedCount,   icon: '📤', cls: 'bg-info text-dark' },
+                { label: 'Cross-Encoder',     value: s.crossEncoderInputCount,    icon: '⚖️',  cls: 'bg-warning text-dark' },
+                { label: 'Final Sonuç',        value: s.finalReturnedCount,        icon: '🏆', cls: 'bg-dark text-white' },
+            ];
+
+            pipelineEl.innerHTML = pipelineSteps.map(step => `
+                <div class="col-md-2 col-4">
+                    <div class="card ${step.cls} text-center py-3">
+                        <div class="fs-4">${step.icon}</div>
+                        <div class="fw-bold fs-5">${step.value}</div>
+                        <div class="small">${step.label}</div>
+                    </div>
+                </div>`).join('');
+
+            // Extra info
+            const evalInfo = document.getElementById('evalCasesInfo');
+            evalInfo.innerHTML = `
+                <span>Mevcut değerlendirme: <strong>${s.existingEvaluationCaseCount}</strong></span>
+                <span>·</span>
+                <span>Yeni oluşturulan: <strong>${s.createdEvaluationCaseCount}</strong></span>
+                <span>·</span>
+                <span>Ön eleme: <strong>${s.preScreenedCandidateCount}</strong></span>
+                <span>·</span>
+                <span>İstenen retrieval: <strong>${s.requestedRetrievalTopN}</strong></span>
+                <span>·</span>
+                <span>İstenen final: <strong>${s.requestedFinalTopN}</strong></span>`;
+
+            // ── Hard filter breakdown ────────────────────────────
+            const hfEl = document.getElementById('hardFilterBreakdown');
+            if (result.hardFilterBreakdown) {
+                const hf = result.hardFilterBreakdown;
+                const gates = [
+                    { label: 'Zorunlu Yetkinlik', gate: hf.mandatorySkill },
+                    { label: 'Deneyim',            gate: hf.experience },
+                    { label: 'Eğitim',             gate: hf.education },
+                    { label: 'Çalışma Modu',       gate: hf.workMode },
+                    { label: 'Dil',                gate: hf.language },
+                ];
+                hfEl.innerHTML = gates.map(g => {
+                    const total    = g.gate.passCount + g.gate.failCount + g.gate.notApplicableCount;
+                    const passPct  = total > 0 ? Math.round(g.gate.passCount / total * 100) : 0;
+                    return `
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body pb-2">
+                                <div class="fw-bold mb-2">${g.label}</div>
+                                <div class="progress mb-1" style="height:8px">
+                                    <div class="progress-bar bg-success" style="width:${passPct}%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>✅ Geçen: <strong>${g.gate.passCount}</strong></span>
+                                    <span>❌ Elenen: <strong>${g.gate.failCount}</strong></span>
+                                    ${g.gate.notApplicableCount > 0 ? `<span>— N/A: <strong>${g.gate.notApplicableCount}</strong></span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                hfEl.innerHTML = '<p class="text-muted small">Sert filtre ayrıntısı mevcut değil.</p>';
+            }
+
+            // ── Ranked candidates ────────────────────────────────
+            const tbody  = document.getElementById('rankedCandidatesBody');
+            const countEl = document.getElementById('rankedCandidatesCount');
+            const candidates = result.candidates || [];
+            countEl.textContent = `${candidates.length} aday`;
+
+            tbody.innerHTML = '';
+            if (candidates.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Eşleşen aday bulunamadı.</td></tr>';
+                return;
+            }
+
+            candidates.forEach((c, idx) => {
+                const tierBadge = tierBadgeHtml(c.skillTier);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="ps-3 fw-bold text-muted">#${idx + 1}</td>
+                    <td class="fw-bold">${escHtml(c.displayName)}</td>
+                    <td><span class="text-monospace small text-muted">${escHtml(c.candidateCode || '—')}</span></td>
+                    <td>${tierBadge}</td>
+                    <td>${fmtPct(c.mandatorySkillCoverage)}</td>
+                    <td>${fmtPct(c.preferredSkillCoverage)}</td>
+                    <td class="text-muted small">${fmtScore(c.embeddingScore, 4)}</td>
+                    <td><span class="badge bg-primary">${fmtScore(c.jobFitScore, 4)}</span></td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function tierBadgeHtml(tier) {
+            const cls = tier === 1 ? 'bg-success' : tier === 2 ? 'bg-warning text-dark' : 'bg-secondary';
+            return `<span class="badge ${cls}">Kademe ${tier}</span>`;
+        }
+    </script>
+}

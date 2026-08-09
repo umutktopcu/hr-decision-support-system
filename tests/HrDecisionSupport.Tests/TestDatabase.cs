@@ -7,6 +7,9 @@ namespace HrDecisionSupport.Tests;
 
 internal static class TestDatabase
 {
+    public static readonly Guid DefaultWorkModeId = Guid.Parse("10000000-0000-0000-0000-000000000001");
+    public static readonly Guid DefaultCompetencyId = Guid.Parse("20000000-0000-0000-0000-000000000002");
+
     internal static HrDecisionSupportDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<HrDecisionSupportDbContext>()
@@ -76,7 +79,8 @@ internal static class TestDatabase
             JobRequisitionStatus = status,
             OpenedAt = openedAt ?? new DateOnly(2026, 1, 1),
             ClosedAt = closedAt,
-            CreatedAtUtc = DateTime.UtcNow
+            CreatedAtUtc = DateTime.UtcNow,
+            WorkModeId = DefaultWorkModeId
         };
 
     internal static JobRequisitionRequirement JobRequisitionRequirement(

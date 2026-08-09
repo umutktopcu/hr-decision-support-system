@@ -12,7 +12,8 @@ builder.Services.AddInfrastructure(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("PostgreSql")
         ?? throw new InvalidOperationException(
-            "PostgreSQL connection string is not configured.")));
+            "PostgreSQL connection string is not configured.")),
+    builder.Configuration);
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();

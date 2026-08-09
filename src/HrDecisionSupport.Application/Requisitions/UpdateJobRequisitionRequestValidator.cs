@@ -1,5 +1,6 @@
 using HrDecisionSupport.Application.Common;
 using HrDecisionSupport.Application.Common.Validation;
+using System.Linq;
 
 namespace HrDecisionSupport.Application.Requisitions;
 
@@ -21,7 +22,14 @@ public sealed class UpdateJobRequisitionRequestValidator
             instance.MinimumRelevantExperienceMonths,
             instance.OpenedAt,
             instance.MandatorySkillCoverageThreshold,
-            instance.OverallSkillCoverageThreshold);
+            instance.MinimumEducationLevel);
+
+        if (instance.Requirements != null && !instance.Requirements.Any(r => r.IsRequired))
+        {
+            errors.Add(new("mandatory_skill_required", "At least one mandatory skill is required.", "Requirements"));
+        }
+
+        JobRequisitionValidation.ValidateLanguageRequirements(errors, instance.LanguageRequirements);
 
         return RequestValidation.ToResult(errors);
     }

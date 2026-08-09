@@ -1,4 +1,5 @@
 using HrDecisionSupport.Domain.Entities;
+using HrDecisionSupport.Domain.Enums;
 
 namespace HrDecisionSupport.Application.PreScreening.Models;
 
@@ -6,12 +7,14 @@ public sealed record CandidatePreScreeningResult(
     Guid CandidateId,
     Guid JobRequisitionId,
     SkillEvaluationResult MandatorySkillResult,
-    SkillEvaluationResult OverallSkillResult,
+    SkillEvaluationResult PreferredSkillResult,
     ExperienceEvaluationResult ExperienceResult,
+    EducationEvaluationResult EducationResult,
+    WorkModeEvaluationResult WorkModeResult,
+    IReadOnlyList<LanguageEvaluationResult> LanguageResults,
     bool EligibleForSemanticEvaluation,
     IReadOnlyList<PreScreeningFailureReason> FailureReasons,
-    decimal MandatorySkillThresholdUsed,
-    decimal OverallSkillThresholdUsed);
+    decimal MandatorySkillThresholdUsed);
 
 public sealed record SkillEvaluationResult(
     int TotalRequired,
@@ -28,6 +31,27 @@ public sealed record ExperienceEvaluationResult(
     EvaluationStatus Status,
     bool Passed);
 
+public sealed record EducationEvaluationResult(
+    DegreeLevel? RequiredLevel,
+    DegreeLevel? CandidateHighestLevel,
+    EvaluationStatus Status,
+    bool Passed);
+
+public sealed record WorkModeEvaluationResult(
+    Guid? RequiredWorkModeId,
+    bool HardFilterEnabled,
+    bool CandidateSupportsWorkMode,
+    EvaluationStatus Status,
+    bool Passed);
+
+public sealed record LanguageEvaluationResult(
+    Guid LanguageId,
+    LanguageProficiencyLevel RequiredProficiency,
+    LanguageProficiencyLevel? CandidateProficiency,
+    bool HardFilterEnabled,
+    EvaluationStatus Status,
+    bool Passed);
+
 public enum EvaluationStatus
 {
     NotApplicable,
@@ -38,8 +62,10 @@ public enum EvaluationStatus
 public enum PreScreeningFailureReason
 {
     MandatorySkillCoverageBelowThreshold,
-    OverallSkillCoverageBelowThreshold,
     RelevantExperienceBelowMinimum,
     MissingRelevantExperienceData,
-    UnsupportedRelevantExperienceSource
+    UnsupportedRelevantExperienceSource,
+    EducationLevelBelowMinimum,
+    WorkModeMismatch,
+    LanguageRequirementNotMet
 }

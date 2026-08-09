@@ -1,73 +1,45 @@
-﻿using HrDecisionSupport.Application.CandidateEvaluations;
-using HrDecisionSupport.Application.Requisitions;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Threading.Tasks;
 
-namespace HrDecisionSupport.Web.Controllers
+namespace HrDecisionSupport.Web.Controllers;
+
+/// <summary>
+/// MVC view controller for Job Requisition UI pages.
+/// Routes: /JobRequisition, /JobRequisition/Create, /JobRequisition/Details/{id}, /JobRequisition/Edit/{id}
+///
+/// Do NOT confuse with the API controllers:
+///   JobRequisitionsController  (API: /api/job-requisitions/...)
+///   JobRequisitionOptionsController (API: /api/job-requisitions/options)
+///   JobMatchingController (API: /api/job-requisitions/{jobId}/matching)
+///
+/// This controller only returns Razor Views. All data is loaded by
+/// JavaScript fetch calls in the views that call the API controllers above.
+/// </summary>
+public class JobRequisitionController : Controller
 {
-    public class JobRequisitionController : Controller
+    public IActionResult Index()
     {
-        private readonly IJobRequisitionService _requisitionService;
+        ViewData["Title"] = "İş İlanları";
+        return View();
+    }
 
-        
+    public IActionResult Create()
+    {
+        ViewData["Title"] = "Yeni İlan Oluştur";
+        return View();
+    }
 
-        // 1. İlanları Listeleme Sayfası
-        public async Task<IActionResult> Index()
-        {
-            var result = await _requisitionService.ListAsync(); // Metot adına göre servis üzerinden çağırıyoruz
-            if (!result.IsSuccess)
-            {
-                return View();
-            }
-            return View(result.Value);
-        }
+    public IActionResult Details(Guid id)
+    {
+        ViewData["Title"] = "İlan Detayı";
+        ViewData["RequisitionId"] = id;
+        return View();
+    }
 
-        // 2. Yeni İlan Oluşturma Sayfası (GET)
-        [HttpGet]
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // 3. Yeni İlan Kaydetme (POST)
-        [HttpPost]
-        public async Task<IActionResult> Create(CreateJobRequisitionRequest request)
-        {
-            var result = await _requisitionService.CreateAsync(request);
-            if (!result.IsSuccess)
-            {
-                ModelState.AddModelError("", "İlan oluşturulamadı.");
-                return View(request);
-            }
-            return RedirectToAction(nameof(Index));
-        }
-
-        private readonly ICandidateEvaluationCaseService _evaluationCaseService; // Arkadaşının servisini ekledik
-
-        public JobRequisitionController(
-            IJobRequisitionService requisitionService,
-            ICandidateEvaluationCaseService evaluationCaseService)
-        {
-            _requisitionService = requisitionService;
-            _evaluationCaseService = evaluationCaseService;
-        }
-
-        public async Task<IActionResult> Details(Guid id)
-        {
-            var requisitionResult = await _requisitionService.GetByIdAsync(id);
-            if (!requisitionResult.IsSuccess)
-            {
-                return NotFound("İlan bulunamadı.");
-            }
-
-            // Arkadaşının servisini kullanarak bu ilana ait adayları çekiyoruz
-            var evaluationCasesResult = await _evaluationCaseService.ListByRequisitionAsync(id);
-
-            // Adayları view tarafına taşıyoruz
-            ViewBag.EvaluationCases = evaluationCasesResult.IsSuccess ? evaluationCasesResult.Value : null;
-
-            return View(requisitionResult.Value);
-        }
+    public IActionResult Edit(Guid id)
+    {
+        ViewData["Title"] = "İlanı Düzenle";
+        ViewData["RequisitionId"] = id;
+        return View();
     }
 }
