@@ -111,28 +111,21 @@ public sealed class EmployeeService : IEmployeeService
                 assignment.EndDate))
             .ToListAsync(cancellationToken);
 
-        // --- YENİ EKLENEN KISIM: Snapshot Verilerini Çekiyoruz ---
-        // PersonId üzerinden ilgili kariyer snapshot verisini buluyoruz
-        // Çalışanın PersonId'sine karşılık gelen bir aday (Candidate) ve onun kariyer snapshot verisini çekiyoruz
+        // --- DÜZELTİLEN KISIM: Çalışanın KENDİ Snapshot Verilerini Çekiyoruz ---
         int? shortestJob = null;
         int? totalExp = null;
 
-        var candidateRecord = await _dbContext.Candidates
+        var snap = await _dbContext.Employees
             .AsNoTracking()
-            .Include(c => c.CareerFeatureSnapshots)
-            .FirstOrDefaultAsync(c => c.PersonId == employee.PersonId, cancellationToken);
+            .Where(e => e.Id == id)
+            .SelectMany(e => e.CareerFeatureSnapshots)
+            .OrderByDescending(s => s.CreatedAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (candidateRecord != null && candidateRecord.CareerFeatureSnapshots != null)
+        if (snap != null)
         {
-            var snap = candidateRecord.CareerFeatureSnapshots
-                .OrderByDescending(s => s.TotalExperienceMonths)
-                .FirstOrDefault();
-
-            if (snap != null)
-            {
-                shortestJob = (int?)snap.ShortestPreviousJobMonths;
-                totalExp = (int?)snap.TotalExperienceMonths;
-            }
+            shortestJob = snap.ShortestPreviousJobMonths;
+            totalExp = snap.TotalExperienceMonths;
         }
         // -----------------------------------------------------------
 
