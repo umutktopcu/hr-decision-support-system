@@ -48,7 +48,7 @@ public static class DependencyInjection
             var opts = serviceProvider
                 .GetRequiredService<Microsoft.Extensions.Options.IOptions<QwenEmbeddingOptions>>().Value;
             client.BaseAddress = new Uri(opts.BaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds);
+            client.Timeout = TimeSpan.FromMinutes(10);
         });
 
         if (configuration is not null)
@@ -66,7 +66,7 @@ public static class DependencyInjection
             var opts = serviceProvider
                 .GetRequiredService<Microsoft.Extensions.Options.IOptions<HrDecisionSupport.Infrastructure.SemanticMatching.Reranking.QwenRerankerOptions>>().Value;
             client.BaseAddress = new Uri(opts.BaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds);
+            client.Timeout = TimeSpan.FromMinutes(10);
         });
 
         return services;

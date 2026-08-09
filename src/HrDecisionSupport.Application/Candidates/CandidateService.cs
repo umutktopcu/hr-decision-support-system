@@ -38,7 +38,19 @@ public sealed class CandidateService : ICandidateService
                 candidate.Person.LastName,
                 candidate.Person.Email,
                 candidate.CandidateSource,
-                candidate.ExternalCandidateId))
+                candidate.ExternalCandidateId,
+                candidate.CareerFeatureSnapshots
+                    .OrderByDescending(s => s.TotalExperienceMonths)
+                    .Select(s => (int?)(s.TotalExperienceMonths / 12))
+                    .FirstOrDefault(),
+
+                candidate.Person.PersonCompetencies
+                    .Where(pc => pc.Competency != null)
+                    .Select(pc => pc.Competency.Name)
+                    .ToList(),
+
+                null,
+                candidate.ProfessionalTitle))
             .ToListAsync(cancellationToken);
 
         return Result<IReadOnlyList<CandidateListItemDto>>.Success(candidates);
@@ -62,7 +74,10 @@ public sealed class CandidateService : ICandidateService
                 item.Person.PhoneNumber,
                 item.CandidateSource,
                 item.ExternalCandidateId,
-                item.EvaluationCases.Count))
+                item.EvaluationCases.Count,
+                item.CareerFeatureSnapshots.Select(s => (int?)s.ShortestPreviousJobMonths).FirstOrDefault(),
+                item.CareerFeatureSnapshots.Select(s => (int?)s.TotalExperienceMonths).FirstOrDefault() // Longest için şimdilik total'i gönderiyoruz
+                ))
             .SingleOrDefaultAsync(cancellationToken);
 
         return candidate is null

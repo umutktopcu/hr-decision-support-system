@@ -29,7 +29,9 @@ public sealed record EmployeeDetailsDto(
     DateOnly HireDate,
     DateOnly? TerminationDate,
     EmploymentStatus EmploymentStatus,
-    IReadOnlyList<EmployeeAssignmentDto> Assignments);
+    IReadOnlyList<EmployeeAssignmentDto> Assignments,
+    int? ShortestJobMonths = null,
+    int? TotalExperienceMonths = null);
 
 public sealed record EmployeeAssignmentDto(
     Guid Id,

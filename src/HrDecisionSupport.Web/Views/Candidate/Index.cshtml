@@ -1,18 +1,20 @@
 ﻿@model IEnumerable<HrDecisionSupport.Application.Candidates.Dtos.CandidateListItemDto>
+@using HrDecisionSupport.Application.Common.Interfaces
+@using Microsoft.EntityFrameworkCore
+@inject IHrDecisionSupportDbContext DbContext
 
 @{
     ViewData["Title"] = "Aday Yönetimi";
+    
+    // Yetkinlikleri doğrudan Index.cshtml içinden güvenle çekiyoruz
+    var allCompetencies = await DbContext.Competencies
+        .Where(c => c.IsActive)
+        .OrderBy(c => c.Name)
+        .ToListAsync();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Aday Listesi</h2>
-    <button class="btn btn-success">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel me-2" viewBox="0 0 16 16">
-            <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z" />
-            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z" />
-        </svg>
-        Excel'den Aday Aktar
-    </button>
 </div>
 
 <!-- Filtreleme Alanı -->
@@ -27,24 +29,21 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label text-muted small">Aranan Yetkinlikler</label>
-                <!-- Sadece fareyle tıklanabilen, kaydırılabilir onay kutusu listesi -->
                 <div class="border rounded p-2 bg-white form-control" style="max-height: 85px; overflow-y: auto;">
-                    <div class="form-check mb-1">
-                        <input class="form-check-input skill-checkbox" type="checkbox" value="c#" id="chk-csharp">
-                        <label class="form-check-label small" style="cursor:pointer;" for="chk-csharp">C# / .NET</label>
-                    </div>
-                    <div class="form-check mb-1">
-                        <input class="form-check-input skill-checkbox" type="checkbox" value="react" id="chk-react">
-                        <label class="form-check-label small" style="cursor:pointer;" for="chk-react">React.js</label>
-                    </div>
-                    <div class="form-check mb-1">
-                        <input class="form-check-input skill-checkbox" type="checkbox" value="sql" id="chk-sql">
-                        <label class="form-check-label small" style="cursor:pointer;" for="chk-sql">PostgreSQL / SQL</label>
-                    </div>
-                    <div class="form-check mb-0">
-                        <input class="form-check-input skill-checkbox" type="checkbox" value="java" id="chk-java">
-                        <label class="form-check-label small" style="cursor:pointer;" for="chk-java">Java</label>
-                    </div>
+                    @if (allCompetencies != null && allCompetencies.Any())
+        {
+            foreach (var comp in allCompetencies)
+            {
+                <div class="form-check mb-1">
+                    <input class="form-check-input skill-checkbox" type="checkbox" value="@comp.Name.ToLower()" id="chk-@comp.Id">
+                    <label class="form-check-label small" style="cursor:pointer;" for="chk-@comp.Id">@comp.Name</label>
+                </div>
+            }
+        }
+        else
+        {
+            <span class="text-muted small">Yetkinlikler bulunamadı.</span>
+        }
                 </div>
             </div>
             <div class="col-md-2">
@@ -88,6 +87,7 @@
                     </tr>
                 </thead>
                 <!-- ID eklendi: candidateTableBody -->
+                <!-- ID eklendi: candidateTableBody -->
                 <tbody id="candidateTableBody">
                     @if (Model != null)
                     {
@@ -101,17 +101,43 @@
                                         : (candidate.CandidateCode ?? "İsimsiz Aday"))
                                 </td>
 
-                                <!-- Başvurduğu Pozisyon (DTO'da olmadığı için şimdilik boş veya kaynak yazıyoruz) -->
-                                <td>Aday Kaynağı: @candidate.CandidateSource</td>
-
-                                <!-- Deneyim (DTO'da olmadığı için şimdilik tire) -->
-                                <td class="exp-cell">-</td>
-
-                                <td class="skills-cell">
-                                    <span class="badge bg-secondary">Beceriler Yakında</span>
+                                <!-- Başvurduğu Pozisyon -->
+                                <!-- Başvurduğu Pozisyon (Gerçek Veri) -->
+                                <td>
+                                    @(string.IsNullOrEmpty(candidate.ProfessionalTitle) ? "Belirtilmemiş" : candidate.ProfessionalTitle)
                                 </td>
 
-                                <td><span class="badge bg-success" style="font-size: 0.9em;">Skor Hesaplanacak</span></td>
+                                <!-- Deneyim (DTO'dan gelen gerçek veri, eğer yoksa 0 Yıl yazsın) -->
+                                <td class="exp-cell">
+                                    @(candidate.TotalExperienceYears != null ? $"{candidate.TotalExperienceYears} Yıl" : "-")
+                                </td>
+
+                                <!-- Beceriler (Eğer liste halinde geliyorsa aralarına virgül koyarak yazdırıyoruz) -->
+                                <td class="skills-cell">
+                                    @if (candidate.Skills != null && candidate.Skills.Any())
+                                    {
+                                        foreach (var skill in candidate.Skills)
+                                        {
+                                            <span class="badge bg-secondary me-1">@skill</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Belirtilmemiş</span>
+                                    }
+                                </td>
+
+                                <!-- Uyum Skoru (Eğer eşleştirme listesindeysek) -->
+                                <td>
+                                    @if (candidate.MatchScore != null)
+                                    {
+                                        <span class="badge bg-success" style="font-size: 0.9em;">%@candidate.MatchScore</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-dark border" style="font-size: 0.8em;">Hesaplanmadı</span>
+                                    }
+                                </td>
 
                                 <td class="text-end pe-4">
                                     <a asp-action="Details" asp-route-id="@candidate.Id" class="btn btn-sm btn-outline-primary">Profili İncele</a>
@@ -129,32 +155,33 @@
 @section Scripts {
     <script>
         document.getElementById('filterBtn').addEventListener('click', function() {
-            // Metin ve deneyim filtrelerini al
+            // Arama ve filtre değerlerini al
             const searchText = document.getElementById('searchInput').value.toLowerCase();
             const expFilter = parseInt(document.getElementById('expSelect').value) || 0;
 
-            // YENİ MANTIK: İşaretlenmiş (checked) olan tüm checkbox'ları bul ve değerlerini diziye al
+            // Seçili yetkinlikleri al
             const skillCheckboxes = document.querySelectorAll('.skill-checkbox:checked');
             const selectedSkills = Array.from(skillCheckboxes).map(cb => cb.value.toLowerCase());
 
-            // Tablodaki tüm satırları al
             const rows = document.querySelectorAll('#candidateTableBody tr');
 
             rows.forEach(row => {
-                // Hücrelerdeki metinleri oku
                 const name = row.cells[0].innerText.toLowerCase();
                 const position = row.cells[1].innerText.toLowerCase();
-                const expYears = parseInt(row.cells[2].innerText) || 0;
+                
+                // GÜVENLİ RAKAM OKUMA ("9 Yıl" metninden sadece 9'u alır)
+                const expText = row.cells[2].innerText;
+                const expMatch = expText.match(/\d+/);
+                const expYears = expMatch ? parseInt(expMatch[0]) : 0;
+
                 const skills = row.cells[3].innerText.toLowerCase();
 
-                // Eşleşme Kontrolleri
+                // Eşleşme Mantıkları
                 const matchSearch = name.includes(searchText) || position.includes(searchText);
                 const matchExp = expYears >= expFilter;
-
-                // Çoklu Yetkinlik Eşleşmesi (Seçilen her bir yetkinlik adayda var mı?)
                 const matchSkill = selectedSkills.length === 0 || selectedSkills.every(skill => skills.includes(skill));
 
-                // Tüm kurallardan geçiyorsa göster, geçmiyorsa gizle
+                // Tüm şartlar sağlanıyorsa göster, yoksa gizle
                 if (matchSearch && matchSkill && matchExp) {
                     row.style.display = '';
                 } else {

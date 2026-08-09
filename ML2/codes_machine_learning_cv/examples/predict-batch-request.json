@@ -1,0 +1,12 @@
+[
+    {
+        "referenceId": "EMP0001",
+        "shortestPreviousJobMonths": 8,
+        "longestPreviousJobMonths": 42
+    },
+    {
+        "referenceId": "EMP0002",
+        "shortestPreviousJobMonths": 12,
+        "longestPreviousJobMonths": 60
+    }
+]

@@ -12,7 +12,7 @@
         <div class="card dashboard-card shadow-sm p-3">
             <div class="card-body">
                 <h5 class="text-muted">Toplam Çalışan</h5>
-                <div class="dashboard-number">124</div>
+                <h3>@ViewBag.TotalEmployees</h3>
                 <a asp-controller="Employee" asp-action="Index" class="btn btn-outline-primary mt-3">Çalışanları Gör</a>
             </div>
         </div>
@@ -23,7 +23,7 @@
         <div class="card dashboard-card shadow-sm p-3">
             <div class="card-body">
                 <h5 class="text-muted">Aktif Adaylar</h5>
-                <div class="dashboard-number">38</div>
+                <h3>@ViewBag.TotalCandidates</h3>
                 <a asp-controller="Candidate" asp-action="Index" class="btn btn-outline-primary mt-3">Adayları Gör</a>
             </div>
         </div>

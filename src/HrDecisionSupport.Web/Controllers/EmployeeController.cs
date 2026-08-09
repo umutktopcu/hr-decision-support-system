@@ -6,7 +6,7 @@ namespace HrDecisionSupport.Web.Controllers
     public class EmployeeController : Controller
     {
         private readonly IEmployeeService _employeeService;
-        private readonly IMlPredictionService _mlPredictionService; // ML Servisini ekledik
+        private readonly IMlPredictionService _mlPredictionService;
 
         public EmployeeController(IEmployeeService employeeService, IMlPredictionService mlPredictionService)
         {
@@ -24,21 +24,17 @@ namespace HrDecisionSupport.Web.Controllers
                 return View(new List<HrDecisionSupport.Application.Employees.Dtos.EmployeeListItemDto>());
             }
 
-            // Gelen tüm listeyi LINQ ile filtreleyebilmek için bir değişkene alıyoruz
             var employees = result.Value.AsEnumerable();
 
-            // Filtreleme Mantığı (EmploymentStatus Enum'una göre)
             if (status == "Aktif")
             {
                 employees = employees.Where(e => e.EmploymentStatus.ToString() == "Active");
             }
             else if (status == "Eski")
             {
-                // Active olmayanları (örneğin Terminated) filtrele
                 employees = employees.Where(e => e.EmploymentStatus.ToString() != "Active");
             }
 
-            // Filtrelenmiş listeyi View'a (HTML'e) gönder
             return View(employees.ToList());
         }
 
@@ -47,14 +43,18 @@ namespace HrDecisionSupport.Web.Controllers
             var result = await _employeeService.GetByIdAsync(id);
             if (!result.IsSuccess) return NotFound();
 
-            // Şimdilik test amaçlı örnek veriler gönderiyoruz (DTO güncellenince buraya DB'den gelen gerçek süreleri koyacağız)
-            double ornekEnKisaIs = 14.0;
-            double ornekEnUzunIs = 44.0;
+            double enKisaIs = result.Value.ShortestJobMonths ?? -1;
+            double enUzunIs = result.Value.TotalExperienceMonths ?? -1;
 
-            // Python'a soruyoruz!
-            int tahminSonucu = await _mlPredictionService.PredictStayAsync(ornekEnKisaIs, ornekEnUzunIs);
+            ViewBag.TestKisa = enKisaIs;
+            ViewBag.TestUzun = enUzunIs;
 
-            // Tahmini arayüze taşıyoruz
+            // Eğer veritabanından veri gelmediyse (-1 ise) geçici olarak 14 ve 44 kullanalım, geldiyse gerçek veriyi kullanalım
+            double mlKisa = enKisaIs > 0 ? enKisaIs : 14.0;
+            double mlUzun = enUzunIs > 0 ? enUzunIs : 44.0;
+
+            int tahminSonucu = await _mlPredictionService.PredictStayAsync(mlKisa, mlUzun);
+
             ViewBag.MlTahmin = tahminSonucu switch
             {
                 0 => "Kısa Süreli Kalıcı (Riskli)",

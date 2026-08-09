@@ -1,0 +1,13 @@
+{
+    "referenceId": "EMP0001",
+    "success": true,
+    "prediction": {
+        "predictedClass": 2,
+        "className": "Long",
+        "probabilities": {
+            "Short": 0.08,
+            "Normal": 0.21,
+            "Long": 0.71
+        }
+    }
+}

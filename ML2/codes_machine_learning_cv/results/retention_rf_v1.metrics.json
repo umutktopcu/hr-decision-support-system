@@ -1,0 +1,28 @@
+{
+    "modelVersion": "retention-rf-v1",
+    "accuracy": 0.89,
+    "weightedF1": 0.8954613689395902,
+    "classificationReport": "              precision    recall  f1-score   support\n\nKısa (short)       1.00      0.87      0.93        15\n      Normal       0.96      0.89      0.93       148\n Uzun (long)       0.66      0.89      0.76        37\n\n    accuracy                           0.89       200\n   macro avg       0.87      0.88      0.87       200\nweighted avg       0.91      0.89      0.90       200\n",
+    "confusionMatrix": [
+        [
+            13,
+            1,
+            1
+        ],
+        [
+            0,
+            132,
+            16
+        ],
+        [
+            0,
+            4,
+            33
+        ]
+    ],
+    "featureList": [
+        "En kısa önceki iş (ay)",
+        "En uzun önceki iş (ay)"
+    ],
+    "testRowCount": 200
+}

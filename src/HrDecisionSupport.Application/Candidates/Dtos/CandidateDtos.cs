@@ -10,7 +10,13 @@ public sealed record CandidateListItemDto(
     string? LastName,
     string? Email,
     CandidateSource CandidateSource,
-    string? ExternalCandidateId);
+    string? ExternalCandidateId,
+
+    int? TotalExperienceYears = null,
+    List<string>? Skills = null,
+    double? MatchScore = null,
+    string? ProfessionalTitle = null
+);
 
 public sealed record CandidateDetailsDto(
     Guid Id,
@@ -23,7 +29,10 @@ public sealed record CandidateDetailsDto(
     string? PhoneNumber,
     CandidateSource CandidateSource,
     string? ExternalCandidateId,
-    int EvaluationCaseCount);
+    int EvaluationCaseCount,
+    int? ShortestJobMonths = null,
+    int? LongestJobMonths = null);
+
 
 public sealed record CreateCandidateRequest(
     string CandidateCode,

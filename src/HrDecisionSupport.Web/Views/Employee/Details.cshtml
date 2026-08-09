@@ -6,6 +6,9 @@
 <div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Çalışan Profili</h2>
+        <div class="alert alert-info">
+            <strong>Test Verileri:</strong> En Kısa İş: @ViewBag.TestKisa ay | Toplam Deneyim: @ViewBag.TestUzun ay
+        </div>
         <div>
             <a href="/Employee/Index" class="btn btn-outline-secondary me-2">Listeye Dön</a>
             <!-- Butonu Modal açacak şekilde güncelledik -->
@@ -78,6 +81,7 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link fw-bold" id="egitim-tab" data-bs-toggle="tab" data-bs-target="#egitim" type="button" role="tab">Eğitim</button>
                         </li>
+                        
                         <!-- Senin mevcut sekmelerin -->
                         <li class="nav-item" role="presentation">
                             <button class="nav-link fw-bold" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab">Performans</button>

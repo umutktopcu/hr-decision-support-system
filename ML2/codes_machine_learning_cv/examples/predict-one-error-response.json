@@ -1,0 +1,6 @@
+{
+    "referenceId": "EMP0001",
+    "success": false,
+    "errorCode": "INVALID_FEATURE_RANGE",
+    "message": "Shortest previous job duration cannot exceed longest previous job duration."
+}

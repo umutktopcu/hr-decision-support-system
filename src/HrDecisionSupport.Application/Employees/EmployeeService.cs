@@ -111,7 +111,32 @@ public sealed class EmployeeService : IEmployeeService
                 assignment.EndDate))
             .ToListAsync(cancellationToken);
 
-        return Result<EmployeeDetailsDto>.Success(MapDetails(employee, assignments));
+        // --- YENİ EKLENEN KISIM: Snapshot Verilerini Çekiyoruz ---
+        // PersonId üzerinden ilgili kariyer snapshot verisini buluyoruz
+        // Çalışanın PersonId'sine karşılık gelen bir aday (Candidate) ve onun kariyer snapshot verisini çekiyoruz
+        int? shortestJob = null;
+        int? totalExp = null;
+
+        var candidateRecord = await _dbContext.Candidates
+            .AsNoTracking()
+            .Include(c => c.CareerFeatureSnapshots)
+            .FirstOrDefaultAsync(c => c.PersonId == employee.PersonId, cancellationToken);
+
+        if (candidateRecord != null && candidateRecord.CareerFeatureSnapshots != null)
+        {
+            var snap = candidateRecord.CareerFeatureSnapshots
+                .OrderByDescending(s => s.TotalExperienceMonths)
+                .FirstOrDefault();
+
+            if (snap != null)
+            {
+                shortestJob = (int?)snap.ShortestPreviousJobMonths;
+                totalExp = (int?)snap.TotalExperienceMonths;
+            }
+        }
+        // -----------------------------------------------------------
+
+        return Result<EmployeeDetailsDto>.Success(MapDetails(employee, assignments, shortestJob, totalExp));
     }
 
     public async Task<Result<EmployeeDetailsDto>> CreateAsync(
@@ -284,8 +309,10 @@ public sealed class EmployeeService : IEmployeeService
     private static EmployeeDetailsDto MapDetails(
         Employee employee,
         Person person,
-        IReadOnlyList<EmployeeAssignmentDto> assignments) =>
-        new(
+        IReadOnlyList<EmployeeAssignmentDto> assignments,
+        int? shortestJobMonths = null,          // <-- Varsayılan değer eklendi
+        int? totalExperienceMonths = null)      // <-- Varsayılan değer eklendi
+        => new(
             employee.Id,
             person.Id,
             employee.EmployeeCode,
@@ -297,7 +324,32 @@ public sealed class EmployeeService : IEmployeeService
             employee.HireDate,
             employee.TerminationDate,
             employee.EmploymentStatus,
-            assignments);
+            assignments,
+            shortestJobMonths,
+            totalExperienceMonths
+        );
+
+    private static EmployeeDetailsDto MapDetails(
+        EmployeeHeader employee,
+        IReadOnlyList<EmployeeAssignmentDto> assignments,
+        int? shortestJobMonths = null,          // <-- Varsayılan değer eklendi
+        int? totalExperienceMonths = null)      // <-- Varsayılan değer eklendi
+        => new(
+            employee.Id,
+            employee.PersonId,
+            employee.EmployeeCode,
+            employee.AnonymousCode,
+            employee.FirstName,
+            employee.LastName,
+            employee.Email,
+            employee.PhoneNumber,
+            employee.HireDate,
+            employee.TerminationDate,
+            employee.EmploymentStatus,
+            assignments,
+            shortestJobMonths,
+            totalExperienceMonths
+        );
 
     private static EmployeeDetailsDto MapDetails(
         EmployeeHeader employee,

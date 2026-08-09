@@ -1,0 +1,17 @@
+{
+    "modelVersion": "retention-rf-v1",
+    "featureSchemaVersion": "retention-features-v1",
+    "algorithm": "random_forest",
+    "features": [
+        "En kısa önceki iş (ay)",
+        "En uzun önceki iş (ay)"
+    ],
+    "classMapping": {
+        "0": "Short",
+        "1": "Normal",
+        "2": "Long"
+    },
+    "trainedAtUtc": "2026-08-07T09:16:43.592026Z",
+    "sklearnVersion": "1.9.0",
+    "modelFileName": "retention_rf_v1.joblib"
+}

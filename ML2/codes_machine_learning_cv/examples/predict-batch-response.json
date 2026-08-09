@@ -1,0 +1,18 @@
+[
+    {
+        "referenceId": "EMP0001",
+        "success": true,
+        "prediction": {
+            "predictedClass": 2,
+            "className": "Long"
+        }
+    },
+    {
+        "referenceId": "EMP0002",
+        "success": true,
+        "prediction": {
+            "predictedClass": 1,
+            "className": "Normal"
+        }
+    }
+]

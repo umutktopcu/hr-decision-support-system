@@ -181,15 +181,12 @@
                                 <th class="ps-3">Sıra</th>
                                 <th>Aday</th>
                                 <th>Kod</th>
-                                <th>
-                                    Yetkinlik Kademesi
-                                    <span class="text-muted small fw-normal ms-1"
-                                          title="Sıralama; önce zorunlu yetkinlik kapsamı, sonra tercih edilen kapsam, ardından semantik uyum skoru dikkate alınarak yapılır.">ⓘ</span>
-                                </th>
+                                <th>Yetkinlik Kademesi <span class="text-muted small fw-normal ms-1">ⓘ</span></th>
                                 <th>Zorunlu Kapsam</th>
                                 <th>Tercih Kapsamı</th>
                                 <th>Embedding Skoru</th>
                                 <th>İş Uyum Skoru</th>
+                                <th>AI Kalıcılık Tahmini</th> 
                             </tr>
                         </thead>
                         <tbody id="rankedCandidatesBody"></tbody>
@@ -534,6 +531,7 @@
             candidates.forEach((c, idx) => {
                 const tierBadge = tierBadgeHtml(c.skillTier);
                 const tr = document.createElement('tr');
+                const mlBadgeId = `ml-badge-${idx}`;
                 tr.innerHTML = `
                     <td class="ps-3 fw-bold text-muted">#${idx + 1}</td>
                     <td class="fw-bold">${escHtml(c.displayName)}</td>
@@ -542,16 +540,47 @@
                     <td>${fmtPct(c.mandatorySkillCoverage)}</td>
                     <td>${fmtPct(c.preferredSkillCoverage)}</td>
                     <td class="text-muted small">${fmtScore(c.embeddingScore, 4)}</td>
-        <td><span class="badge bg-primary">${fmtScore(c.jobFitScore, 4)}</span></td>
-        <td><span id="${mlBadgeId}" class="badge bg-secondary">Hesaplanıyor...</span></td>
-    `;
+                    <td><span class="badge bg-primary">${fmtScore(c.jobFitScore, 4)}</span></td>
+                    <td><span id="${mlBadgeId}" class="badge bg-secondary">Hesaplanıyor...</span></td>`;
                 tbody.appendChild(tr);
+                fetchMlPrediction(mlBadgeId, 5.0, 36.0);
             });
         }
 
         function tierBadgeHtml(tier) {
             const cls = tier === 1 ? 'bg-success' : tier === 2 ? 'bg-warning text-dark' : 'bg-secondary';
             return `<span class="badge ${cls}">Kademe ${tier}</span>`;
+        }
+
+                async function fetchMlPrediction(badgeId, shortest, longest) {
+            try {
+                const res = await fetch('http://127.0.0.1:8000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ shortest_job_months: shortest, longest_job_months: longest })
+                });
+
+                const badge = document.getElementById(badgeId);
+                if(res.ok) {
+                    const data = await res.json();
+                    if(data.label === 0) {
+                        badge.className = 'badge bg-danger';
+                        badge.textContent = 'Kısa Süreli';
+                    } else if(data.label === 1) {
+                        badge.className = 'badge bg-info text-dark';
+                        badge.textContent = 'Normal';
+                    } else {
+                        badge.className = 'badge bg-success';
+                        badge.textContent = 'Uzun Süreli (Güvenli)';
+                    }
+                } else {
+                    badge.className = 'badge bg-secondary';
+                    badge.textContent = 'API Hatası';
+                }
+            } catch(e) {
+                document.getElementById(badgeId).className = 'badge bg-danger';
+                document.getElementById(badgeId).textContent = 'Bağlantı Koptu';
+            }
         }
     </script>
 }
