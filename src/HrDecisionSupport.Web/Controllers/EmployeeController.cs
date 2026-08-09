@@ -1,4 +1,4 @@
-﻿using HrDecisionSupport.Application.Employees;
+using HrDecisionSupport.Application.Employees;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HrDecisionSupport.Web.Controllers
@@ -49,19 +49,22 @@ namespace HrDecisionSupport.Web.Controllers
             ViewBag.TestKisa = enKisaIs;
             ViewBag.TestUzun = enUzunIs;
 
-            // Eğer veritabanından veri gelmediyse (-1 ise) geçici olarak 14 ve 44 kullanalım, geldiyse gerçek veriyi kullanalım
-            double mlKisa = enKisaIs > 0 ? enKisaIs : 14.0;
-            double mlUzun = enUzunIs > 0 ? enUzunIs : 44.0;
-
-            int tahminSonucu = await _mlPredictionService.PredictStayAsync(mlKisa, mlUzun);
-
-            ViewBag.MlTahmin = tahminSonucu switch
+            if (enKisaIs > 0 && enUzunIs > 0)
             {
-                0 => "Kısa Süreli Kalıcı (Riskli)",
-                1 => "Normal Süreli Kalıcı",
-                2 => "Uzun Süreli Kalıcı (Güvenli)",
-                _ => "Tahmin Yapılamadı"
-            };
+                int tahminSonucu = await _mlPredictionService.PredictStayAsync(enKisaIs, enUzunIs);
+
+                ViewBag.MlTahmin = tahminSonucu switch
+                {
+                    0 => "Kısa Süreli Kalıcı (Riskli)",
+                    1 => "Normal Süreli Kalıcı",
+                    2 => "Uzun Süreli Kalıcı (Güvenli)",
+                    _ => "Tahmin Yapılamadı"
+                };
+            }
+            else
+            {
+                ViewBag.MlTahmin = "Yetersiz Veri (Tahmin Yapılamadı)";
+            }
 
             return View(result.Value);
         }

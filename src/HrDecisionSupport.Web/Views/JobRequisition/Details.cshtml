@@ -1,16 +1,16 @@
-@{
-    ViewData["Title"] = "Gereksinim Detayı";
+﻿@{
+    ViewData["Title"] = "Gereksinim DetayÄ±";
     var requisitionId = ViewData["RequisitionId"]?.ToString() ?? "";
 }
 
 <!-- Back + Action Bar -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <a asp-controller="JobRequisition" asp-action="Index" class="btn btn-outline-secondary me-2">← Listeye Dön</a>
+        <a asp-controller="JobRequisition" asp-action="Index" class="btn btn-outline-secondary me-2">â† Listeye DÃ¶n</a>
     </div>
     <div id="detailActionBar" class="d-none">
-        <a id="editBtn" href="#" class="btn btn-outline-primary me-2">Gereksinimleri Düzenle</a>
-        <button type="button" id="statusBtn" class="btn btn-outline-warning me-2 d-none">Durum Değiştir</button>
+        <a id="editBtn" href="#" class="btn btn-outline-primary me-2">Gereksinimleri DÃ¼zenle</a>
+        <button type="button" id="statusBtn" class="btn btn-outline-warning me-2 d-none">Durum DeÄŸiÅŸtir</button>
     </div>
 </div>
 
@@ -19,13 +19,13 @@
 <!-- Loading -->
 <div id="detailLoading" class="text-center py-5">
     <div class="spinner-border text-primary" role="status"></div>
-    <p class="text-muted mt-2">Yükleniyor...</p>
+    <p class="text-muted mt-2">YÃ¼kleniyor...</p>
 </div>
 
 <!-- Detail content (hidden until loaded) -->
 <div id="detailContent" class="d-none">
 
-    <!-- ── Header Card ──────────────────────────────────────── -->
+    <!-- â”€â”€ Header Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div class="card section-card shadow-sm mb-4">
         <div class="card-body">
             <div class="row align-items-center">
@@ -33,18 +33,18 @@
                     <h3 id="detTitle" class="mb-1"></h3>
                     <div class="text-muted">
                         Kod: <strong id="detCode"></strong>
-                        &nbsp;·&nbsp; Pozisyon: <strong id="detPosition"></strong>
-                        &nbsp;·&nbsp; Departman: <strong id="detDepartment"></strong>
+                        &nbsp;Â·&nbsp; Pozisyon: <strong id="detPosition"></strong>
+                        &nbsp;Â·&nbsp; Departman: <strong id="detDepartment"></strong>
                     </div>
                 </div>
                 <div class="col-md-4 text-end">
                     <div id="detStatus" class="mb-1"></div>
                     <small class="text-muted">
-                        Açılış: <span id="detOpenedAt"></span>
-                        &nbsp;|&nbsp; Kapanış: <span id="detClosedAt">—</span>
+                        AÃ§Ä±lÄ±ÅŸ: <span id="detOpenedAt"></span>
+                        &nbsp;|&nbsp; KapanÄ±ÅŸ: <span id="detClosedAt">â€”</span>
                     </small>
                     <div class="mt-1">
-                        <small class="text-muted">Açık Pozisyon: <strong id="detOpenings"></strong></small>
+                        <small class="text-muted">AÃ§Ä±k Pozisyon: <strong id="detOpenings"></strong></small>
                     </div>
                 </div>
             </div>
@@ -52,33 +52,33 @@
         </div>
     </div>
 
-    <!-- ── Filter Config ────────────────────────────────────── -->
+    <!-- â”€â”€ Filter Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div class="card section-card shadow-sm mb-4">
-        <div class="card-header bg-white fw-bold">Filtre Yapılandırması</div>
+        <div class="card-header bg-white fw-bold">Filtre YapÄ±landÄ±rmasÄ±</div>
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-3">
                     <div class="text-muted small">Min. Deneyim</div>
-                    <div id="detMinExp" class="fw-bold">—</div>
+                    <div id="detMinExp" class="fw-bold">â€”</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="text-muted small">Min. Eğitim Seviyesi</div>
-                    <div id="detMinEdu" class="fw-bold">—</div>
+                    <div class="text-muted small">Min. EÄŸitim Seviyesi</div>
+                    <div id="detMinEdu" class="fw-bold">â€”</div>
                 </div>
                 <div class="col-md-3">
-                    <div class="text-muted small">Çalışma Modu</div>
-                    <div id="detWorkMode" class="fw-bold">—</div>
+                    <div class="text-muted small">Ã‡alÄ±ÅŸma Modu</div>
+                    <div id="detWorkMode" class="fw-bold">â€”</div>
                     <small id="detWorkModeFilter" class="text-muted"></small>
                 </div>
                 <div class="col-md-3">
-                    <div class="text-muted small">Zorunlu Yetkinlik Eşiği</div>
-                    <div id="detThreshold" class="fw-bold">—</div>
+                    <div class="text-muted small">Zorunlu Yetkinlik EÅŸiÄŸi</div>
+                    <div id="detThreshold" class="fw-bold">â€”</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ── Skills ────────────────────────────────────────────── -->
+    <!-- â”€â”€ Skills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div class="card section-card shadow-sm mb-4">
         <div class="card-header bg-white fw-bold">Yetkinlikler</div>
         <div class="card-body">
@@ -99,7 +99,7 @@
         </div>
     </div>
 
-    <!-- ── Language Requirements ─────────────────────────────── -->
+    <!-- â”€â”€ Language Requirements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div class="card section-card shadow-sm mb-4" id="langSection">
         <div class="card-header bg-white fw-bold">Dil Gereksinimleri</div>
         <div class="card-body">
@@ -107,31 +107,31 @@
         </div>
     </div>
 
-    <!-- ── Matching Panel ────────────────────────────────────── -->
+    <!-- â”€â”€ Matching Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div class="card section-card shadow-sm mb-4">
         <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
-            <span>Aday Eşleştirme</span>
-            <small class="text-muted fw-normal">"Eşleştir" tuşuna basıldığında AI modeli çalışır</small>
+            <span>Aday EÅŸleÅŸtirme</span>
+            <small class="text-muted fw-normal">"EÅŸleÅŸtir" tuÅŸuna basÄ±ldÄ±ÄŸÄ±nda AI modeli Ã§alÄ±ÅŸÄ±r</small>
         </div>
         <div class="card-body">
             <div class="row g-3 align-items-end mb-3">
                 <div class="col-md-3">
                     <label class="form-label text-muted small">Retrieval Top N</label>
                     <input type="number" id="retrievalTopN" class="form-control" value="100" min="1">
-                    <div class="form-text">Embedding'den kaç aday geri alınsın?</div>
+                    <div class="form-text">Embedding'den kaÃ§ aday geri alÄ±nsÄ±n?</div>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label text-muted small">Final Sonuç Sayısı</label>
+                    <label class="form-label text-muted small">Final SonuÃ§ SayÄ±sÄ±</label>
                     <input type="number" id="finalTopN" class="form-control" value="10" min="1">
-                    <div class="form-text">Kaç aday sıralanarak dönsün?</div>
+                    <div class="form-text">KaÃ§ aday sÄ±ralanarak dÃ¶nsÃ¼n?</div>
                 </div>
                 <div class="col-md-6 d-flex align-items-end gap-2">
                     <button type="button" id="matchBtn" class="btn btn-success">
-                        <span id="matchBtnText">Adayları Eşleştir</span>
+                        <span id="matchBtnText">AdaylarÄ± EÅŸleÅŸtir</span>
                         <span id="matchSpinner" class="spinner-border spinner-border-sm ms-1 d-none" role="status"></span>
                     </button>
                     <div id="matchStatusText" class="text-muted small d-none">
-                        Adaylar değerlendiriliyor. Bu birkaç saniye sürebilir...
+                        Adaylar deÄŸerlendiriliyor. Bu birkaÃ§ saniye sÃ¼rebilir...
                     </div>
                 </div>
             </div>
@@ -139,12 +139,12 @@
         </div>
     </div>
 
-    <!-- ── Matching Results (shown after matching) ──────────── -->
+    <!-- â”€â”€ Matching Results (shown after matching) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div id="matchingResults" class="d-none">
 
         <!-- Pipeline Telemetry -->
         <div class="card section-card shadow-sm mb-4">
-            <div class="card-header bg-white fw-bold">Eşleştirme Hattı</div>
+            <div class="card-header bg-white fw-bold">EÅŸleÅŸtirme HattÄ±</div>
             <div class="card-body">
                 <div class="row g-3 text-center mb-3" id="pipelineCards"></div>
                 <div class="text-muted small d-flex gap-2 justify-content-center" id="evalCasesInfo"></div>
@@ -154,14 +154,14 @@
         <!-- Hard Filter Breakdown -->
         <div class="card section-card shadow-sm mb-4">
             <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
-                <span>Sert Filtre Detayı</span>
+                <span>Sert Filtre DetayÄ±</span>
                 <a id="editFromMatchBtn" href="#" class="btn btn-sm btn-outline-primary">
-                    Gereksinimleri Düzenle
+                    Gereksinimleri DÃ¼zenle
                 </a>
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-3">
-                    <em>Bir aday birden fazla filtreye takılabilir. Toplamlar bağımsız olarak hesaplanmıştır.</em>
+                    <em>Bir aday birden fazla filtreye takÄ±labilir. Toplamlar baÄŸÄ±msÄ±z olarak hesaplanmÄ±ÅŸtÄ±r.</em>
                 </p>
                 <div class="row g-3" id="hardFilterBreakdown"></div>
             </div>
@@ -170,7 +170,7 @@
         <!-- Ranked Candidates -->
         <div class="card section-card shadow-sm mb-5">
             <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
-                <span>Sıralı Adaylar</span>
+                <span>SÄ±ralÄ± Adaylar</span>
                 <small class="text-muted fw-normal" id="rankedCandidatesCount"></small>
             </div>
             <div class="card-body p-0">
@@ -178,15 +178,15 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th class="ps-3">Sıra</th>
+                                <th class="ps-3">SÄ±ra</th>
                                 <th>Aday</th>
                                 <th>Kod</th>
-                                <th>Yetkinlik Kademesi <span class="text-muted small fw-normal ms-1">ⓘ</span></th>
+                                <th>Yetkinlik Kademesi <span class="text-muted small fw-normal ms-1">â“˜</span></th>
                                 <th>Zorunlu Kapsam</th>
-                                <th>Tercih Kapsamı</th>
+                                <th>Tercih KapsamÄ±</th>
                                 <th>Embedding Skoru</th>
-                                <th>İş Uyum Skoru</th>
-                                <th>AI Kalıcılık Tahmini</th> 
+                                <th>Ä°ÅŸ Uyum Skoru</th>
+                                <th>AI KalÄ±cÄ±lÄ±k Tahmini</th>
                             </tr>
                         </thead>
                         <tbody id="rankedCandidatesBody"></tbody>
@@ -204,7 +204,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header">
-                <h5 class="modal-title" id="statusModalLabel">Durum Değiştir</h5>
+                <h5 class="modal-title" id="statusModalLabel">Durum DeÄŸiÅŸtir</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -220,13 +220,13 @@
                     </select>
                 </div>
                 <div class="mb-3" id="closedAtGroup" style="display:none">
-                    <label class="form-label text-muted small">Kapanış Tarihi</label>
+                    <label class="form-label text-muted small">KapanÄ±ÅŸ Tarihi</label>
                     <input type="date" id="statusClosedAt" class="form-control">
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
-                <button type="button" id="confirmStatusBtn" class="btn btn-warning">Değiştir</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Ä°ptal</button>
+                <button type="button" id="confirmStatusBtn" class="btn btn-warning">DeÄŸiÅŸtir</button>
             </div>
         </div>
     </div>
@@ -253,7 +253,7 @@
 
                 if (!detRes.ok) {
                     const msg = await parseApiError(detRes);
-                    showAlert(alertEl, `Gereksinim yüklenemedi: ${msg}`, 'danger');
+                    showAlert(alertEl, `Gereksinim yÃ¼klenemedi: ${msg}`, 'danger');
                     loadingEl.classList.add('d-none');
                     return;
                 }
@@ -263,7 +263,7 @@
                     opts.workModes.forEach(w => { workModeMap[w.id] = w.name; });
                 }
             } catch (err) {
-                showAlert(alertEl, `Bağlantı hatası: ${err.message}`, 'danger');
+                showAlert(alertEl, `BaÄŸlantÄ± hatasÄ±: ${err.message}`, 'danger');
                 loadingEl.classList.add('d-none');
                 return;
             }
@@ -271,14 +271,14 @@
             loadingEl.classList.add('d-none');
             contentEl.classList.remove('d-none');
 
-            // ── Populate header ──────────────────────────────────
+            // â”€â”€ Populate header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             document.getElementById('detTitle').textContent      = detail.title;
             document.getElementById('detCode').textContent       = detail.requisitionCode;
             document.getElementById('detPosition').textContent   = detail.positionName;
             document.getElementById('detDepartment').textContent = detail.departmentName;
             document.getElementById('detStatus').innerHTML       = statusBadge(detail.jobRequisitionStatus);
             document.getElementById('detOpenedAt').textContent   = fmtDate(detail.openedAt);
-            document.getElementById('detClosedAt').textContent   = detail.closedAt ? fmtDate(detail.closedAt) : '—';
+            document.getElementById('detClosedAt').textContent   = detail.closedAt ? fmtDate(detail.closedAt) : 'â€”';
             document.getElementById('detOpenings').textContent   = detail.openingsCount;
 
             if (detail.description) {
@@ -287,36 +287,36 @@
                 descEl.classList.remove('d-none');
             }
 
-            // ── Filter config ────────────────────────────────────
+            // â”€â”€ Filter config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             document.getElementById('detMinExp').textContent =
                 detail.minimumRelevantExperienceMonths != null
-                    ? `${detail.minimumRelevantExperienceMonths} ay` : '—';
+                    ? `${detail.minimumRelevantExperienceMonths} ay` : 'â€”';
 
             document.getElementById('detMinEdu').textContent =
                 detail.minimumEducationLevel != null
-                    ? degreeLevelLabel(detail.minimumEducationLevel) : '—';
+                    ? degreeLevelLabel(detail.minimumEducationLevel) : 'â€”';
 
             if (detail.workModeId) {
                 document.getElementById('detWorkMode').textContent   = workModeMap[detail.workModeId] || detail.workModeId;
                 document.getElementById('detWorkModeFilter').textContent =
-                    detail.workModeHardFilterEnabled ? '(Sert Filtre aktif)' : '(Yumuşak filtre)';
+                    detail.workModeHardFilterEnabled ? '(Sert Filtre aktif)' : '(YumuÅŸak filtre)';
             }
 
             document.getElementById('detThreshold').textContent =
                 detail.mandatorySkillCoverageThreshold != null
-                    ? `${Math.round(detail.mandatorySkillCoverageThreshold * 100)}%` : '—';
+                    ? `${Math.round(detail.mandatorySkillCoverageThreshold * 100)}%` : 'â€”';
 
-            // ── Skills ───────────────────────────────────────────
+            // â”€â”€ Skills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const mandatory  = (detail.requirements || []).filter(r => r.isRequired);
             const preferred  = (detail.requirements || []).filter(r => !r.isRequired);
 
             renderSkillBadges('detMandatorySkills', mandatory, 'bg-primary');
             renderSkillBadges('detPreferredSkills', preferred, 'bg-secondary');
 
-            // ── Languages ────────────────────────────────────────
+            // â”€â”€ Languages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             renderLanguageBadges('detLanguages', detail.languageRequirements || []);
 
-            // ── Action bar ───────────────────────────────────────
+            // â”€â”€ Action bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             document.getElementById('editBtn').href = `/JobRequisition/Edit/${REQUISITION_ID}`;
             document.getElementById('editFromMatchBtn').href = `/JobRequisition/Edit/${REQUISITION_ID}`;
             document.getElementById('detailActionBar').classList.remove('d-none');
@@ -355,7 +355,7 @@
                 }
             });
 
-            // ── Match button ─────────────────────────────────────
+            // â”€â”€ Match button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             document.getElementById('matchBtn').addEventListener('click', runMatching);
         })();
 
@@ -383,7 +383,7 @@
             el.innerHTML = langs.map(l => `
                 <span class="badge bg-info text-dark me-1 mb-1">${escHtml(l.languageName)}</span>
                 <span class="text-muted small me-2">Min: ${escHtml(l.minimumProficiency?.toString() || '')}</span>
-                ${l.hardFilterEnabled ? '<span class="badge bg-danger me-2 mb-1">Sert Filtre</span>' : '<span class="badge bg-secondary me-2 mb-1">Yumuşak</span>'}
+                ${l.hardFilterEnabled ? '<span class="badge bg-danger me-2 mb-1">Sert Filtre</span>' : '<span class="badge bg-secondary me-2 mb-1">YumuÅŸak</span>'}
             `).join('<br class="d-md-none">');
         }
 
@@ -402,15 +402,15 @@
             // Client validation
             const rn = parseInt(retrievalTopN.value, 10);
             const fn = parseInt(finalTopN.value, 10);
-            if (isNaN(rn) || rn < 1) { showAlert(matchAlertEl, 'Retrieval Top N en az 1 olmalıdır.', 'warning'); return; }
-            if (isNaN(fn) || fn < 1) { showAlert(matchAlertEl, 'Final Sonuç Sayısı en az 1 olmalıdır.', 'warning'); return; }
-            if (fn > rn)             { showAlert(matchAlertEl, 'Final Sonuç Sayısı, Retrieval Top N değerinden büyük olamaz.', 'warning'); return; }
+            if (isNaN(rn) || rn < 1) { showAlert(matchAlertEl, 'Retrieval Top N en az 1 olmalÄ±dÄ±r.', 'warning'); return; }
+            if (isNaN(fn) || fn < 1) { showAlert(matchAlertEl, 'Final SonuÃ§ SayÄ±sÄ± en az 1 olmalÄ±dÄ±r.', 'warning'); return; }
+            if (fn > rn)             { showAlert(matchAlertEl, 'Final SonuÃ§ SayÄ±sÄ±, Retrieval Top N deÄŸerinden bÃ¼yÃ¼k olamaz.', 'warning'); return; }
 
             // Lock controls
             matchBtn.disabled     = true;
             retrievalTopN.disabled = true;
             finalTopN.disabled     = true;
-            matchBtnText.textContent = 'Eşleştiriliyor...';
+            matchBtnText.textContent = 'EÅŸleÅŸtiriliyor...';
             matchSpinner.classList.remove('d-none');
             matchStatusTxt.classList.remove('d-none');
             matchingRes.classList.add('d-none');
@@ -424,7 +424,7 @@
 
                 if (!res.ok) {
                     const msg = await parseApiError(res);
-                    showAlert(matchAlertEl, `Eşleştirme hatası: ${msg}`, 'danger');
+                    showAlert(matchAlertEl, `EÅŸleÅŸtirme hatasÄ±: ${msg}`, 'danger');
                     return;
                 }
 
@@ -434,12 +434,12 @@
                 matchingRes.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
             } catch (err) {
-                showAlert(matchAlertEl, `Bağlantı hatası: ${err.message}`, 'danger');
+                showAlert(matchAlertEl, `BaÄŸlantÄ± hatasÄ±: ${err.message}`, 'danger');
             } finally {
                 matchBtn.disabled     = false;
                 retrievalTopN.disabled = false;
                 finalTopN.disabled     = false;
-                matchBtnText.textContent = 'Adayları Eşleştir';
+                matchBtnText.textContent = 'AdaylarÄ± EÅŸleÅŸtir';
                 matchSpinner.classList.add('d-none');
                 matchStatusTxt.classList.add('d-none');
             }
@@ -448,15 +448,15 @@
         function renderMatchingResults(result) {
             const s = result.statistics;
 
-            // ── Pipeline cards ───────────────────────────────────
+            // â”€â”€ Pipeline cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const pipelineEl = document.getElementById('pipelineCards');
             const pipelineSteps = [
-                { label: 'Aday Havuzu',       value: s.candidatePoolCount,        icon: '👥', cls: 'bg-primary text-white' },
-                { label: 'Sert Filtre Geçen', value: s.eligibleAfterHardFilters,  icon: '✅', cls: 'bg-success text-white' },
-                { label: 'Embedding Girdi',   value: s.embeddingInputCount,       icon: '🔍', cls: 'bg-info text-dark' },
-                { label: 'Embedding Alınan',  value: s.embeddingRetrievedCount,   icon: '📤', cls: 'bg-info text-dark' },
-                { label: 'Cross-Encoder',     value: s.crossEncoderInputCount,    icon: '⚖️',  cls: 'bg-warning text-dark' },
-                { label: 'Final Sonuç',        value: s.finalReturnedCount,        icon: '🏆', cls: 'bg-dark text-white' },
+                { label: 'Aday Havuzu',       value: s.candidatePoolCount,        icon: 'ğŸ‘¥', cls: 'bg-primary text-white' },
+                { label: 'Sert Filtre GeÃ§en', value: s.eligibleAfterHardFilters,  icon: 'âœ…', cls: 'bg-success text-white' },
+                { label: 'Embedding Girdi',   value: s.embeddingInputCount,       icon: 'ğŸ”', cls: 'bg-info text-dark' },
+                { label: 'Embedding AlÄ±nan',  value: s.embeddingRetrievedCount,   icon: 'ğŸ“¤', cls: 'bg-info text-dark' },
+                { label: 'Cross-Encoder',     value: s.crossEncoderInputCount,    icon: 'âš–ï¸',  cls: 'bg-warning text-dark' },
+                { label: 'Final SonuÃ§',        value: s.finalReturnedCount,        icon: 'ğŸ†', cls: 'bg-dark text-white' },
             ];
 
             pipelineEl.innerHTML = pipelineSteps.map(step => `
@@ -471,25 +471,25 @@
             // Extra info
             const evalInfo = document.getElementById('evalCasesInfo');
             evalInfo.innerHTML = `
-                <span>Mevcut değerlendirme: <strong>${s.existingEvaluationCaseCount}</strong></span>
-                <span>·</span>
-                <span>Yeni oluşturulan: <strong>${s.createdEvaluationCaseCount}</strong></span>
-                <span>·</span>
-                <span>Ön eleme: <strong>${s.preScreenedCandidateCount}</strong></span>
-                <span>·</span>
-                <span>İstenen retrieval: <strong>${s.requestedRetrievalTopN}</strong></span>
-                <span>·</span>
-                <span>İstenen final: <strong>${s.requestedFinalTopN}</strong></span>`;
+                <span>Mevcut deÄŸerlendirme: <strong>${s.existingEvaluationCaseCount}</strong></span>
+                <span>Â·</span>
+                <span>Yeni oluÅŸturulan: <strong>${s.createdEvaluationCaseCount}</strong></span>
+                <span>Â·</span>
+                <span>Ã–n eleme: <strong>${s.preScreenedCandidateCount}</strong></span>
+                <span>Â·</span>
+                <span>Ä°stenen retrieval: <strong>${s.requestedRetrievalTopN}</strong></span>
+                <span>Â·</span>
+                <span>Ä°stenen final: <strong>${s.requestedFinalTopN}</strong></span>`;
 
-            // ── Hard filter breakdown ────────────────────────────
+            // â”€â”€ Hard filter breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const hfEl = document.getElementById('hardFilterBreakdown');
             if (result.hardFilterBreakdown) {
                 const hf = result.hardFilterBreakdown;
                 const gates = [
                     { label: 'Zorunlu Yetkinlik', gate: hf.mandatorySkill },
                     { label: 'Deneyim',            gate: hf.experience },
-                    { label: 'Eğitim',             gate: hf.education },
-                    { label: 'Çalışma Modu',       gate: hf.workMode },
+                    { label: 'EÄŸitim',             gate: hf.education },
+                    { label: 'Ã‡alÄ±ÅŸma Modu',       gate: hf.workMode },
                     { label: 'Dil',                gate: hf.language },
                 ];
                 hfEl.innerHTML = gates.map(g => {
@@ -504,19 +504,19 @@
                                     <div class="progress-bar bg-success" style="width:${passPct}%"></div>
                                 </div>
                                 <div class="d-flex justify-content-between small text-muted">
-                                    <span>✅ Geçen: <strong>${g.gate.passCount}</strong></span>
-                                    <span>❌ Elenen: <strong>${g.gate.failCount}</strong></span>
-                                    ${g.gate.notApplicableCount > 0 ? `<span>— N/A: <strong>${g.gate.notApplicableCount}</strong></span>` : ''}
+                                    <span>âœ… GeÃ§en: <strong>${g.gate.passCount}</strong></span>
+                                    <span>âŒ Elenen: <strong>${g.gate.failCount}</strong></span>
+                                    ${g.gate.notApplicableCount > 0 ? `<span>â€” N/A: <strong>${g.gate.notApplicableCount}</strong></span>` : ''}
                                 </div>
                             </div>
                         </div>
                     </div>`;
                 }).join('');
             } else {
-                hfEl.innerHTML = '<p class="text-muted small">Sert filtre ayrıntısı mevcut değil.</p>';
+                hfEl.innerHTML = '<p class="text-muted small">Sert filtre ayrÄ±ntÄ±sÄ± mevcut deÄŸil.</p>';
             }
 
-            // ── Ranked candidates ────────────────────────────────
+            // â”€â”€ Ranked candidates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             const tbody  = document.getElementById('rankedCandidatesBody');
             const countEl = document.getElementById('rankedCandidatesCount');
             const candidates = result.candidates || [];
@@ -524,7 +524,7 @@
 
             tbody.innerHTML = '';
             if (candidates.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Eşleşen aday bulunamadı.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">EÅŸleÅŸen aday bulunamadÄ±.</td></tr>';
                 return;
             }
 
@@ -535,15 +535,27 @@
                 tr.innerHTML = `
                     <td class="ps-3 fw-bold text-muted">#${idx + 1}</td>
                     <td class="fw-bold">${escHtml(c.displayName)}</td>
-                    <td><span class="text-monospace small text-muted">${escHtml(c.candidateCode || '—')}</span></td>
+                    <td><span class="text-monospace small text-muted">${escHtml(c.candidateCode || 'â€”')}</span></td>
                     <td>${tierBadge}</td>
                     <td>${fmtPct(c.mandatorySkillCoverage)}</td>
                     <td>${fmtPct(c.preferredSkillCoverage)}</td>
                     <td class="text-muted small">${fmtScore(c.embeddingScore, 4)}</td>
                     <td><span class="badge bg-primary">${fmtScore(c.jobFitScore, 4)}</span></td>
-                    <td><span id="${mlBadgeId}" class="badge bg-secondary">Hesaplanıyor...</span></td>`;
+                    <td><span id="${mlBadgeId}" class="badge bg-secondary">HesaplanÄ±yor...</span></td>`;
                 tbody.appendChild(tr);
-                fetchMlPrediction(mlBadgeId, 5.0, 36.0);
+
+                const shortest = c.shortestJobMonths || 0;
+                const longest = c.longestJobMonths || 0;
+
+                if (shortest > 0 && longest > 0) {
+                    fetchMlPrediction(mlBadgeId, shortest, longest);
+                } else {
+                    const badge = document.getElementById(mlBadgeId);
+                    if (badge) {
+                        badge.className = 'badge bg-secondary';
+                        badge.textContent = 'Yetersiz Veri';
+                    }
+                }
             });
         }
 
@@ -565,21 +577,21 @@
                     const data = await res.json();
                     if(data.label === 0) {
                         badge.className = 'badge bg-danger';
-                        badge.textContent = 'Kısa Süreli';
+                        badge.textContent = 'KÄ±sa SÃ¼reli';
                     } else if(data.label === 1) {
                         badge.className = 'badge bg-info text-dark';
                         badge.textContent = 'Normal';
                     } else {
                         badge.className = 'badge bg-success';
-                        badge.textContent = 'Uzun Süreli (Güvenli)';
+                        badge.textContent = 'Uzun SÃ¼reli (GÃ¼venli)';
                     }
                 } else {
                     badge.className = 'badge bg-secondary';
-                    badge.textContent = 'API Hatası';
+                    badge.textContent = 'API HatasÄ±';
                 }
             } catch(e) {
                 document.getElementById(badgeId).className = 'badge bg-danger';
-                document.getElementById(badgeId).textContent = 'Bağlantı Koptu';
+                document.getElementById(badgeId).textContent = 'BaÄŸlantÄ± Koptu';
             }
         }
     </script>
