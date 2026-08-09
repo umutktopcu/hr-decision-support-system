@@ -1,0 +1,101 @@
+﻿@model HrDecisionSupport.Application.Requisitions.JobRequisitionDetailDto
+
+@{
+    ViewData["Title"] = "İlan Detayı";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Eşleşen ve Puanlanan Adaylar (Pipeline Sonucu)</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Aday Kodu</th>
+                        <th>Pozisyon</th>
+                        <th>Yapay Zeka Kalıcılık Tahmini</th>
+                        <th class="text-end pe-4">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (ViewBag.EvaluationCases != null && ((IReadOnlyList<HrDecisionSupport.Application.CandidateEvaluations.CandidateEvaluationCaseDto>)ViewBag.EvaluationCases).Any())
+                    {
+                        @foreach (var item in (IReadOnlyList<HrDecisionSupport.Application.CandidateEvaluations.CandidateEvaluationCaseDto>)ViewBag.EvaluationCases)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold">@item.CandidateCode</td>
+                                <td>@item.PositionName</td>
+                                <td>
+                                    <span class="badge bg-success">Durum: @item.Status</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a asp-controller="Candidate" asp-action="Details" asp-route-id="@item.CandidateId" class="btn btn-sm btn-outline-primary">Profili İncele</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">Bu ilan için henüz aday değerlendirilmemiş.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Eşleşen ve Puanlanan Adaylar (Pipeline Sonucu)</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Burada arkadaşının pipeline'ından süzülüp gelen adaylar ve senin yapay zeka kalıcılık skorların listelenecek.</p>
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Eşleşen ve Puanlanan Adaylar (Pipeline Sonucu)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Aday Kodu</th>
+                                <th>Pozisyon</th>
+                                <th>Yapay Zeka Kalıcılık Tahmini</th>
+                                <th class="text-end pe-4">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewBag.EvaluationCases != null && ((IReadOnlyList<HrDecisionSupport.Application.CandidateEvaluations.CandidateEvaluationCaseDto>)ViewBag.EvaluationCases).Any())
+                            {
+                                @foreach (var req in (IReadOnlyList<HrDecisionSupport.Application.CandidateEvaluations.CandidateEvaluationCaseDto>)ViewBag.EvaluationCases)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-bold">@req.CandidateCode</td>
+                                        <td>@req.PositionName</td>
+                                        <td>
+                                            <span class="badge bg-success">Durum: @req.Status</span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a asp-controller="Candidate" asp-action="Details" asp-route-id="@req.CandidateId" class="btn btn-sm btn-outline-primary">Profili İncele</a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">Bu ilan için henüz aday değerlendirilmemiş.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

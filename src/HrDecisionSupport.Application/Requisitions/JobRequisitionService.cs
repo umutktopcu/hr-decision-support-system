@@ -31,14 +31,19 @@ public sealed class JobRequisitionService : IJobRequisitionService
     }
 
     public async Task<Result<IReadOnlyList<JobRequisitionDto>>> ListAsync(
-        CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken = default)
     {
+        // 1. Önce veritabanı sorgusunu ve ProjectRequisitions dönüşümünü yapıp veriyi hafızaya (Listeye) alıyoruz
         var query = _dbContext.JobRequisitions.AsNoTracking();
-        var items = await ProjectRequisitions(query)
+        var rawList = await ProjectRequisitions(query).ToListAsync(cancellationToken);
+
+        // 2. Sıralama işlemini tamamen bellek (C#) tarafında güvenle yapıyoruz
+        var items = rawList
             .OrderByDescending(item => item.JobRequisitionStatus == JobRequisitionStatus.Open)
             .ThenByDescending(item => item.OpenedAt)
             .ThenBy(item => item.Id)
-            .ToListAsync(cancellationToken);
+            .ToList();
+
         return Result<IReadOnlyList<JobRequisitionDto>>.Success(items);
     }
 

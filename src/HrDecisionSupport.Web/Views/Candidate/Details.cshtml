@@ -1,22 +1,27 @@
-﻿@{
+﻿@model HrDecisionSupport.Application.Candidates.Dtos.CandidateDetailsDto
+
+@{
     ViewData["Title"] = "Aday Detayı";
 }
 
 <!-- Üst Bilgi Başlığı -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="mb-1">Ayşe Yılmaz</h2>
+        <h2 class="mb-1">
+            @(Model.FirstName != null && Model.LastName != null
+                ? $"{Model.FirstName} {Model.LastName}"
+                : (Model.CandidateCode ?? "İsimsiz Aday"))
+        </h2>
         <div class="text-muted">
-            Başvurulan Pozisyon: <strong>Kıdemli Yazılım Geliştirici</strong>
-            <span class="badge bg-success ms-3" style="font-size: 0.9em;">%92 Uyum Skoru</span>
+            Aday Kodu: <strong>@Model.CandidateCode</strong>
+
+            <!-- Yapay Zeka Tahmini Rozeti -->
+            <span class="badge bg-primary ms-3" style="font-size: 0.9em;">
+                Yapay Zeka Tahmini: @ViewBag.MlPrediction
+            </span>
         </div>
     </div>
-    <div>
-        <a asp-action="Index" class="btn btn-outline-secondary me-2">Listeye Dön</a>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
-            Profili Düzenle
-        </button>
-    </div>
+    <!-- Sağ taraftaki butonlar aynı kalabilir -->
 </div>
 
 <div class="card section-card shadow-sm">

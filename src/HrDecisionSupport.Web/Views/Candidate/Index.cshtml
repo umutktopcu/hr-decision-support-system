@@ -1,4 +1,6 @@
-﻿@{
+﻿@model IEnumerable<HrDecisionSupport.Application.Candidates.Dtos.CandidateListItemDto>
+
+@{
     ViewData["Title"] = "Aday Yönetimi";
 }
 
@@ -87,45 +89,36 @@
                 </thead>
                 <!-- ID eklendi: candidateTableBody -->
                 <tbody id="candidateTableBody">
-                    <tr>
-                        <td class="ps-4 fw-bold">Ayşe Yılmaz</td>
-                        <td>Kıdemli Yazılım Geliştirici</td>
-                        <td class="exp-cell">6 Yıl</td>
-                        <td class="skills-cell">
-                            <span class="badge bg-secondary">C#</span>
-                            <span class="badge bg-secondary">PostgreSQL</span>
-                        </td>
-                        <td><span class="badge bg-success" style="font-size: 0.9em;">%92 Uyumlu</span></td>
-                        <td class="text-end pe-4">
-                            <a asp-action="Details" asp-route-id="1" class="btn btn-sm btn-outline-primary">Profili İncele</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="ps-4 fw-bold">Caner Demir</td>
-                        <td>Yazılım Geliştirici</td>
-                        <td class="exp-cell">3 Yıl</td>
-                        <td class="skills-cell">
-                            <span class="badge bg-secondary">C#</span>
-                            <span class="badge bg-secondary">React</span>
-                        </td>
-                        <td><span class="badge bg-info text-dark" style="font-size: 0.9em;">%78 Uyumlu</span></td>
-                        <td class="text-end pe-4">
-                            <a asp-action="Details" asp-route-id="2" class="btn btn-sm btn-outline-primary">Profili İncele</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="ps-4 fw-bold">Zeynep Kaya</td>
-                        <td>Junior Geliştirici</td>
-                        <td class="exp-cell">1 Yıl</td>
-                        <td class="skills-cell">
-                            <span class="badge bg-secondary">Java</span>
-                            <span class="badge bg-secondary">SQL</span>
-                        </td>
-                        <td><span class="badge bg-warning text-dark" style="font-size: 0.9em;">%45 Uyumlu</span></td>
-                        <td class="text-end pe-4">
-                            <a asp-action="Details" asp-route-id="3" class="btn btn-sm btn-outline-primary">Profili İncele</a>
-                        </td>
-                    </tr>
+                    @if (Model != null)
+                    {
+                        @foreach (var candidate in Model)
+                        {
+                            <tr>
+                                <!-- İsim varsa İsim Soyisim, yoksa Aday Kodu yazsın -->
+                                <td class="ps-4 fw-bold">
+                                    @(candidate.FirstName != null && candidate.LastName != null
+                                        ? $"{candidate.FirstName} {candidate.LastName}"
+                                        : (candidate.CandidateCode ?? "İsimsiz Aday"))
+                                </td>
+
+                                <!-- Başvurduğu Pozisyon (DTO'da olmadığı için şimdilik boş veya kaynak yazıyoruz) -->
+                                <td>Aday Kaynağı: @candidate.CandidateSource</td>
+
+                                <!-- Deneyim (DTO'da olmadığı için şimdilik tire) -->
+                                <td class="exp-cell">-</td>
+
+                                <td class="skills-cell">
+                                    <span class="badge bg-secondary">Beceriler Yakında</span>
+                                </td>
+
+                                <td><span class="badge bg-success" style="font-size: 0.9em;">Skor Hesaplanacak</span></td>
+
+                                <td class="text-end pe-4">
+                                    <a asp-action="Details" asp-route-id="@candidate.Id" class="btn btn-sm btn-outline-primary">Profili İncele</a>
+                                </td>
+                            </tr>
+                        }
+                    }
                 </tbody>
             </table>
         </div>
