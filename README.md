@@ -37,12 +37,62 @@ Projeyi tam kapasiteyle (Yapay zeka servisleri dahil) yerel ortamınızda ayağa
 *   .NET 8.0+ SDK
 *   Python 3.9+
 *   PostgreSQL Sunucusu
+*   PostgreSQL sunucu kurulumuyla uyumlu pgvector eklentisi
 
 ### 2. Veritabanı Kurulumu
-1. `src` altındaki projenin `appsettings.json` dosyasını açın.
-2. `ConnectionStrings` bölümündeki PostgreSQL bağlantı bilgilerini kendi bilgisayarınıza göre düzenleyin.
-3. Terminal üzerinden veritabanını oluşturmak için EF Core migration komutunu çalıştırın:
-   `dotnet ef database update`
+PostgreSQL zorunludur. Aday ve iş talebi embedding'leri `vector(1024)` olarak saklandığı için pgvector da gereklidir. Uygulama pgvector'ı ANN/vektör araması için değil, yalnızca mevcut embedding vektörlerini kalıcı olarak saklamak için kullanır. EF migration `vector` eklentisini veritabanında etkinleştirir; ancak önce pgvector sunucu dosyalarının PostgreSQL kurulumunda bulunması gerekir.
+
+Kurulumdan önce pgvector'ın sunucuda kullanılabilir olup olmadığını kontrol edin:
+
+```sql
+SELECT name, default_version, installed_version
+FROM pg_available_extensions
+WHERE name = 'vector';
+```
+
+Sonuç dönmüyorsa pgvector PostgreSQL sunucusuna kurulmamıştır. Satır dönüyor ancak `installed_version` değeri `NULL` ise eklenti sunucuda kullanılabilir, fakat ilgili veritabanında henüz etkin değildir; projenin EF migration'ı eklentiyi etkinleştirir.
+
+#### Windows ve PostgreSQL 18
+
+Doğrulanan yerel yapılandırma PostgreSQL 18.x x64 ve pgvector 0.8.6'dır. Windows'ta Visual Studio C++ x64 build tools, Windows SDK, Git ve PostgreSQL 18 kurulu olmalıdır. x64 Visual Studio geliştirici ortamında resmi pgvector derleme yöntemi:
+
+```bat
+set "PGROOT=C:\Program Files\PostgreSQL\18"
+
+git clone --branch v0.8.6 --depth 1 https://github.com/pgvector/pgvector.git
+cd pgvector
+
+nmake /F Makefile.win
+nmake /F Makefile.win install
+```
+
+`nmake install` adımı için yönetici yetkisi gerekebilir.
+
+Yeni bir ortamda veritabanını şu sırayla hazırlayın:
+
+1. PostgreSQL'i kurun ve sunucuyu başlatın.
+2. pgvector'ı aynı PostgreSQL sunucu kurulumuna yükleyin.
+3. Mevcut veritabanı yedeğini kullanacaksanız `database/database_dump.backup` dosyasını geri yükleyin.
+4. `ConnectionStrings:PostgreSql` bağlantı dizesini Web projesinin user-secrets desteği veya mevcut yapılandırma mekanizmasıyla tanımlayın.
+5. Depo kökünde EF migration'larını uygulayın:
+
+```powershell
+dotnet ef database update `
+  --project ".\src\HrDecisionSupport.Infrastructure\HrDecisionSupport.Infrastructure.csproj" `
+  --startup-project ".\src\HrDecisionSupport.Web\HrDecisionSupport.Web.csproj" `
+  --context HrDecisionSupportDbContext
+```
+
+Migration sonrasında eklentiyi ve isteğe bağlı olarak embedding tablolarını doğrulayın:
+
+```sql
+SELECT extname, extversion
+FROM pg_extension
+WHERE extname = 'vector';
+
+SELECT to_regclass('public.candidate_embeddings'),
+       to_regclass('public.job_requisition_embeddings');
+```
 
 ### 3. NLP Servislerini Başlatma (`ml` Klasörü)
 Aday eşleştirme ve semantik arama özelliklerinin çalışması için bu servislerin aktif olması gerekir.
