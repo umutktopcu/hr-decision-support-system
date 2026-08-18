@@ -14,6 +14,7 @@ using HrDecisionSupport.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Pgvector.EntityFrameworkCore;
 using Xunit;
 
 namespace HrDecisionSupport.Tests.CandidateImports;
@@ -36,7 +37,9 @@ public sealed class CandidateImportIntegrationTests
         // Arrange
         var services = new ServiceCollection();
         services.AddApplication();
-        services.AddInfrastructure(options => options.UseNpgsql(_fixture.ConnectionString));
+        services.AddInfrastructure(options => options.UseNpgsql(
+            _fixture.ConnectionString,
+            npgsqlOptions => npgsqlOptions.UseVector()));
 
         var mockReader = new MockCandidateImportSourceReader();
         services.RemoveAll<ICandidateImportSourceReader>();
@@ -92,7 +95,9 @@ public sealed class CandidateImportIntegrationTests
 
         var services = new ServiceCollection();
         services.AddApplication();
-        services.AddInfrastructure(options => options.UseNpgsql(_fixture.ConnectionString));
+        services.AddInfrastructure(options => options.UseNpgsql(
+            _fixture.ConnectionString,
+            npgsqlOptions => npgsqlOptions.UseVector()));
 
         var mockReader = new MockCandidateImportSourceReader();
         services.RemoveAll<ICandidateImportSourceReader>();
@@ -164,7 +169,9 @@ public sealed class CandidateImportIntegrationTests
 
         var services = new ServiceCollection();
         services.AddApplication();
-        services.AddInfrastructure(options => options.UseNpgsql(_fixture.ConnectionString));
+        services.AddInfrastructure(options => options.UseNpgsql(
+            _fixture.ConnectionString,
+            npgsqlOptions => npgsqlOptions.UseVector()));
 
         var mockReader = new MockCandidateImportSourceReader();
         services.RemoveAll<ICandidateImportSourceReader>();

@@ -10,6 +10,7 @@ using HrDecisionSupport.Infrastructure;
 using HrDecisionSupport.Infrastructure.CandidateImports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Pgvector.EntityFrameworkCore;
 using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Domain.Entities;
 using HrDecisionSupport.Domain.Enums;
@@ -34,7 +35,8 @@ class Program
 
         var services = new ServiceCollection();
         services.AddApplication();
-        services.AddInfrastructure(options => options.UseNpgsql(connStr));
+        services.AddInfrastructure(options =>
+            options.UseNpgsql(connStr, npgsqlOptions => npgsqlOptions.UseVector()));
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ICandidateImportSourceReader, ClosedXmlCandidateSpreadsheetReader>();
 

@@ -4,6 +4,7 @@ using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Pgvector.EntityFrameworkCore;
 
 namespace HrDecisionSupport.Tests;
 
@@ -208,7 +209,7 @@ public class EmployeeExcelImportFoundationTests
     private static IModel CreateModel()
     {
         var options = new DbContextOptionsBuilder<HrDecisionSupportDbContext>()
-            .UseNpgsql()
+            .UseNpgsql(npgsqlOptions => npgsqlOptions.UseVector())
             .Options;
         using var context = new HrDecisionSupportDbContext(options);
         return context.GetService<IDesignTimeModel>().Model;

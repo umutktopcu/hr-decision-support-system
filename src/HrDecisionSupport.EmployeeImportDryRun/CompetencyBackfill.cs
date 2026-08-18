@@ -7,6 +7,7 @@ using HrDecisionSupport.Domain.Entities;
 using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Pgvector.EntityFrameworkCore;
 
 namespace HrDecisionSupport.EmployeeImportDryRun;
 
@@ -127,7 +128,10 @@ public sealed class PostgreSqlCompetencyBackfillExecution(string? connectionStri
         catch (OperationCanceledException) { await transaction.RollbackAsync(CancellationToken.None); throw; } catch { await transaction.RollbackAsync(CancellationToken.None); return Result<CompetencyBackfillResult>.Failure("competency_backfill.transaction_failed", "Backfill transaction failed and was rolled back."); }
     }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-    private HrDecisionSupportDbContext CreateContext() => new(new DbContextOptionsBuilder<HrDecisionSupportDbContext>().UseNpgsql(connectionString).Options);
+    private HrDecisionSupportDbContext CreateContext() => new(
+        new DbContextOptionsBuilder<HrDecisionSupportDbContext>()
+            .UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.UseVector())
+            .Options);
     private async Task<CompetencyBackfillPreview> PlanAsync(HrDecisionSupportDbContext context, Guid batchId, string status, string host, string database, CancellationToken cancellationToken)
     {
         var rows = await context.EmployeeImportRows.Where(row => row.ImportBatchId == batchId).Select(row => new CompetencyBackfillRawRow(row.Id, row.Employee == null ? null : row.Employee.PersonId, row.RawPayloadJson, row.ValidationErrorsJson)).ToListAsync(cancellationToken);
@@ -164,7 +168,7 @@ public sealed class PostgreSqlCompetencyBackfillAuditExecution
         var stage = "open";
         try
         {
-            await using var context = new HrDecisionSupportDbContext(new DbContextOptionsBuilder<HrDecisionSupportDbContext>().UseNpgsql(options.ConnectionString).Options); stage = "batch"; var batch = await context.EmployeeImportBatches.SingleOrDefaultAsync(item => item.Id == options.BatchId, cancellationToken); if (batch is null) return Result<CompetencyBackfillAuditResult>.Failure("competency_backfill_audit.batch_not_found", "The requested import batch does not exist.");
+            await using var context = new HrDecisionSupportDbContext(new DbContextOptionsBuilder<HrDecisionSupportDbContext>().UseNpgsql(options.ConnectionString, npgsqlOptions => npgsqlOptions.UseVector()).Options); stage = "batch"; var batch = await context.EmployeeImportBatches.SingleOrDefaultAsync(item => item.Id == options.BatchId, cancellationToken); if (batch is null) return Result<CompetencyBackfillAuditResult>.Failure("competency_backfill_audit.batch_not_found", "The requested import batch does not exist.");
             stage = "historical-preview"; var preview = await new PostgreSqlCompetencyBackfillExecution(options.ConnectionString).PreviewAsync(new(options.BatchId, null, null, "Development"), cancellationToken); if (preview.IsFailure) return Result<CompetencyBackfillAuditResult>.Failure(preview.Error!); var plan = preview.Value;
             var candidates = plan.Candidates.Select(item => (item.PersonId, item.Code)).ToHashSet(); var personIds = candidates.Select(item => item.PersonId).Distinct().ToArray(); var codes = candidates.Select(item => item.Code).Distinct().ToArray();
             stage = "expected-links"; var actual = await (from link in context.PersonCompetencies join competency in context.Competencies on link.CompetencyId equals competency.Id where personIds.Contains(link.PersonId) && codes.Contains(competency.Code) select new { link.PersonId, competency.Code }).ToListAsync(cancellationToken); var actualPairs = actual.Select(item => (item.PersonId, item.Code)).ToHashSet();

@@ -11,6 +11,7 @@ using HrDecisionSupport.Infrastructure;
 using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Application.Requisitions;
 using HrDecisionSupport.Domain.Enums;
+using Pgvector.EntityFrameworkCore;
 
 namespace JobRequisitionSeeder;
 
@@ -34,7 +35,9 @@ class Program
                 services.AddInfrastructure(options =>
                 {
                     var connStr = context.Configuration.GetConnectionString("PostgreSql") ?? context.Configuration.GetConnectionString("DefaultConnection");
-                    options.UseNpgsql(connStr);
+                    options.UseNpgsql(
+                        connStr,
+                        npgsqlOptions => npgsqlOptions.UseVector());
                 });
             })
             .Build();

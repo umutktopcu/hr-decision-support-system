@@ -6,6 +6,7 @@ using HrDecisionSupport.Domain.Enums;
 using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Pgvector.EntityFrameworkCore;
 
 namespace HrDecisionSupport.EmployeeImportDryRun;
 
@@ -128,7 +129,10 @@ public sealed class PostgreSqlTerminationDateBackfillExecution(string? connectio
         catch { await transaction.RollbackAsync(CancellationToken.None); return Result<TerminationDateBackfillResult>.Failure("termination_date_backfill.transaction_failed", "Backfill transaction failed and was rolled back."); }
     }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-    private HrDecisionSupportDbContext CreateContext() => new(new DbContextOptionsBuilder<HrDecisionSupportDbContext>().UseNpgsql(connectionString).Options);
+    private HrDecisionSupportDbContext CreateContext() => new(
+        new DbContextOptionsBuilder<HrDecisionSupportDbContext>()
+            .UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.UseVector())
+            .Options);
     private static async Task<List<TerminationDateBackfillRow>> LoadRowsAsync(HrDecisionSupportDbContext context, Guid batchId, CancellationToken cancellationToken)
     {
         var data = await (from row in context.EmployeeImportRows where row.ImportBatchId == batchId join employee in context.Employees on row.EmployeeId equals employee.Id into employees from employee in employees.DefaultIfEmpty() select new { row.Id, row.SourceRowNumber, row.EmployeeId, row.RawPayloadJson, HireDate = employee == null ? (DateOnly?)null : employee.HireDate, TerminationDate = employee == null ? (DateOnly?)null : employee.TerminationDate }).ToListAsync(cancellationToken);
