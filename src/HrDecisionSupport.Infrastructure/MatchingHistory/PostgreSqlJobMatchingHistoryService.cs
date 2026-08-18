@@ -43,6 +43,83 @@ public sealed class PostgreSqlJobMatchingHistoryService : IJobMatchingHistorySer
         _timeProvider = timeProvider;
     }
 
+    public async Task<IReadOnlyList<JobMatchingRunListItem>> GetRunsForJobAsync(
+        Guid jobRequisitionId,
+        CancellationToken cancellationToken = default) =>
+        await _dbContext.JobMatchingRuns
+            .AsNoTracking()
+            .Where(run => run.JobRequisitionId == jobRequisitionId)
+            .OrderByDescending(run => run.ExecutedAtUtc)
+            .Select(run => new JobMatchingRunListItem(
+                run.Id,
+                run.ExecutedAtUtc,
+                run.JobRequisitionCodeSnapshot,
+                run.JobTitleSnapshot,
+                run.RetrievalTopN,
+                run.FinalTopN,
+                run.FinalCandidateCount,
+                run.EmbeddingModelName,
+                run.RerankerModelName,
+                run.RetentionModelName))
+            .ToListAsync(cancellationToken);
+
+    public async Task<JobMatchingRunDetail?> GetRunDetailAsync(
+        Guid jobRequisitionId,
+        Guid runId,
+        CancellationToken cancellationToken = default)
+    {
+        var run = await _dbContext.JobMatchingRuns
+            .AsNoTracking()
+            .Include(item => item.Results)
+            .SingleOrDefaultAsync(
+                item => item.Id == runId && item.JobRequisitionId == jobRequisitionId,
+                cancellationToken);
+
+        if (run is null)
+        {
+            return null;
+        }
+
+        var candidates = run.Results
+            .OrderBy(result => result.FinalRank)
+            .Select(result => new JobMatchingHistoricalCandidate(
+                result.CandidateId,
+                result.CandidateCodeSnapshot,
+                result.CandidateDisplayNameSnapshot,
+                result.FinalRank,
+                result.SkillTier,
+                result.MandatorySkillCoverage,
+                result.PreferredSkillCoverage,
+                result.EmbeddingScore,
+                result.CrossEncoderRawScore,
+                result.JobFitScore,
+                result.RetentionPredictionStatus,
+                result.RetentionLabel,
+                result.ShortestPreviousJobMonthsSnapshot,
+                result.LongestPreviousJobMonthsSnapshot))
+            .ToList();
+
+        return new JobMatchingRunDetail(
+            run.Id,
+            run.ExecutedAtUtc,
+            run.JobRequisitionCodeSnapshot,
+            run.JobTitleSnapshot,
+            run.RetrievalTopN,
+            run.FinalTopN,
+            run.CandidatePoolCount,
+            run.HardFilterPassedCount,
+            run.RetrievedCandidateCount,
+            run.FinalCandidateCount,
+            run.EmbeddingModelName,
+            run.RerankerModelName,
+            run.RetentionModelName,
+            run.RetentionFeatureSchemaVersion,
+            run.JobDocumentHash,
+            run.ConfigurationSnapshotJson,
+            TryDeserializeConfiguration(run.ConfigurationSnapshotJson),
+            candidates);
+    }
+
     public async Task SaveCompletedRunAsync(
         CompletedJobMatchingRun completedRun,
         CancellationToken cancellationToken = default)
@@ -155,6 +232,38 @@ public sealed class PostgreSqlJobMatchingHistoryService : IJobMatchingHistorySer
 
     private static string ComputeDocumentHash(string document) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(document))).ToLowerInvariant();
+
+    private static global::HrDecisionSupport.Application.MatchingExecution.History.JobMatchingConfigurationSnapshot?
+        TryDeserializeConfiguration(string json)
+    {
+        try
+        {
+            var snapshot = JsonSerializer.Deserialize<
+                global::HrDecisionSupport.Application.MatchingExecution.History.JobMatchingConfigurationSnapshot>(
+                json,
+                SnapshotJsonOptions);
+
+            return snapshot is not null
+                && snapshot.SnapshotSchemaVersion == ConfigurationSnapshotSchemaVersion
+                && snapshot.Position is not null
+                && snapshot.MandatoryCompetencies is not null
+                && snapshot.MandatoryCompetencies.All(item => item is not null)
+                && snapshot.PreferredCompetencies is not null
+                && snapshot.PreferredCompetencies.All(item => item is not null)
+                && snapshot.LanguageRequirements is not null
+                && snapshot.LanguageRequirements.All(item => item is not null)
+                    ? snapshot
+                    : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        catch (NotSupportedException)
+        {
+            return null;
+        }
+    }
 
     private sealed record JobMatchingConfigurationSnapshot(
         string SnapshotSchemaVersion,

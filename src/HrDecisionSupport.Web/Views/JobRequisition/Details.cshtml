@@ -1,3 +1,4 @@
+@model IReadOnlyList<HrDecisionSupport.Application.MatchingExecution.History.JobMatchingRunListItem>
 @{
     ViewData["Title"] = "Gereksinim Detayı";
     var requisitionId = ViewData["RequisitionId"]?.ToString() ?? "";
@@ -136,6 +137,39 @@
                 </div>
             </div>
             <div id="matchAlert"></div>
+        </div>
+    </div>
+
+    <!-- ── Matching History ─────────────────────────────────── -->
+    <div class="card section-card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">Eşleştirme Geçmişi</div>
+        <div class="card-body">
+            @if (Model.Count == 0)
+            {
+                <div class="text-muted small">Henüz kaydedilmiş bir eşleştirme çalışması yok.</div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var run in Model)
+                    {
+                        <div class="list-group-item px-0 d-flex justify-content-between align-items-center gap-3">
+                            <div>
+                                <div class="fw-semibold">@run.ExecutedAtUtc.ToLocalTime().ToString("dd MMM yyyy HH:mm")</div>
+                                <div class="text-muted small">
+                                    @run.FinalCandidateCount aday
+                                    &nbsp;·&nbsp; Retrieval @run.RetrievalTopN / Final @run.FinalTopN
+                                </div>
+                            </div>
+                            <a asp-controller="JobRequisition"
+                               asp-action="MatchingHistory"
+                               asp-route-jobId="@requisitionId"
+                               asp-route-runId="@run.RunId"
+                               class="btn btn-sm btn-outline-primary">Görüntüle</a>
+                        </div>
+                    }
+                </div>
+            }
         </div>
     </div>
 

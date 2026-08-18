@@ -4,6 +4,15 @@ namespace HrDecisionSupport.Application.MatchingExecution.History;
 
 public interface IJobMatchingHistoryService
 {
+    Task<IReadOnlyList<JobMatchingRunListItem>> GetRunsForJobAsync(
+        Guid jobRequisitionId,
+        CancellationToken cancellationToken = default);
+
+    Task<JobMatchingRunDetail?> GetRunDetailAsync(
+        Guid jobRequisitionId,
+        Guid runId,
+        CancellationToken cancellationToken = default);
+
     Task SaveCompletedRunAsync(
         CompletedJobMatchingRun completedRun,
         CancellationToken cancellationToken = default);
