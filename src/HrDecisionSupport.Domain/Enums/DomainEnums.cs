@@ -88,6 +88,13 @@ public enum EmployeeRetentionLabelSource
     ImportedDataset = 1
 }
 
+public enum RetentionPredictionStatus
+{
+    Predicted = 1,
+    InsufficientData = 2,
+    Unavailable = 3
+}
+
 public enum DegreeLevel
 {
     HighSchool = 1,

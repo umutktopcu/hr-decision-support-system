@@ -1,0 +1,234 @@
+@model HrDecisionSupport.Application.MatchingExecution.History.JobMatchingRunDetail
+@using HrDecisionSupport.Domain.Enums
+@{
+    ViewData["Title"] = "Geçmiş Eşleştirme Sonucu";
+    var configuration = Model.Configuration;
+    var requisitionId = ViewData["RequisitionId"];
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a asp-controller="JobRequisition"
+           asp-action="Details"
+           asp-route-id="@requisitionId"
+           class="btn btn-outline-secondary">← İlan Detayına Dön</a>
+    </div>
+    <span class="badge bg-secondary">Salt Okunur</span>
+</div>
+
+<div class="card section-card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+            <div>
+                <h3 class="mb-1">Geçmiş Eşleştirme Sonucu</h3>
+                <div class="text-muted">
+                    <strong>@Model.JobRequisitionCodeSnapshot</strong>
+                    &nbsp;·&nbsp; @Model.JobTitleSnapshot
+                </div>
+            </div>
+            <div class="text-end">
+                <div class="fw-semibold">@Model.ExecutedAtUtc.ToLocalTime().ToString("dd MMM yyyy HH:mm")</div>
+                <small class="text-muted">Çalışma: @Model.RunId</small>
+            </div>
+        </div>
+
+        <div class="row g-3 text-center mt-2">
+            <div class="col-6 col-md">
+                <div class="text-muted small">Aday Havuzu</div>
+                <div class="fw-bold">@Model.CandidatePoolCount</div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="text-muted small">Filtreyi Geçen</div>
+                <div class="fw-bold">@Model.HardFilterPassedCount</div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="text-muted small">Getirilen</div>
+                <div class="fw-bold">@Model.RetrievedCandidateCount</div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="text-muted small">Final</div>
+                <div class="fw-bold">@Model.FinalCandidateCount</div>
+            </div>
+            <div class="col-12 col-md">
+                <div class="text-muted small">Top N</div>
+                <div class="fw-bold">@Model.RetrievalTopN / @Model.FinalTopN</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card section-card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">Kaydedilmiş Eşleştirme Yapılandırması</div>
+    <div class="card-body">
+        @if (configuration is null)
+        {
+            <div class="alert alert-secondary mb-0">Yapılandırma anlık görüntüsü kullanılamıyor.</div>
+        }
+        else
+        {
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="text-muted small">Pozisyon</div>
+                    <div class="fw-semibold">@configuration.Position.Name</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Minimum Deneyim</div>
+                    <div class="fw-semibold">@(configuration.MinimumRelevantExperienceMonths is null ? "—" : $"{configuration.MinimumRelevantExperienceMonths} ay")</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Minimum Eğitim</div>
+                    <div class="fw-semibold">@(configuration.MinimumEducation?.ToString() ?? "—")</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Zorunlu Yetkinlik Eşiği</div>
+                    <div class="fw-semibold">@configuration.MandatorySkillCoverageThreshold.ToString("P0")</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Çalışma Modu</div>
+                    <div class="fw-semibold">@(configuration.WorkMode?.Name ?? "—")</div>
+                    @if (configuration.WorkMode is not null)
+                    {
+                        <small class="text-muted">@(configuration.WorkModeHardFilterEnabled ? "Zorunlu filtre" : "Tercih")</small>
+                    }
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <h6 class="fw-bold">Zorunlu Yetkinlikler</h6>
+                    @if (configuration.MandatoryCompetencies.Count == 0)
+                    {
+                        <span class="text-muted small">Yok</span>
+                    }
+                    else
+                    {
+                        @foreach (var competency in configuration.MandatoryCompetencies)
+                        {
+                            <span class="badge bg-primary me-1 mb-1">@competency.Name</span>
+                        }
+                    }
+                </div>
+                <div class="col-md-4">
+                    <h6 class="fw-bold">Tercih Edilen Yetkinlikler</h6>
+                    @if (configuration.PreferredCompetencies.Count == 0)
+                    {
+                        <span class="text-muted small">Yok</span>
+                    }
+                    else
+                    {
+                        @foreach (var competency in configuration.PreferredCompetencies)
+                        {
+                            <span class="badge bg-secondary me-1 mb-1">@competency.Name</span>
+                        }
+                    }
+                </div>
+                <div class="col-md-4">
+                    <h6 class="fw-bold">Dil Gereksinimleri</h6>
+                    @if (configuration.LanguageRequirements.Count == 0)
+                    {
+                        <span class="text-muted small">Yok</span>
+                    }
+                    else
+                    {
+                        <ul class="list-unstyled small mb-0">
+                            @foreach (var language in configuration.LanguageRequirements)
+                            {
+                                <li class="mb-1">
+                                    <strong>@language.Name</strong> — @language.MinimumProficiency
+                                    @if (language.HardFilterEnabled)
+                                    {
+                                        <span class="badge bg-warning text-dark ms-1">Zorunlu</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card section-card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">Model Bilgileri</div>
+    <div class="card-body small">
+        <div><span class="text-muted">Embedding:</span> <code>@Model.EmbeddingModelName</code></div>
+        <div><span class="text-muted">Reranker:</span> <code>@Model.RerankerModelName</code></div>
+        <div><span class="text-muted">Retention:</span> <code>@Model.RetentionModelName</code> / <code>@Model.RetentionFeatureSchemaVersion</code></div>
+        <div class="mt-2 text-break"><span class="text-muted">Job document SHA-256:</span> <code>@Model.JobDocumentHash</code></div>
+    </div>
+</div>
+
+<div class="card section-card shadow-sm mb-5">
+    <div class="card-header bg-white fw-bold">Kaydedilmiş Aday Sıralaması</div>
+    <div class="card-body p-0">
+        @if (Model.Candidates.Count == 0)
+        {
+            <div class="text-muted small p-4">Bu çalışmada final aday sonucu bulunmuyor.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Sıra</th>
+                            <th>Aday</th>
+                            <th>Kademe</th>
+                            <th>Zorunlu</th>
+                            <th>Tercih</th>
+                            <th>Embedding</th>
+                            <th>CrossEncoder</th>
+                            <th>Job Fit</th>
+                            <th>Retention</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var candidate in Model.Candidates)
+                        {
+                            var retention = RetentionBadge(candidate.RetentionPredictionStatus, candidate.RetentionLabel);
+                            <tr>
+                                <td class="ps-3 fw-bold">#@candidate.FinalRank</td>
+                                <td>
+                                    <div class="fw-semibold">@candidate.CandidateDisplayNameSnapshot</div>
+                                    <small class="text-muted">@(candidate.CandidateCodeSnapshot ?? "—")</small>
+                                </td>
+                                <td><span class="badge bg-secondary">Kademe @candidate.SkillTier</span></td>
+                                <td>@candidate.MandatorySkillCoverage.ToString("P0")</td>
+                                <td>@candidate.PreferredSkillCoverage.ToString("P0")</td>
+                                <td class="small text-muted">@candidate.EmbeddingScore.ToString("0.0000")</td>
+                                <td class="small text-muted">@candidate.CrossEncoderRawScore.ToString("0.0000")</td>
+                                <td><span class="badge bg-primary">@candidate.JobFitScore.ToString("0.0000")</span></td>
+                                <td>
+                                    <span class="badge @retention.CssClass">@retention.Text</span>
+                                    <div class="text-muted small mt-1">
+                                        Girdi: @(candidate.ShortestPreviousJobMonthsSnapshot?.ToString() ?? "—") /
+                                        @(candidate.LongestPreviousJobMonthsSnapshot?.ToString() ?? "—") ay
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    private static (string Text, string CssClass) RetentionBadge(
+        RetentionPredictionStatus status,
+        EmployeeRetentionLabelValue? label) =>
+        (status, label) switch
+        {
+            (RetentionPredictionStatus.Predicted, EmployeeRetentionLabelValue.Short) =>
+                ("Kısa Süreli", "bg-danger"),
+            (RetentionPredictionStatus.Predicted, EmployeeRetentionLabelValue.Normal) =>
+                ("Normal", "bg-info text-dark"),
+            (RetentionPredictionStatus.Predicted, EmployeeRetentionLabelValue.Long) =>
+                ("Uzun Süreli (Güvenli)", "bg-success"),
+            (RetentionPredictionStatus.InsufficientData, _) =>
+                ("Yetersiz Veri", "bg-secondary"),
+            _ => ("Kullanılamıyor", "bg-danger")
+        };
+}

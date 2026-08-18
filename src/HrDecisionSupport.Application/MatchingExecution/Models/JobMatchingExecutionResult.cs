@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HrDecisionSupport.Domain.Enums;
 
 namespace HrDecisionSupport.Application.MatchingExecution.Models;
 
@@ -43,6 +44,7 @@ public sealed record JobMatchingCandidateResult(
     Guid CandidateId,
     string? CandidateCode,
     string DisplayName,
+    int FinalRank,
     int SkillTier,
     decimal MandatorySkillCoverage,
     decimal PreferredSkillCoverage,
@@ -50,4 +52,6 @@ public sealed record JobMatchingCandidateResult(
     double? CrossEncoderRawScore,
     double JobFitScore,
     int? ShortestJobMonths = null,
-    int? LongestJobMonths = null);
+    int? LongestJobMonths = null,
+    RetentionPredictionStatus RetentionPredictionStatus = RetentionPredictionStatus.InsufficientData,
+    EmployeeRetentionLabelValue? RetentionLabel = null);

@@ -54,6 +54,8 @@ public class HrDecisionSupportDbContext : DbContext, IHrDecisionSupportDbContext
     public DbSet<CandidateEmbedding> CandidateEmbeddings => Set<CandidateEmbedding>();
     public DbSet<JobRequisitionEmbedding> JobRequisitionEmbeddings =>
         Set<JobRequisitionEmbedding>();
+    public DbSet<JobMatchingRun> JobMatchingRuns => Set<JobMatchingRun>();
+    public DbSet<JobMatchingRunResult> JobMatchingRunResults => Set<JobMatchingRunResult>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -2,5 +2,8 @@
 
 public interface IMlPredictionService
 {
-    Task<int> PredictStayAsync(double shortestJobMonths, double longestJobMonths);
+    Task<int> PredictStayAsync(
+        double shortestJobMonths,
+        double longestJobMonths,
+        CancellationToken cancellationToken = default);
 }
