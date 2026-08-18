@@ -36,6 +36,8 @@ public interface IHrDecisionSupportDbContext
     DbSet<EmployeeRetentionLabel> EmployeeRetentionLabels { get; }
     DbSet<CandidateWorkModePreference> CandidateWorkModePreferences { get; }
     DbSet<CandidateCareerFeatureSnapshot> CandidateCareerFeatureSnapshots { get; }
+    DbSet<JobMatchingRun> JobMatchingRuns { get; }
+    DbSet<JobMatchingRunResult> JobMatchingRunResults { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
