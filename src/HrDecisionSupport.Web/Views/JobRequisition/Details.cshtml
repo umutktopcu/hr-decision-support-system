@@ -150,6 +150,48 @@
             }
             else
             {
+                @if (Model.Count >= 2)
+                {
+                    <form asp-controller="JobRequisition"
+                          asp-action="CompareMatchingHistory"
+                          asp-route-jobId="@requisitionId"
+                          method="get"
+                          class="row g-2 align-items-end border-bottom pb-3 mb-2">
+                        <div class="col-md-5">
+                            <label for="comparisonRunA" class="form-label text-muted small">Run A</label>
+                            <select id="comparisonRunA" name="runAId" class="form-select form-select-sm" required>
+                                @foreach (var run in Model)
+                                {
+                                    <option value="@run.RunId"
+                                            selected="@(run.RunId == Model[1].RunId ? "selected" : null)">
+                                        @run.ExecutedAtUtc.ToLocalTime().ToString("dd MMM yyyy HH:mm") — Final @run.FinalCandidateCount
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label for="comparisonRunB" class="form-label text-muted small">Run B</label>
+                            <select id="comparisonRunB" name="runBId" class="form-select form-select-sm" required>
+                                @foreach (var run in Model)
+                                {
+                                    <option value="@run.RunId"
+                                            selected="@(run.RunId == Model[0].RunId ? "selected" : null)">
+                                        @run.ExecutedAtUtc.ToLocalTime().ToString("dd MMM yyyy HH:mm") — Final @run.FinalCandidateCount
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button id="compareRunsButton" type="submit" class="btn btn-sm btn-outline-primary">
+                                Karşılaştır
+                            </button>
+                        </div>
+                        <div id="comparisonSelectionMessage" class="col-12 text-danger small d-none">
+                            Karşılaştırmak için iki farklı çalışma seçin.
+                        </div>
+                    </form>
+                }
+
                 <div class="list-group list-group-flush">
                     @foreach (var run in Model)
                     {
@@ -271,6 +313,23 @@
     <script>
         const REQUISITION_ID = '@requisitionId';
         let workModeMap = {}; // id -> name, populated from options
+
+        const comparisonRunA = document.getElementById('comparisonRunA');
+        const comparisonRunB = document.getElementById('comparisonRunB');
+        const compareRunsButton = document.getElementById('compareRunsButton');
+        const comparisonSelectionMessage = document.getElementById('comparisonSelectionMessage');
+
+        function updateComparisonSelection() {
+            if (!comparisonRunA || !comparisonRunB || !compareRunsButton) return;
+            const valid = comparisonRunA.value && comparisonRunB.value
+                && comparisonRunA.value !== comparisonRunB.value;
+            compareRunsButton.disabled = !valid;
+            comparisonSelectionMessage?.classList.toggle('d-none', valid);
+        }
+
+        comparisonRunA?.addEventListener('change', updateComparisonSelection);
+        comparisonRunB?.addEventListener('change', updateComparisonSelection);
+        updateComparisonSelection();
 
         (async function () {
             const alertEl   = document.getElementById('detailAlert');

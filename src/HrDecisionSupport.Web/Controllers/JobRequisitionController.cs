@@ -62,6 +62,33 @@ public class JobRequisitionController : Controller
         return View(run);
     }
 
+    [HttpGet("JobRequisition/{jobId:guid}/MatchingHistory/Compare")]
+    public async Task<IActionResult> CompareMatchingHistory(
+        Guid jobId,
+        Guid runAId,
+        Guid runBId,
+        CancellationToken cancellationToken)
+    {
+        if (runAId == runBId)
+        {
+            return BadRequest();
+        }
+
+        var comparison = await _historyService.GetComparisonAsync(
+            jobId,
+            runAId,
+            runBId,
+            cancellationToken);
+        if (comparison is null)
+        {
+            return NotFound();
+        }
+
+        ViewData["Title"] = "Eşleştirme Karşılaştırması";
+        ViewData["RequisitionId"] = jobId;
+        return View("MatchingComparison", comparison);
+    }
+
     public IActionResult Edit(Guid id)
     {
         ViewData["Title"] = "İlanı Düzenle";

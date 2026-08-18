@@ -13,6 +13,12 @@ public interface IJobMatchingHistoryService
         Guid runId,
         CancellationToken cancellationToken = default);
 
+    Task<JobMatchingRunComparison?> GetComparisonAsync(
+        Guid jobRequisitionId,
+        Guid runAId,
+        Guid runBId,
+        CancellationToken cancellationToken = default);
+
     Task SaveCompletedRunAsync(
         CompletedJobMatchingRun completedRun,
         CancellationToken cancellationToken = default);

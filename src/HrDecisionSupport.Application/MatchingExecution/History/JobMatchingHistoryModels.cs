@@ -74,3 +74,81 @@ public sealed record MatchingLanguageRequirementSnapshot(
     string Name,
     LanguageProficiencyLevel MinimumProficiency,
     bool HardFilterEnabled);
+
+public enum CandidateMovementStatus
+{
+    Up = 1,
+    Down = 2,
+    Unchanged = 3,
+    New = 4,
+    Dropped = 5
+}
+
+public sealed record JobMatchingRunComparison(
+    JobMatchingComparisonRun RunA,
+    JobMatchingComparisonRun RunB,
+    bool ModelConfigurationChanged,
+    bool SemanticJobDocumentChanged,
+    JobMatchingConfigurationComparison ConfigurationComparison,
+    JobMatchingComparisonSummary Summary,
+    IReadOnlyList<JobMatchingCandidateComparison> Candidates);
+
+public sealed record JobMatchingComparisonRun(
+    Guid RunId,
+    DateTime ExecutedAtUtc,
+    string JobRequisitionCodeSnapshot,
+    string JobTitleSnapshot,
+    int RetrievalTopN,
+    int FinalTopN,
+    int CandidatePoolCount,
+    int HardFilterPassedCount,
+    int RetrievedCandidateCount,
+    int FinalCandidateCount,
+    string EmbeddingModelName,
+    string RerankerModelName,
+    string RetentionModelName,
+    string RetentionFeatureSchemaVersion,
+    string JobDocumentHash);
+
+public sealed record JobMatchingCandidateComparison(
+    Guid CandidateId,
+    string? CandidateCodeSnapshot,
+    string CandidateDisplayNameSnapshot,
+    int? RankA,
+    int? RankB,
+    int? Movement,
+    CandidateMovementStatus MovementStatus,
+    int? SkillTierA,
+    int? SkillTierB,
+    decimal? MandatoryCoverageA,
+    decimal? MandatoryCoverageB,
+    decimal? PreferredCoverageA,
+    decimal? PreferredCoverageB,
+    double? EmbeddingScoreA,
+    double? EmbeddingScoreB,
+    double? CrossEncoderRawScoreA,
+    double? CrossEncoderRawScoreB,
+    double? JobFitScoreA,
+    double? JobFitScoreB,
+    RetentionPredictionStatus? RetentionStatusA,
+    RetentionPredictionStatus? RetentionStatusB,
+    EmployeeRetentionLabelValue? RetentionLabelA,
+    EmployeeRetentionLabelValue? RetentionLabelB);
+
+public sealed record JobMatchingComparisonSummary(
+    int PresentInBoth,
+    int New,
+    int Dropped,
+    int MovedUp,
+    int MovedDown,
+    int Unchanged);
+
+public sealed record JobMatchingConfigurationComparison(
+    bool IsAvailable,
+    bool? IsIdentical,
+    IReadOnlyList<JobMatchingConfigurationDifference> Differences);
+
+public sealed record JobMatchingConfigurationDifference(
+    string Field,
+    string? ValueA,
+    string? ValueB);
