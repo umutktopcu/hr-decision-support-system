@@ -102,7 +102,7 @@ public class CandidateSemanticMatchingServiceTests
         Assert.Empty(result.Value.Results);
 
         // Verify retrieval service was NEVER called
-        _retrievalMock.Verify(x => x.RetrieveTopCandidatesAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        _retrievalMock.Verify(x => x.RetrieveTopCandidatesAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -189,7 +189,7 @@ public class CandidateSemanticMatchingServiceTests
         _preScreeningMock.Setup(x => x.EvaluateApplicantsForJobAsync(jobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<CandidatePreScreeningBatchResult>.Success(batchResult));
 
-        _retrievalMock.Setup(x => x.RetrieveTopCandidatesAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        _retrievalMock.Setup(x => x.RetrieveTopCandidatesAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<IReadOnlyList<SemanticRetrievalResult>>.Failure(new Error("retrieval_error", "Failed")));
 
         var result = await sut.MatchApplicantsForJobAsync(jobId, 10);
@@ -243,10 +243,11 @@ public class CandidateSemanticMatchingServiceTests
             new SemanticRetrievalResult(eligibleCandidateId, 0.95, "CANDIDATE_DOC")
         };
 
-        _retrievalMock.Setup(x => x.RetrieveTopCandidatesAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), 5, It.IsAny<CancellationToken>()))
+        _retrievalMock.Setup(x => x.RetrieveTopCandidatesAsync(jobId, It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), 5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<IReadOnlyList<SemanticRetrievalResult>>.Success(expectedRetrievalResult))
-            .Callback<string, IReadOnlyList<SemanticCandidateDocument>, int, CancellationToken>((jDoc, cDocs, n, c) =>
+            .Callback<Guid, string, IReadOnlyList<SemanticCandidateDocument>, int, CancellationToken>((receivedJobId, jDoc, cDocs, n, c) =>
             {
+                Assert.Equal(jobId, receivedJobId);
                 // Verify ONLY eligible candidate was sent
                 Assert.Single(cDocs);
                 Assert.Equal(eligibleCandidateId, cDocs[0].CandidateId);
@@ -311,10 +312,11 @@ public class CandidateSemanticMatchingServiceTests
         _preScreeningMock.Setup(x => x.EvaluateApplicantsForJobAsync(jobId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<CandidatePreScreeningBatchResult>.Success(batchResult));
 
-        _retrievalMock.Setup(x => x.RetrieveTopCandidatesAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), 5, It.IsAny<CancellationToken>()))
+        _retrievalMock.Setup(x => x.RetrieveTopCandidatesAsync(jobId, It.IsAny<string>(), It.IsAny<IReadOnlyList<SemanticCandidateDocument>>(), 5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<IReadOnlyList<SemanticRetrievalResult>>.Success(new List<SemanticRetrievalResult>()))
-            .Callback<string, IReadOnlyList<SemanticCandidateDocument>, int, CancellationToken>((jDoc, cDocs, n, c) =>
+            .Callback<Guid, string, IReadOnlyList<SemanticCandidateDocument>, int, CancellationToken>((receivedJobId, jDoc, cDocs, n, c) =>
             {
+                Assert.Equal(jobId, receivedJobId);
                 var text = cDocs[0].Text;
                 // Assert that the document text contains values from the navigations,
                 // which proves the AsSplitQuery includes worked correctly.

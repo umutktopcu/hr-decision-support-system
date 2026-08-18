@@ -31,7 +31,7 @@ public static class DependencyInjection
         services.AddScoped<IEmployeeImportTransactionRunner, EmployeeImportTransactionRunner>();
 
         // Semantic matching
-        services.AddScoped<ISemanticRetrievalService, SemanticRetrievalService>();
+        services.AddScoped<IEmbeddingStore, PostgreSqlEmbeddingStore>();
 
         if (configuration is not null)
         {
@@ -49,6 +49,19 @@ public static class DependencyInjection
                 .GetRequiredService<Microsoft.Extensions.Options.IOptions<QwenEmbeddingOptions>>().Value;
             client.BaseAddress = new Uri(opts.BaseUrl);
             client.Timeout = TimeSpan.FromMinutes(10);
+        });
+
+        services.AddScoped<ISemanticRetrievalService>(serviceProvider =>
+        {
+            var options = serviceProvider
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<QwenEmbeddingOptions>>()
+                .Value;
+            return new SemanticRetrievalService(
+                serviceProvider.GetRequiredService<IEmbeddingProvider>(),
+                serviceProvider.GetRequiredService<IEmbeddingStore>(),
+                options.ModelName,
+                options.ExpectedDimension,
+                serviceProvider.GetRequiredService<TimeProvider>());
         });
 
         if (configuration is not null)
