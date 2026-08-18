@@ -2,7 +2,9 @@ using HrDecisionSupport.Application.Common;
 using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Application.Common.Validation;
 using HrDecisionSupport.Application.MatchingExecution;
+using HrDecisionSupport.Application.MatchingExecution.History;
 using HrDecisionSupport.Application.MatchingExecution.Models;
+using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Application.SemanticMatching.Orchestration;
 using HrDecisionSupport.Application.SemanticMatching.Orchestration.Models;
 using HrDecisionSupport.Application.SemanticMatching.Reranking;
@@ -27,6 +29,8 @@ public class JobMatchingExecutionServiceTests
     private readonly HrDecisionSupportDbContext _dbContext;
     private readonly Mock<ICandidateJobFitRankingService> _semanticMatchingServiceMock;
     private readonly Mock<IValidator<JobMatchingRequest>> _validatorMock;
+    private readonly Mock<IMlPredictionService> _retentionPredictionServiceMock;
+    private readonly Mock<IJobMatchingHistoryService> _historyServiceMock;
     private readonly JobMatchingExecutionService _sut;
 
     public JobMatchingExecutionServiceTests()
@@ -39,11 +43,20 @@ public class JobMatchingExecutionServiceTests
 
         _semanticMatchingServiceMock = new Mock<ICandidateJobFitRankingService>();
         _validatorMock = new Mock<IValidator<JobMatchingRequest>>();
+        _retentionPredictionServiceMock = new Mock<IMlPredictionService>();
+        _historyServiceMock = new Mock<IJobMatchingHistoryService>();
+        _historyServiceMock
+            .Setup(service => service.SaveCompletedRunAsync(
+                It.IsAny<CompletedJobMatchingRun>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         _sut = new JobMatchingExecutionService(
             _dbContext,
             _semanticMatchingServiceMock.Object,
-            _validatorMock.Object);
+            _validatorMock.Object,
+            _retentionPredictionServiceMock.Object,
+            _historyServiceMock.Object);
     }
 
     [Fact]

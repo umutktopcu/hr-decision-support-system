@@ -1,7 +1,9 @@
 using HrDecisionSupport.Application.Common;
 using HrDecisionSupport.Application.Common.Validation;
 using HrDecisionSupport.Application.MatchingExecution;
+using HrDecisionSupport.Application.MatchingExecution.History;
 using HrDecisionSupport.Application.MatchingExecution.Models;
+using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Application.PreScreening.Models;
 using HrDecisionSupport.Application.SemanticMatching.Reranking;
 using HrDecisionSupport.Application.SemanticMatching.Reranking.Models;
@@ -24,6 +26,8 @@ public class JobMatchingExecutionServiceAdditionalTests
     private readonly HrDecisionSupportDbContext _dbContext;
     private readonly Mock<ICandidateJobFitRankingService> _semanticMatchingServiceMock;
     private readonly Mock<IValidator<JobMatchingRequest>> _validatorMock;
+    private readonly Mock<IMlPredictionService> _retentionPredictionServiceMock;
+    private readonly Mock<IJobMatchingHistoryService> _historyServiceMock;
     private readonly JobMatchingExecutionService _sut;
 
     public JobMatchingExecutionServiceAdditionalTests()
@@ -36,12 +40,21 @@ public class JobMatchingExecutionServiceAdditionalTests
 
         _semanticMatchingServiceMock = new Mock<ICandidateJobFitRankingService>();
         _validatorMock = new Mock<IValidator<JobMatchingRequest>>();
+        _retentionPredictionServiceMock = new Mock<IMlPredictionService>();
+        _historyServiceMock = new Mock<IJobMatchingHistoryService>();
         _validatorMock.Setup(x => x.Validate(It.IsAny<JobMatchingRequest>())).Returns(ValidationResult.Valid());
+        _historyServiceMock
+            .Setup(service => service.SaveCompletedRunAsync(
+                It.IsAny<CompletedJobMatchingRun>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         _sut = new JobMatchingExecutionService(
             _dbContext,
             _semanticMatchingServiceMock.Object,
-            _validatorMock.Object);
+            _validatorMock.Object,
+            _retentionPredictionServiceMock.Object,
+            _historyServiceMock.Object);
     }
 
     [Fact]

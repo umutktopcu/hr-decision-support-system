@@ -7,6 +7,8 @@ using HrDecisionSupport.Application.Common;
 using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Application.Common.Validation;
 using HrDecisionSupport.Application.MatchingExecution.Models;
+using HrDecisionSupport.Application.MatchingExecution.History;
+using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Application.SemanticMatching.Reranking;
 using HrDecisionSupport.Application.PreScreening.Models;
 using HrDecisionSupport.Domain.Entities;
@@ -20,15 +22,21 @@ public class JobMatchingExecutionService : IJobMatchingExecutionService
     private readonly IHrDecisionSupportDbContext _dbContext;
     private readonly ICandidateJobFitRankingService _rankingService;
     private readonly IValidator<JobMatchingRequest> _validator;
+    private readonly IMlPredictionService _retentionPredictionService;
+    private readonly IJobMatchingHistoryService _historyService;
 
     public JobMatchingExecutionService(
         IHrDecisionSupportDbContext dbContext,
         ICandidateJobFitRankingService rankingService,
-        IValidator<JobMatchingRequest> validator)
+        IValidator<JobMatchingRequest> validator,
+        IMlPredictionService retentionPredictionService,
+        IJobMatchingHistoryService historyService)
     {
         _dbContext = dbContext;
         _rankingService = rankingService;
         _validator = validator;
+        _retentionPredictionService = retentionPredictionService;
+        _historyService = historyService;
     }
 
     public async Task<Result<JobMatchingExecutionResult>> ExecuteMatchingAsync(
@@ -157,13 +165,21 @@ public class JobMatchingExecutionService : IJobMatchingExecutionService
             }
         }
 
-        var candidateResults = batch.Results.Select(r =>
+        var candidateResults = new List<JobMatchingCandidateResult>(batch.Results.Count);
+        var completedResults = new List<CompletedJobMatchingResult>(batch.Results.Count);
+        foreach (var r in batch.Results)
         {
             var info = candidatesInfo.GetValueOrDefault(r.CandidateId, (null, "Unknown Candidate", null, null));
-            return new JobMatchingCandidateResult(
+            var retention = await PredictRetentionAsync(
+                info.Short,
+                info.Long,
+                cancellationToken);
+
+            candidateResults.Add(new JobMatchingCandidateResult(
                 CandidateId: r.CandidateId,
                 CandidateCode: info.Code,
                 DisplayName: info.DisplayName,
+                FinalRank: r.FinalRank,
                 SkillTier: r.SkillTier,
                 MandatorySkillCoverage: r.MandatorySkillCoverage,
                 PreferredSkillCoverage: r.PreferredSkillCoverage,
@@ -171,9 +187,26 @@ public class JobMatchingExecutionService : IJobMatchingExecutionService
                 CrossEncoderRawScore: r.CrossEncoderRawScore,
                 JobFitScore: r.JobFitScore,
                 ShortestJobMonths: info.Short,
-                LongestJobMonths: info.Long
-            );
-        }).ToList();
+                LongestJobMonths: info.Long,
+                RetentionPredictionStatus: retention.Status,
+                RetentionLabel: retention.Label));
+
+            completedResults.Add(new CompletedJobMatchingResult(
+                CandidateId: r.CandidateId,
+                CandidateCodeSnapshot: info.Code,
+                CandidateDisplayNameSnapshot: info.DisplayName,
+                FinalRank: r.FinalRank,
+                SkillTier: r.SkillTier,
+                MandatorySkillCoverage: r.MandatorySkillCoverage,
+                PreferredSkillCoverage: r.PreferredSkillCoverage,
+                EmbeddingScore: r.CosineSimilarityScore,
+                CrossEncoderRawScore: r.CrossEncoderRawScore,
+                JobFitScore: r.JobFitScore,
+                RetentionPredictionStatus: retention.Status,
+                RetentionLabel: retention.Label,
+                ShortestPreviousJobMonthsSnapshot: info.Short,
+                LongestPreviousJobMonthsSnapshot: info.Long));
+        }
 
         var finalResult = new JobMatchingExecutionResult(
             JobRequisitionId: jobRequisitionId,
@@ -182,7 +215,64 @@ public class JobMatchingExecutionService : IJobMatchingExecutionService
             Candidates: candidateResults
         );
 
+        try
+        {
+            await _historyService.SaveCompletedRunAsync(
+                new CompletedJobMatchingRun(
+                    JobRequisitionId: jobRequisitionId,
+                    RetrievalTopN: request.RetrievalTopN,
+                    FinalTopN: request.FinalTopN,
+                    CandidatePoolCount: poolCandidateIds.Count,
+                    HardFilterPassedCount: eligibleCount,
+                    RetrievedCandidateCount: batch.RetrievedCandidateCount,
+                    FinalCandidateCount: batch.FinalCandidateCount,
+                    JobDocumentText: batch.JobDocumentText,
+                    Results: completedResults),
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return Result<JobMatchingExecutionResult>.Failure(new Error(
+                "matching_history_persistence_failed",
+                "Matching completed, but its immutable history could not be persisted.",
+                ErrorType.Failure));
+        }
+
         return Result<JobMatchingExecutionResult>.Success(finalResult);
+    }
+
+    private async Task<RetentionOutcome> PredictRetentionAsync(
+        int? shortestJobMonths,
+        int? longestJobMonths,
+        CancellationToken cancellationToken)
+    {
+        if (shortestJobMonths is not > 0 || longestJobMonths is not > 0)
+        {
+            return new(RetentionPredictionStatus.InsufficientData, null);
+        }
+
+        try
+        {
+            var label = await _retentionPredictionService.PredictStayAsync(
+                shortestJobMonths.Value,
+                longestJobMonths.Value,
+                cancellationToken);
+            return label switch
+            {
+                0 => new(RetentionPredictionStatus.Predicted, EmployeeRetentionLabelValue.Short),
+                1 => new(RetentionPredictionStatus.Predicted, EmployeeRetentionLabelValue.Normal),
+                2 => new(RetentionPredictionStatus.Predicted, EmployeeRetentionLabelValue.Long),
+                _ => new(RetentionPredictionStatus.Unavailable, null)
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return new(RetentionPredictionStatus.Unavailable, null);
+        }
     }
 
     private static HardFilterBreakdown? BuildBreakdown(IReadOnlyList<CandidatePreScreeningResult>? results)
@@ -218,4 +308,8 @@ public class JobMatchingExecutionService : IJobMatchingExecutionService
             )
         );
     }
+
+    private sealed record RetentionOutcome(
+        RetentionPredictionStatus Status,
+        EmployeeRetentionLabelValue? Label);
 }

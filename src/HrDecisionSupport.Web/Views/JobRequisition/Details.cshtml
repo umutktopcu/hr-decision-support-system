@@ -531,9 +531,8 @@
             candidates.forEach((c, idx) => {
                 const tierBadge = tierBadgeHtml(c.skillTier);
                 const tr = document.createElement('tr');
-                const mlBadgeId = `ml-badge-${idx}`;
                 tr.innerHTML = `
-                    <td class="ps-3 fw-bold text-muted">#${idx + 1}</td>
+                    <td class="ps-3 fw-bold text-muted">#${c.finalRank}</td>
                     <td class="fw-bold">${escHtml(c.displayName)}</td>
                     <td><span class="text-monospace small text-muted">${escHtml(c.candidateCode || '—')}</span></td>
                     <td>${tierBadge}</td>
@@ -541,21 +540,8 @@
                     <td>${fmtPct(c.preferredSkillCoverage)}</td>
                     <td class="text-muted small">${fmtScore(c.embeddingScore, 4)}</td>
                     <td><span class="badge bg-primary">${fmtScore(c.jobFitScore, 4)}</span></td>
-                    <td><span id="${mlBadgeId}" class="badge bg-secondary">Hesaplanıyor...</span></td>`;
+                    <td>${retentionBadgeHtml(c.retentionPredictionStatus, c.retentionLabel)}</td>`;
                 tbody.appendChild(tr);
-
-                const shortest = c.shortestJobMonths || 0;
-                const longest = c.longestJobMonths || 0;
-                
-                if (shortest > 0 && longest > 0) {
-                    fetchMlPrediction(mlBadgeId, shortest, longest);
-                } else {
-                    const badge = document.getElementById(mlBadgeId);
-                    if (badge) {
-                        badge.className = 'badge bg-secondary';
-                        badge.textContent = 'Yetersiz Veri';
-                    }
-                }
             });
         }
 
@@ -564,35 +550,15 @@
             return `<span class="badge ${cls}">Kademe ${tier}</span>`;
         }
 
-                async function fetchMlPrediction(badgeId, shortest, longest) {
-            try {
-                const res = await fetch('http://127.0.0.1:8000/predict', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shortest_job_months: shortest, longest_job_months: longest })
-                });
-
-                const badge = document.getElementById(badgeId);
-                if(res.ok) {
-                    const data = await res.json();
-                    if(data.label === 0) {
-                        badge.className = 'badge bg-danger';
-                        badge.textContent = 'Kısa Süreli';
-                    } else if(data.label === 1) {
-                        badge.className = 'badge bg-info text-dark';
-                        badge.textContent = 'Normal';
-                    } else {
-                        badge.className = 'badge bg-success';
-                        badge.textContent = 'Uzun Süreli (Güvenli)';
-                    }
-                } else {
-                    badge.className = 'badge bg-secondary';
-                    badge.textContent = 'API Hatası';
-                }
-            } catch(e) {
-                document.getElementById(badgeId).className = 'badge bg-danger';
-                document.getElementById(badgeId).textContent = 'Bağlantı Koptu';
+        function retentionBadgeHtml(status, label) {
+            if (status === 1) {
+                if (label === 0) return '<span class="badge bg-danger">Kısa Süreli</span>';
+                if (label === 1) return '<span class="badge bg-info text-dark">Normal</span>';
+                if (label === 2) return '<span class="badge bg-success">Uzun Süreli (Güvenli)</span>';
             }
+
+            if (status === 2) return '<span class="badge bg-secondary">Yetersiz Veri</span>';
+            return '<span class="badge bg-danger">Tahmin Kullanılamıyor</span>';
         }
     </script>
 }

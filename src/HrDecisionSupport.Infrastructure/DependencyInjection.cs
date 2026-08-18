@@ -3,9 +3,11 @@ using HrDecisionSupport.Application.EmployeeImports.Spreadsheet;
 using HrDecisionSupport.Application.CandidateImports.Spreadsheet;
 using HrDecisionSupport.Application.SemanticMatching.Embeddings;
 using HrDecisionSupport.Application.SemanticMatching.Retrieval;
+using HrDecisionSupport.Application.MatchingExecution.History;
 using HrDecisionSupport.Infrastructure.EmployeeImports;
 using HrDecisionSupport.Infrastructure.CandidateImports;
 using HrDecisionSupport.Infrastructure.Persistence;
+using HrDecisionSupport.Infrastructure.MatchingHistory;
 using HrDecisionSupport.Infrastructure.SemanticMatching;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +31,7 @@ public static class DependencyInjection
         services.AddSingleton<IEmployeeSpreadsheetReader, ClosedXmlEmployeeSpreadsheetReader>();
         services.AddSingleton<ICandidateImportSourceReader, ClosedXmlCandidateSpreadsheetReader>();
         services.AddScoped<IEmployeeImportTransactionRunner, EmployeeImportTransactionRunner>();
+        services.AddScoped<IJobMatchingHistoryService, PostgreSqlJobMatchingHistoryService>();
 
         // Semantic matching
         services.AddScoped<IEmbeddingStore, PostgreSqlEmbeddingStore>();
