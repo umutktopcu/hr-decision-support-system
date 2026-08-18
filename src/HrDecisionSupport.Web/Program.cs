@@ -2,6 +2,7 @@ using HrDecisionSupport.Application;
 using HrDecisionSupport.Application.Employees;
 using HrDecisionSupport.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Pgvector.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +13,8 @@ builder.Services.AddInfrastructure(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("PostgreSql")
         ?? throw new InvalidOperationException(
-            "PostgreSQL connection string is not configured.")),
+            "PostgreSQL connection string is not configured."),
+        npgsqlOptions => npgsqlOptions.UseVector()),
     builder.Configuration);
 builder.Services.AddControllersWithViews();
 

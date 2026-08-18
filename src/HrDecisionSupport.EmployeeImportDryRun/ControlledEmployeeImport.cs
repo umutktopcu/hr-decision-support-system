@@ -10,6 +10,7 @@ using HrDecisionSupport.Infrastructure.EmployeeImports;
 using HrDecisionSupport.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Pgvector.EntityFrameworkCore;
 
 namespace HrDecisionSupport.EmployeeImportDryRun;
 
@@ -81,7 +82,9 @@ public sealed class PostgreSqlEmployeeImportExecution(string? connectionString) 
         try
         {
             var builder = new NpgsqlConnectionStringBuilder(connectionString);
-            _context = new(new DbContextOptionsBuilder<HrDecisionSupportDbContext>().UseNpgsql(connectionString).Options);
+            _context = new(new DbContextOptionsBuilder<HrDecisionSupportDbContext>()
+                .UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.UseVector())
+                .Options);
             if (!await _context.Database.CanConnectAsync(cancellationToken)) return Result<ImportPreflightSummary>.Failure("employee_import_runner.database_unreachable", "The target database is not reachable.");
             if ((await _context.Database.GetPendingMigrationsAsync(cancellationToken)).Any()) return Result<ImportPreflightSummary>.Failure("employee_import_runner.pending_migrations", "All migrations must be applied before import.");
             if (_context.Database.HasPendingModelChanges()) return Result<ImportPreflightSummary>.Failure("employee_import_runner.pending_model_changes", "Pending EF model changes must be resolved before import.");

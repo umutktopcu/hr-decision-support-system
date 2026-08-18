@@ -1,5 +1,6 @@
 using HrDecisionSupport.Application.Common.Interfaces;
 using HrDecisionSupport.Domain.Entities;
+using HrDecisionSupport.Infrastructure.Persistence.Embeddings;
 using Microsoft.EntityFrameworkCore;
 
 namespace HrDecisionSupport.Infrastructure.Persistence;
@@ -50,10 +51,23 @@ public class HrDecisionSupportDbContext : DbContext, IHrDecisionSupportDbContext
         Set<CandidateWorkModePreference>();
     public DbSet<CandidateCareerFeatureSnapshot> CandidateCareerFeatureSnapshots =>
         Set<CandidateCareerFeatureSnapshot>();
+    public DbSet<CandidateEmbedding> CandidateEmbeddings => Set<CandidateEmbedding>();
+    public DbSet<JobRequisitionEmbedding> JobRequisitionEmbeddings =>
+        Set<JobRequisitionEmbedding>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(HrDecisionSupportDbContext).Assembly);
+
+        if (Database.IsNpgsql())
+        {
+            modelBuilder.HasPostgresExtension("vector");
+        }
+        else
+        {
+            modelBuilder.Ignore<CandidateEmbedding>();
+            modelBuilder.Ignore<JobRequisitionEmbedding>();
+        }
     }
 }

@@ -14,6 +14,7 @@ public interface ISemanticRetrievalService
     /// Candidates with duplicate IDs will result in a validation failure.
     /// </summary>
     Task<Result<IReadOnlyList<SemanticRetrievalResult>>> RetrieveTopCandidatesAsync(
+        Guid jobRequisitionId,
         string jobDocument,
         IReadOnlyList<SemanticCandidateDocument> candidates,
         int topN,

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
+using Pgvector.EntityFrameworkCore;
 
 namespace HrDecisionSupport.Tests;
 
@@ -33,7 +34,8 @@ public sealed class PostgreSqlIntegrationTestFixture : IAsyncLifetime
     public HrDecisionSupportDbContext CreateDbContext(DbCommandInterceptor? interceptor = null)
     {
         RequireConfigured();
-        var builder = new DbContextOptionsBuilder<HrDecisionSupportDbContext>().UseNpgsql(ConnectionString);
+        var builder = new DbContextOptionsBuilder<HrDecisionSupportDbContext>()
+            .UseNpgsql(ConnectionString, npgsqlOptions => npgsqlOptions.UseVector());
         if (interceptor is not null) builder.AddInterceptors(interceptor);
         var options = builder.Options;
         return new HrDecisionSupportDbContext(options);
@@ -45,7 +47,8 @@ public sealed class PostgreSqlIntegrationTestFixture : IAsyncLifetime
         var services = new ServiceCollection();
         if (timeProvider is not null) services.AddSingleton(timeProvider);
         services.AddApplication();
-        services.AddInfrastructure(options => options.UseNpgsql(ConnectionString));
+        services.AddInfrastructure(options =>
+            options.UseNpgsql(ConnectionString, npgsqlOptions => npgsqlOptions.UseVector()));
         if (spreadsheetReader is not null)
         {
             services.RemoveAll<IEmployeeSpreadsheetReader>();

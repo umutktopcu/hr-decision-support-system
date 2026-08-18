@@ -140,6 +140,7 @@ public class CandidateSemanticMatchingService : ICandidateSemanticMatchingServic
 
         // 8. Run semantic retrieval
         var retrievalResult = await _retrievalService.RetrieveTopCandidatesAsync(
+            jobRequisitionId,
             jobDocumentText,
             semanticCandidates,
             topN,
