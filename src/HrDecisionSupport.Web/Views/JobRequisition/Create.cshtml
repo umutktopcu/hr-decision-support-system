@@ -43,10 +43,20 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-muted small">Pozisyon *</label>
-                    <select id="positionId" class="form-select" required>
-                        <option value="">— Pozisyon Seçin —</option>
-                    </select>
+                    <div class="input-group">
+                        <select id="positionId" class="form-select" required>
+                            <option value="">— Pozisyon Seçin —</option>
+                        </select>
+                        <button type="button" id="analyzePositionBtn" class="btn btn-outline-primary" disabled>
+                            <span id="analyzePositionBtnText">Pozisyonu Analiz Et</span>
+                            <span id="analyzePositionSpinner" class="spinner-border spinner-border-sm ms-1 d-none" role="status"></span>
+                        </button>
+                    </div>
                     <div class="invalid-feedback">Pozisyon zorunludur.</div>
+                </div>
+                <div class="col-12">
+                    <div id="positionBenchmarkContainer" class="d-none" aria-live="polite"></div>
+                    <div id="positionBenchmarkWarning" class="d-none mt-2" aria-live="polite"></div>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label text-muted small">Açık Pozisyon Sayısı *</label>
@@ -289,6 +299,28 @@
                 listEl:                   document.getElementById('languageList'),
                 store:                    languageStore,
                 languageProficiencyLevels: opts.languageProficiencyLevels
+            });
+
+            // ── Position benchmark ──────────────────────────────
+            initPositionBenchmark({
+                positionSelectEl: document.getElementById('positionId'),
+                analyzeButtonEl:  document.getElementById('analyzePositionBtn'),
+                buttonTextEl:     document.getElementById('analyzePositionBtnText'),
+                spinnerEl:        document.getElementById('analyzePositionSpinner'),
+                containerEl:      document.getElementById('positionBenchmarkContainer'),
+                warningEl:        document.getElementById('positionBenchmarkWarning'),
+                experienceInputEl: document.getElementById('minimumRelevantExperienceMonths'),
+                educationSelectEl: eduSel,
+                mandatoryStore,
+                preferredStore,
+                languageStore,
+                renderPreferredSkills: () => renderSkillList(
+                    document.getElementById('preferredSkillList'),
+                    preferredStore,
+                    opts.competencies),
+                renderLanguages: () => renderLanguageList(
+                    document.getElementById('languageList'),
+                    languageStore)
             });
 
             // Set today as default for openedAt
