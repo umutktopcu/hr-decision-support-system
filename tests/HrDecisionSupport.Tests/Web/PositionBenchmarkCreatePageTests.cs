@@ -92,7 +92,11 @@ public sealed class PositionBenchmarkCreatePageTests
 
         Assert.Contains("data-benchmark-apply-skill", SharedScript);
         Assert.Contains("type=\"button\"", SharedScript);
-        Assert.Contains("applyPreferredCompetencySuggestion(suggestion, mandatoryStore, preferredStore)", apply);
+        Assert.Contains("applyPreferredCompetencySuggestion(", apply);
+        Assert.Contains("suggestion,", apply);
+        Assert.Contains("mandatoryStore,", apply);
+        Assert.Contains("preferredStore,", apply);
+        Assert.Contains("canApplySuggestions()", apply);
         Assert.Contains("mandatoryStore.some(item => item.competencyId === competencyId)", helper);
         Assert.Contains("preferredStore.some(item => item.competencyId === competencyId)", helper);
         Assert.Contains("preferredStore.push({", helper);

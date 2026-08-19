@@ -45,10 +45,20 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-muted small">Pozisyon *</label>
-                    <select id="positionId" class="form-select" required>
-                        <option value="">— Pozisyon Seçin —</option>
-                    </select>
+                    <div class="input-group">
+                        <select id="positionId" class="form-select" required>
+                            <option value="">— Pozisyon Seçin —</option>
+                        </select>
+                        <button type="button" id="analyzePositionBtn" class="btn btn-outline-primary" disabled>
+                            <span id="analyzePositionBtnText">Pozisyonu Analiz Et</span>
+                            <span id="analyzePositionSpinner" class="spinner-border spinner-border-sm ms-1 d-none" role="status"></span>
+                        </button>
+                    </div>
                     <div class="invalid-feedback">Pozisyon zorunludur.</div>
+                </div>
+                <div class="col-12">
+                    <div id="positionBenchmarkContainer" class="d-none" aria-live="polite"></div>
+                    <div id="positionBenchmarkWarning" class="d-none mt-2" aria-live="polite"></div>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label text-muted small">Açık Pozisyon Sayısı *</label>
@@ -284,7 +294,14 @@
             // ── Pre-populate skills ──────────────────────────────
             (detail.requirements || []).forEach(r => {
                 const target = r.isRequired ? mandatoryStore : preferredStore;
-                target.push({ competencyId: r.competencyId, competencyName: r.competencyName, isRequired: r.isRequired });
+                target.push({
+                    competencyId: r.competencyId,
+                    competencyName: r.competencyName,
+                    isRequired: r.isRequired,
+                    minimumExperienceMonths: r.minimumExperienceMonths,
+                    minimumProficiencyLevel: r.minimumProficiencyLevel,
+                    notes: r.notes
+                });
             });
 
             // ── Pre-populate languages ───────────────────────────
@@ -333,6 +350,31 @@
             renderSkillList(document.getElementById('preferredSkillList'), preferredStore, opts.competencies);
             renderLanguageList(document.getElementById('languageList'), languageStore);
 
+            // Closed and Cancelled requisitions are terminal in JobRequisitionService.
+            const benchmarkApplyAllowed = detail.jobRequisitionStatus !== 4
+                && detail.jobRequisitionStatus !== 5;
+            initPositionBenchmark({
+                positionSelectEl: document.getElementById('positionId'),
+                analyzeButtonEl:  document.getElementById('analyzePositionBtn'),
+                buttonTextEl:     document.getElementById('analyzePositionBtnText'),
+                spinnerEl:        document.getElementById('analyzePositionSpinner'),
+                containerEl:      document.getElementById('positionBenchmarkContainer'),
+                warningEl:        document.getElementById('positionBenchmarkWarning'),
+                experienceInputEl: document.getElementById('minimumRelevantExperienceMonths'),
+                educationSelectEl: eduSel,
+                mandatoryStore,
+                preferredStore,
+                languageStore,
+                renderPreferredSkills: () => renderSkillList(
+                    document.getElementById('preferredSkillList'),
+                    preferredStore,
+                    opts.competencies),
+                renderLanguages: () => renderLanguageList(
+                    document.getElementById('languageList'),
+                    languageStore),
+                canApplySuggestions: () => benchmarkApplyAllowed
+            });
+
             // Show form
             loadingEl.classList.add('d-none');
             formEl.classList.remove('d-none');
@@ -376,8 +418,20 @@
                     workModeHardFilterEnabled:       document.getElementById('workModeHardFilterEnabled').checked,
                     mandatorySkillCoverageThreshold: thresholdRaw !== '' ? displayToThreshold(thresholdRaw) : null,
                     requirements: [
-                        ...mandatoryStore.map(s => ({ competencyId: s.competencyId, isRequired: true,  minimumExperienceMonths: null, minimumProficiencyLevel: null, notes: null })),
-                        ...preferredStore.map(s => ({ competencyId: s.competencyId, isRequired: false, minimumExperienceMonths: null, minimumProficiencyLevel: null, notes: null }))
+                        ...mandatoryStore.map(s => ({
+                            competencyId: s.competencyId,
+                            isRequired: true,
+                            minimumExperienceMonths: s.minimumExperienceMonths ?? null,
+                            minimumProficiencyLevel: s.minimumProficiencyLevel ?? null,
+                            notes: s.notes ?? null
+                        })),
+                        ...preferredStore.map(s => ({
+                            competencyId: s.competencyId,
+                            isRequired: false,
+                            minimumExperienceMonths: s.minimumExperienceMonths ?? null,
+                            minimumProficiencyLevel: s.minimumProficiencyLevel ?? null,
+                            notes: s.notes ?? null
+                        }))
                     ],
                     languageRequirements: languageStore.map(l => ({
                         languageId:         l.languageId,

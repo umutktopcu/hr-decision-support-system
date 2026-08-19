@@ -115,8 +115,8 @@ function educationLevelRank(value) {
     return Object.prototype.hasOwnProperty.call(map, value) ? map[value] : -1;
 }
 
-function applyPreferredCompetencySuggestion(suggestion, mandatoryStore, preferredStore) {
-    if (!suggestion) return false;
+function applyPreferredCompetencySuggestion(suggestion, mandatoryStore, preferredStore, canApply = true) {
+    if (!canApply || !suggestion) return false;
 
     const competencyId = suggestion.competencyId;
     if (mandatoryStore.some(item => item.competencyId === competencyId)
@@ -152,7 +152,7 @@ function benchmarkMedianProficiencyLabel(rank) {
 }
 
 // ──────────────────────────────────────────────
-// Position benchmark display (Create page only)
+// Position benchmark display (Create and Edit pages)
 // ──────────────────────────────────────────────
 
 function initPositionBenchmark(cfg) {
@@ -169,8 +169,12 @@ function initPositionBenchmark(cfg) {
         preferredStore,
         languageStore,
         renderPreferredSkills,
-        renderLanguages
+        renderLanguages,
+        canApplySuggestions: configuredCanApplySuggestions
     } = cfg;
+    const canApplySuggestions = typeof configuredCanApplySuggestions === 'function'
+        ? configuredCanApplySuggestions
+        : () => configuredCanApplySuggestions !== false;
     let requestVersion = 0;
     let abortController = null;
     let currentBenchmark = null;
@@ -190,6 +194,16 @@ function initPositionBenchmark(cfg) {
 
     function refreshSuggestionActionStates() {
         if (!currentBenchmark) return;
+
+        if (!canApplySuggestions()) {
+            containerEl.querySelectorAll(`
+                [data-benchmark-apply-skill],
+                [data-benchmark-apply-experience],
+                [data-benchmark-apply-education],
+                [data-benchmark-apply-language]`)
+                .forEach(button => setActionState(button, true, 'Düzenleme kilitli'));
+            return;
+        }
 
         containerEl.querySelectorAll('[data-benchmark-apply-skill]').forEach(button => {
             const competencyId = button.dataset.benchmarkApplySkill;
@@ -283,12 +297,27 @@ function initPositionBenchmark(cfg) {
     }
 
     containerEl.addEventListener('click', event => {
+        const applyControl = event.target.closest(`
+            [data-benchmark-apply-skill],
+            [data-benchmark-apply-experience],
+            [data-benchmark-apply-education],
+            [data-benchmark-apply-language]`);
+        if (!applyControl) return;
+        if (!canApplySuggestions()) {
+            refreshSuggestionActionStates();
+            return;
+        }
+
         const skillButton = event.target.closest('[data-benchmark-apply-skill]');
         if (skillButton && currentBenchmark) {
             const competencyId = skillButton.dataset.benchmarkApplySkill;
             const suggestion = currentBenchmark.suggestions.preferredCompetencies
                 .find(item => item.competencyId === competencyId);
-            if (!applyPreferredCompetencySuggestion(suggestion, mandatoryStore, preferredStore)) {
+            if (!applyPreferredCompetencySuggestion(
+                suggestion,
+                mandatoryStore,
+                preferredStore,
+                canApplySuggestions())) {
                 refreshSuggestionActionStates();
                 return;
             }
@@ -712,5 +741,5 @@ function renderLanguageList(listEl, store) {
 }
 
 if (typeof module === 'object' && module.exports) {
-    module.exports = { applyPreferredCompetencySuggestion };
+    module.exports = { applyPreferredCompetencySuggestion, initPositionBenchmark };
 }
