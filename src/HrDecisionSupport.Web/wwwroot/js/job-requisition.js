@@ -110,6 +110,33 @@ function languageProficiencyLabel(val) {
     return map[val] || val;
 }
 
+function educationLevelRank(value) {
+    const map = { 1:1, 2:2, 3:3, 4:4, 5:5, 99:0 };
+    return Object.prototype.hasOwnProperty.call(map, value) ? map[value] : -1;
+}
+
+function applyPreferredCompetencySuggestion(suggestion, mandatoryStore, preferredStore) {
+    if (!suggestion) return false;
+
+    const competencyId = suggestion.competencyId;
+    if (mandatoryStore.some(item => item.competencyId === competencyId)
+        || preferredStore.some(item => item.competencyId === competencyId)) {
+        return false;
+    }
+
+    preferredStore.push({
+        competencyId,
+        competencyName: suggestion.competencyName,
+        isRequired: false
+    });
+    return true;
+}
+
+function languageProficiencyRank(value) {
+    const map = { 1:1, 2:2, 3:3, 4:4, 5:5, 6:6 };
+    return Object.prototype.hasOwnProperty.call(map, value) ? map[value] : 0;
+}
+
 function benchmarkPercentage(decimal) {
     if (decimal == null) return '—';
     return `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(decimal * 100)}%`;
@@ -129,9 +156,107 @@ function benchmarkMedianProficiencyLabel(rank) {
 // ──────────────────────────────────────────────
 
 function initPositionBenchmark(cfg) {
-    const { positionSelectEl, analyzeButtonEl, buttonTextEl, spinnerEl, containerEl } = cfg;
+    const {
+        positionSelectEl,
+        analyzeButtonEl,
+        buttonTextEl,
+        spinnerEl,
+        containerEl,
+        warningEl,
+        experienceInputEl,
+        educationSelectEl,
+        mandatoryStore,
+        preferredStore,
+        languageStore,
+        renderPreferredSkills,
+        renderLanguages
+    } = cfg;
     let requestVersion = 0;
     let abortController = null;
+    let currentBenchmark = null;
+    let benchmarkSuggestionApplied = false;
+
+    function markBenchmarkSuggestionApplied() {
+        benchmarkSuggestionApplied = true;
+        refreshSuggestionActionStates();
+    }
+
+    function setActionState(button, disabled, text) {
+        button.disabled = disabled;
+        button.textContent = text;
+        button.classList.toggle('btn-outline-primary', !disabled);
+        button.classList.toggle('btn-outline-secondary', disabled);
+    }
+
+    function refreshSuggestionActionStates() {
+        if (!currentBenchmark) return;
+
+        containerEl.querySelectorAll('[data-benchmark-apply-skill]').forEach(button => {
+            const competencyId = button.dataset.benchmarkApplySkill;
+            if (mandatoryStore.some(item => item.competencyId === competencyId)) {
+                setActionState(button, true, 'Zaten zorunlu');
+            } else if (preferredStore.some(item => item.competencyId === competencyId)) {
+                setActionState(button, true, 'Zaten eklendi');
+            } else {
+                setActionState(button, false, 'Tercih Edilenlere Ekle');
+            }
+        });
+
+        const experienceButton = containerEl.querySelector('[data-benchmark-apply-experience]');
+        if (experienceButton) {
+            const suggested = currentBenchmark.suggestions.minimumRelevantExperienceMonths;
+            const parsed = Number.parseInt(experienceInputEl.value, 10);
+            const current = experienceInputEl.value === '' || !Number.isFinite(parsed) ? null : parsed;
+            if (current === suggested) {
+                setActionState(experienceButton, true, 'Kullanılıyor');
+            } else if (current !== null && current > suggested) {
+                setActionState(experienceButton, true, 'Mevcut değer daha sıkı');
+            } else {
+                setActionState(experienceButton, false, `${suggested} ayı kullan`);
+            }
+        }
+
+        const educationButton = containerEl.querySelector('[data-benchmark-apply-education]');
+        if (educationButton) {
+            const suggested = currentBenchmark.suggestions.minimumEducationLevel;
+            const currentValue = educationSelectEl.value;
+            const currentRank = educationLevelRank(currentValue);
+            const suggestedRank = educationLevelRank(suggested);
+            if (currentValue !== '' && currentRank === suggestedRank) {
+                setActionState(educationButton, true, 'Kullanılıyor');
+            } else if (currentRank > suggestedRank) {
+                setActionState(educationButton, true, 'Mevcut değer daha sıkı');
+            } else {
+                setActionState(educationButton, false, 'Bu eğitim seviyesini kullan');
+            }
+        }
+
+        containerEl.querySelectorAll('[data-benchmark-apply-language]').forEach(button => {
+            const languageId = button.dataset.benchmarkApplyLanguage;
+            const suggestion = currentBenchmark.suggestions.languages
+                .find(item => item.languageId === languageId);
+            if (!suggestion) return;
+
+            const existing = languageStore.find(item => item.languageId === languageId);
+            if (!existing) {
+                setActionState(button, false, 'Dil Gereksinimi Olarak Ekle');
+                return;
+            }
+
+            const currentRank = languageProficiencyRank(existing.minimumProficiency);
+            const suggestedRank = languageProficiencyRank(suggestion.minimumProficiency);
+            if (currentRank === suggestedRank) {
+                setActionState(button, true, 'Zaten eklendi');
+            } else if (currentRank > suggestedRank) {
+                setActionState(button, true, 'Mevcut gereksinim daha sıkı');
+            } else {
+                setActionState(
+                    button,
+                    false,
+                    `${languageProficiencyLabel(suggestion.minimumProficiency)} seviyesine yükselt`);
+            }
+        });
+    }
 
     function invalidateBenchmark() {
         requestVersion += 1;
@@ -140,12 +265,99 @@ function initPositionBenchmark(cfg) {
             abortController = null;
         }
 
+        if (benchmarkSuggestionApplied) {
+            warningEl.innerHTML = `
+                <div class="alert alert-warning py-2 mb-0" role="alert">
+                    Pozisyon değişti. Önceki pozisyon benchmarkından forma eklediğiniz gereksinimleri gözden geçirin.
+                </div>`;
+            warningEl.classList.remove('d-none');
+            benchmarkSuggestionApplied = false;
+        }
+
+        currentBenchmark = null;
         containerEl.innerHTML = '';
         containerEl.classList.add('d-none');
         analyzeButtonEl.disabled = !positionSelectEl.value;
         buttonTextEl.textContent = 'Pozisyonu Analiz Et';
         spinnerEl.classList.add('d-none');
     }
+
+    containerEl.addEventListener('click', event => {
+        const skillButton = event.target.closest('[data-benchmark-apply-skill]');
+        if (skillButton && currentBenchmark) {
+            const competencyId = skillButton.dataset.benchmarkApplySkill;
+            const suggestion = currentBenchmark.suggestions.preferredCompetencies
+                .find(item => item.competencyId === competencyId);
+            if (!applyPreferredCompetencySuggestion(suggestion, mandatoryStore, preferredStore)) {
+                refreshSuggestionActionStates();
+                return;
+            }
+
+            renderPreferredSkills();
+            markBenchmarkSuggestionApplied();
+            return;
+        }
+
+        const experienceButton = event.target.closest('[data-benchmark-apply-experience]');
+        if (experienceButton && currentBenchmark) {
+            const suggested = currentBenchmark.suggestions.minimumRelevantExperienceMonths;
+            const parsed = Number.parseInt(experienceInputEl.value, 10);
+            const current = experienceInputEl.value === '' || !Number.isFinite(parsed) ? null : parsed;
+            if (suggested !== null && (current === null || current < suggested)) {
+                experienceInputEl.value = suggested;
+                markBenchmarkSuggestionApplied();
+            } else {
+                refreshSuggestionActionStates();
+            }
+            return;
+        }
+
+        const educationButton = event.target.closest('[data-benchmark-apply-education]');
+        if (educationButton && currentBenchmark) {
+            const suggested = currentBenchmark.suggestions.minimumEducationLevel;
+            const currentRank = educationLevelRank(educationSelectEl.value);
+            const suggestedRank = educationLevelRank(suggested);
+            if (suggested !== null && suggested !== 99 && currentRank < suggestedRank) {
+                educationSelectEl.value = String(suggested);
+                markBenchmarkSuggestionApplied();
+            } else {
+                refreshSuggestionActionStates();
+            }
+            return;
+        }
+
+        const languageButton = event.target.closest('[data-benchmark-apply-language]');
+        if (languageButton && currentBenchmark) {
+            const languageId = languageButton.dataset.benchmarkApplyLanguage;
+            const suggestion = currentBenchmark.suggestions.languages
+                .find(item => item.languageId === languageId);
+            if (!suggestion) return;
+
+            const existing = languageStore.find(item => item.languageId === languageId);
+            if (!existing) {
+                languageStore.push({
+                    languageId: suggestion.languageId,
+                    languageName: suggestion.languageName,
+                    minimumProficiency: suggestion.minimumProficiency,
+                    proficiencyName: languageProficiencyLabel(suggestion.minimumProficiency),
+                    hardFilterEnabled: false
+                });
+                renderLanguages();
+                markBenchmarkSuggestionApplied();
+                return;
+            }
+
+            if (languageProficiencyRank(existing.minimumProficiency)
+                < languageProficiencyRank(suggestion.minimumProficiency)) {
+                existing.minimumProficiency = suggestion.minimumProficiency;
+                existing.proficiencyName = languageProficiencyLabel(suggestion.minimumProficiency);
+                renderLanguages();
+                markBenchmarkSuggestionApplied();
+            } else {
+                refreshSuggestionActionStates();
+            }
+        }
+    });
 
     async function analyzeBenchmark() {
         const requestedPositionId = positionSelectEl.value;
@@ -168,11 +380,14 @@ function initPositionBenchmark(cfg) {
             const benchmark = await response.json();
             if (version !== requestVersion || positionSelectEl.value !== requestedPositionId) return;
 
+            currentBenchmark = benchmark;
             containerEl.innerHTML = renderPositionBenchmark(benchmark);
             containerEl.classList.remove('d-none');
+            refreshSuggestionActionStates();
         } catch (error) {
             if (error.name === 'AbortError' || version !== requestVersion) return;
 
+            currentBenchmark = null;
             containerEl.innerHTML = `
                 <div class="alert alert-danger mb-0" role="alert">
                     Pozisyon benchmarkı alınamadı. Lütfen tekrar deneyin.
@@ -189,6 +404,9 @@ function initPositionBenchmark(cfg) {
     }
 
     positionSelectEl.addEventListener('change', invalidateBenchmark);
+    experienceInputEl.addEventListener('input', refreshSuggestionActionStates);
+    educationSelectEl.addEventListener('change', refreshSuggestionActionStates);
+    document.addEventListener('requisition-form-state-changed', refreshSuggestionActionStates);
     analyzeButtonEl.addEventListener('click', analyzeBenchmark);
     invalidateBenchmark();
 }
@@ -313,24 +531,37 @@ function renderLanguageBenchmark(languages) {
 function renderBenchmarkSuggestions(suggestions) {
     const skills = suggestions.preferredCompetencies.length === 0
         ? '<li>Beceri önerisi yok</li>'
-        : suggestions.preferredCompetencies.map(item => `<li>${escHtml(item.competencyName)} <span class="text-muted">(Tercih edilen)</span></li>`).join('');
+        : suggestions.preferredCompetencies.map(item => `
+            <li class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                <span>${escHtml(item.competencyName)} <span class="text-muted">(Tercih edilen)</span></span>
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        data-benchmark-apply-skill="${escHtml(item.competencyId)}">Tercih Edilenlere Ekle</button>
+            </li>`).join('');
     const experience = suggestions.minimumRelevantExperienceMonths == null
         ? 'Öneri yok'
-        : `${suggestions.minimumRelevantExperienceMonths} ay`;
-    const education = suggestions.minimumEducationLevel == null
+        : `<div>${suggestions.minimumRelevantExperienceMonths} ay</div>
+           <button type="button" class="btn btn-sm btn-outline-primary mt-1"
+                   data-benchmark-apply-experience>${suggestions.minimumRelevantExperienceMonths} ayı kullan</button>`;
+    const education = suggestions.minimumEducationLevel == null || suggestions.minimumEducationLevel === 99
         ? 'Öneri yok'
-        : escHtml(degreeLevelLabel(suggestions.minimumEducationLevel));
+        : `<div>${escHtml(degreeLevelLabel(suggestions.minimumEducationLevel))}</div>
+           <button type="button" class="btn btn-sm btn-outline-primary mt-1"
+                   data-benchmark-apply-education>Bu eğitim seviyesini kullan</button>`;
     const languages = suggestions.languages.length === 0
         ? '<li>Dil önerisi yok</li>'
         : suggestions.languages.map(item => `
-            <li>${escHtml(item.languageName)} ${escHtml(languageProficiencyLabel(item.minimumProficiency))}
-                <span class="badge bg-secondary">Yumuşak</span>
+            <li class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                <span>${escHtml(item.languageName)} ${escHtml(languageProficiencyLabel(item.minimumProficiency))}
+                    <span class="badge bg-secondary">Yumuşak</span>
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        data-benchmark-apply-language="${escHtml(item.languageId)}">Dil Gereksinimi Olarak Ekle</button>
             </li>`).join('');
 
     return `
         <section class="border-top mt-3 pt-3" data-benchmark-suggestions>
             <h6 class="fw-bold">Önerilen Gereksinimler</h6>
-            <div class="text-muted small mb-2">Bilgilendirme amaçlıdır; forma otomatik uygulanmaz.</div>
+            <div class="text-muted small mb-2">Yalnızca seçtiğiniz öneriler forma uygulanır.</div>
             <div class="row g-2 small">
                 <div class="col-md-6"><strong>Tercih Edilen Beceriler</strong><ul class="mb-0">${skills}</ul></div>
                 <div class="col-md-3"><strong>Minimum İlgili Deneyim</strong><div>${experience}</div></div>
@@ -412,6 +643,7 @@ function initSkillPicker(cfg) {
 
 function renderSkillList(listEl, store, competencies) {
     listEl.innerHTML = '';
+    document.dispatchEvent(new CustomEvent('requisition-form-state-changed'));
     if (store.length === 0) {
         listEl.innerHTML = '<span class="text-muted small">Henüz yetkinlik eklenmedi.</span>';
         return;
@@ -457,6 +689,7 @@ function initLanguagePicker(cfg) {
 
 function renderLanguageList(listEl, store) {
     listEl.innerHTML = '';
+    document.dispatchEvent(new CustomEvent('requisition-form-state-changed'));
     if (store.length === 0) {
         listEl.innerHTML = '<span class="text-muted small">Henüz dil gereksinimi eklenmedi.</span>';
         return;
@@ -476,4 +709,8 @@ function renderLanguageList(listEl, store) {
         });
         listEl.appendChild(row);
     });
+}
+
+if (typeof module === 'object' && module.exports) {
+    module.exports = { applyPreferredCompetencySuggestion };
 }

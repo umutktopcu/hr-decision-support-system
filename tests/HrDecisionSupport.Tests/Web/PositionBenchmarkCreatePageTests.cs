@@ -61,23 +61,109 @@ public sealed class PositionBenchmarkCreatePageTests
         Assert.Contains("Dil profili bulunan", SharedScript);
         Assert.Contains("Verisi bulunan", SharedScript);
         Assert.Contains("Önerilen Gereksinimler", SharedScript);
-        Assert.Contains("Bilgilendirme amaçlıdır; forma otomatik uygulanmaz", SharedScript);
+        Assert.Contains("Yalnızca seçtiğiniz öneriler forma uygulanır", SharedScript);
     }
 
     [Fact]
-    public void BenchmarkClient_DoesNotModifyRequisitionFormState()
+    public void BenchmarkLoad_DoesNotApplySuggestionsAutomatically()
     {
-        var benchmarkClient = Section(
+        var analyze = Section(
             SharedScript,
-            "// Position benchmark display (Create page only)",
-            "function thresholdToDisplay(decimal)");
+            "async function analyzeBenchmark()",
+            "positionSelectEl.addEventListener('change', invalidateBenchmark)");
 
-        Assert.DoesNotContain("mandatoryStore", benchmarkClient);
-        Assert.DoesNotContain("preferredStore", benchmarkClient);
-        Assert.DoesNotContain("languageStore", benchmarkClient);
-        Assert.DoesNotContain("getElementById('minimumRelevantExperienceMonths')", benchmarkClient);
-        Assert.DoesNotContain("getElementById('minimumEducationLevel')", benchmarkClient);
-        Assert.DoesNotContain("getElementById('workModeId')", benchmarkClient);
+        Assert.DoesNotContain("preferredStore.push", analyze);
+        Assert.DoesNotContain("languageStore.push", analyze);
+        Assert.DoesNotContain("experienceInputEl.value =", analyze);
+        Assert.DoesNotContain("educationSelectEl.value =", analyze);
+    }
+
+    [Fact]
+    public void SkillApply_UsesStableIdentityAndPreservesMandatoryRequirements()
+    {
+        var helper = Section(
+            SharedScript,
+            "function applyPreferredCompetencySuggestion(",
+            "function languageProficiencyRank(value)");
+        var apply = Section(
+            SharedScript,
+            "containerEl.addEventListener('click', event =>",
+            "async function analyzeBenchmark()");
+
+        Assert.Contains("data-benchmark-apply-skill", SharedScript);
+        Assert.Contains("type=\"button\"", SharedScript);
+        Assert.Contains("applyPreferredCompetencySuggestion(suggestion, mandatoryStore, preferredStore)", apply);
+        Assert.Contains("mandatoryStore.some(item => item.competencyId === competencyId)", helper);
+        Assert.Contains("preferredStore.some(item => item.competencyId === competencyId)", helper);
+        Assert.Contains("preferredStore.push({", helper);
+        Assert.Contains("isRequired: false", helper);
+        Assert.Contains("Zaten zorunlu", SharedScript);
+        Assert.Contains("Zaten eklendi", SharedScript);
+    }
+
+    [Fact]
+    public void ExperienceApply_OnlyFillsOrStrengthensAfterClick()
+    {
+        var apply = Section(
+            SharedScript,
+            "const experienceButton = event.target.closest('[data-benchmark-apply-experience]')",
+            "const educationButton = event.target.closest('[data-benchmark-apply-education]')");
+
+        Assert.Contains("current === null || current < suggested", apply);
+        Assert.Contains("experienceInputEl.value = suggested", apply);
+        Assert.Contains("current > suggested", SharedScript);
+        Assert.Contains("Mevcut değer daha sıkı", SharedScript);
+        Assert.Contains("Kullanılıyor", SharedScript);
+    }
+
+    [Fact]
+    public void EducationApply_UsesDomainRankAndTreatsOtherAsRankZero()
+    {
+        var rank = Section(
+            SharedScript,
+            "function educationLevelRank(value)",
+            "function languageProficiencyRank(value)");
+        var apply = Section(
+            SharedScript,
+            "const educationButton = event.target.closest('[data-benchmark-apply-education]')",
+            "const languageButton = event.target.closest('[data-benchmark-apply-language]')");
+
+        Assert.Contains("1:1, 2:2, 3:3, 4:4, 5:5, 99:0", rank);
+        Assert.Contains("currentRank < suggestedRank", apply);
+        Assert.Contains("suggested !== 99", apply);
+        Assert.Contains("educationSelectEl.value = String(suggested)", apply);
+    }
+
+    [Fact]
+    public void LanguageApply_PreventsDuplicatesUpgradesOnlyAndPreservesHardFlag()
+    {
+        var apply = Section(
+            SharedScript,
+            "const languageButton = event.target.closest('[data-benchmark-apply-language]')",
+            "async function analyzeBenchmark()");
+
+        Assert.Contains("languageStore.find(item => item.languageId === languageId)", apply);
+        Assert.Contains("languageStore.push({", apply);
+        Assert.Contains("hardFilterEnabled: false", apply);
+        Assert.Contains("< languageProficiencyRank(suggestion.minimumProficiency)", apply);
+        Assert.Contains("existing.minimumProficiency = suggestion.minimumProficiency", apply);
+        Assert.DoesNotContain("existing.hardFilterEnabled =", apply);
+    }
+
+    [Fact]
+    public void SuggestionStates_TrackCurrentFormAndPositionChangeWarnsWithoutCleanup()
+    {
+        var invalidation = Section(
+            SharedScript,
+            "function invalidateBenchmark()",
+            "containerEl.addEventListener('click', event =>");
+
+        Assert.Contains("requisition-form-state-changed", SharedScript);
+        Assert.Contains("benchmarkSuggestionApplied", invalidation);
+        Assert.Contains("Pozisyon değişti", invalidation);
+        Assert.DoesNotContain("preferredStore.splice", invalidation);
+        Assert.DoesNotContain("languageStore.splice", invalidation);
+        Assert.DoesNotContain("fetch(", invalidation);
     }
 
     [Fact]
@@ -86,6 +172,10 @@ public sealed class PositionBenchmarkCreatePageTests
         var payload = Section(CreateView, "const payload = {", "try {");
         Assert.DoesNotContain("benchmark", payload, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("suggestion", payload, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("...preferredStore.map", payload);
+        Assert.Contains("minimumRelevantExperienceMonths", payload);
+        Assert.Contains("minimumEducationLevel", payload);
+        Assert.Contains("languageRequirements: languageStore.map", payload);
     }
 
     [Fact]
