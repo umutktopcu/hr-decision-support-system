@@ -454,7 +454,9 @@ function renderPositionBenchmark(result) {
     }
 
     const benchmark = result.benchmark;
-    const suggestions = status === 3 ? renderBenchmarkSuggestions(result.suggestions) : '';
+    const suggestions = status === 3
+        ? renderBenchmarkSuggestions(result.suggestions, benchmark.skills.items)
+        : '';
 
     return `
         <div class="card border-primary-subtle bg-light shadow-sm">
@@ -557,15 +559,22 @@ function renderLanguageBenchmark(languages) {
     return `<section><h6 class="fw-bold">Diller</h6>${renderCoverage('Dil profili bulunan', languages.coverage)}${rows}</section>`;
 }
 
-function renderBenchmarkSuggestions(suggestions) {
+function renderBenchmarkSuggestions(suggestions, skillFrequencies) {
     const skills = suggestions.preferredCompetencies.length === 0
         ? '<li>Beceri önerisi yok</li>'
-        : suggestions.preferredCompetencies.map(item => `
+        : suggestions.preferredCompetencies.map(item => {
+            const frequency = skillFrequencies.find(value => value.competencyId === item.competencyId);
+            const prevalence = frequency
+                ? `<span class="text-muted">Çalışanlarda: ${frequency.employeeCount} / ${frequency.knownProfileCount} (${benchmarkPercentage(frequency.percentage)})</span>`
+                : '';
+
+            return `
             <li class="d-flex align-items-center justify-content-between gap-2 mb-1">
-                <span>${escHtml(item.competencyName)} <span class="text-muted">(Tercih edilen)</span></span>
+                <span>${escHtml(item.competencyName)} <span class="text-muted">(Tercih edilen)</span> ${prevalence}</span>
                 <button type="button" class="btn btn-sm btn-outline-primary"
                         data-benchmark-apply-skill="${escHtml(item.competencyId)}">Tercih Edilenlere Ekle</button>
-            </li>`).join('');
+            </li>`;
+        }).join('');
     const experience = suggestions.minimumRelevantExperienceMonths == null
         ? 'Öneri yok'
         : `<div>${suggestions.minimumRelevantExperienceMonths} ay</div>

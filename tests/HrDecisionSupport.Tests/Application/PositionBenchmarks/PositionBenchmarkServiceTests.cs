@@ -144,6 +144,32 @@ public sealed class PositionBenchmarkServiceTests
     }
 
     [Fact]
+    public async Task Skills_WithoutStrictMajority_SuggestsTwoMostCommonActiveCompetencies()
+    {
+        await using var scenario = await Scenario.CreateAsync();
+        var alpha = scenario.AddCompetency("Alpha", "ALPHA");
+        var beta = scenario.AddCompetency("Beta", "BETA");
+        var lower = scenario.AddCompetency("Lower", "LOWER");
+        var employees = Enumerable.Range(0, 4)
+            .Select(_ => scenario.AddEmployee(scenario.Position))
+            .ToArray();
+
+        scenario.AddCompetency(employees[0], alpha);
+        scenario.AddCompetency(employees[1], alpha);
+        scenario.AddCompetency(employees[2], beta);
+        scenario.AddCompetency(employees[3], beta);
+        scenario.AddCompetency(employees[0], lower);
+        await scenario.Context.SaveChangesAsync();
+
+        var result = await scenario.Service.GetBenchmarkAsync(scenario.Position.Id);
+
+        Assert.Equal(
+            new[] { alpha.Id, beta.Id },
+            result.Value.Suggestions.PreferredCompetencies.Select(item => item.CompetencyId));
+        Assert.All(result.Value.Suggestions.PreferredCompetencies, item => Assert.False(item.IsRequired));
+    }
+
+    [Fact]
     public async Task Skills_FewerThanThreeKnownProfilesSuppressSuggestions()
     {
         await using var scenario = await Scenario.CreateAsync();

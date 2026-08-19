@@ -62,6 +62,10 @@ public sealed class PositionBenchmarkCreatePageTests
         Assert.Contains("Verisi bulunan", SharedScript);
         Assert.Contains("Önerilen Gereksinimler", SharedScript);
         Assert.Contains("Yalnızca seçtiğiniz öneriler forma uygulanır", SharedScript);
+        Assert.Contains("renderBenchmarkSuggestions(result.suggestions, benchmark.skills.items)", SharedScript);
+        Assert.Contains("Çalışanlarda:", SharedScript);
+        Assert.Contains("frequency.employeeCount", SharedScript);
+        Assert.Contains("frequency.knownProfileCount", SharedScript);
     }
 
     [Fact]

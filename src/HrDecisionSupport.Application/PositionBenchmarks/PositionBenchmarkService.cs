@@ -313,8 +313,15 @@ public sealed class PositionBenchmarkService : IPositionBenchmarkService
         if (benchmark.Coverage.KnownProfiles < MinimumKnownProfilesForSuggestion)
             return [];
 
-        return benchmark.Items
+        var strictMajorityItems = benchmark.Items
             .Where(item => IsStrictMajority(item.EmployeeCount, item.KnownProfileCount))
+            .ToArray();
+
+        var suggestedItems = strictMajorityItems.Length > 0
+            ? strictMajorityItems
+            : benchmark.Items.Take(2);
+
+        return suggestedItems
             .Select(item => new PositionCompetencySuggestion(
                 item.CompetencyId,
                 item.CompetencyCode,
