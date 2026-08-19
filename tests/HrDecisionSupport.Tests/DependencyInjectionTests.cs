@@ -14,6 +14,7 @@ using HrDecisionSupport.Application.Profiles.Languages;
 using HrDecisionSupport.Application.Profiles.Projects;
 using HrDecisionSupport.Application.Profiles.Sectors;
 using HrDecisionSupport.Application.Profiles.WorkModes;
+using HrDecisionSupport.Application.PositionBenchmarks;
 using HrDecisionSupport.Infrastructure;
 using HrDecisionSupport.Infrastructure.Persistence;
 using HrDecisionSupport.Infrastructure.EmployeeImports;
@@ -51,6 +52,7 @@ public class DependencyInjectionTests
         Assert.IsType<PersonProjectService>(scope.ServiceProvider.GetRequiredService<IPersonProjectService>());
         Assert.IsType<PersonSectorExperienceService>(scope.ServiceProvider.GetRequiredService<IPersonSectorExperienceService>());
         Assert.IsType<PersonWorkModeExperienceService>(scope.ServiceProvider.GetRequiredService<IPersonWorkModeExperienceService>());
+        Assert.IsType<PositionBenchmarkService>(scope.ServiceProvider.GetRequiredService<IPositionBenchmarkService>());
         AssertValidator<CreatePersonCompetencyRequest, CreatePersonCompetencyRequestValidator>(scope.ServiceProvider);
         AssertValidator<UpdatePersonCompetencyRequest, UpdatePersonCompetencyRequestValidator>(scope.ServiceProvider);
         AssertValidator<CreateEducationRecordRequest, CreateEducationRecordRequestValidator>(scope.ServiceProvider);

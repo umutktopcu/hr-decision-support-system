@@ -21,6 +21,7 @@ using HrDecisionSupport.Application.Requisitions.Requirements;
 using HrDecisionSupport.Application.MatchingExecution;
 using HrDecisionSupport.Application.MatchingExecution.Models;
 using HrDecisionSupport.Application.PreScreening;
+using HrDecisionSupport.Application.PositionBenchmarks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -57,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<ICandidateEvaluationCaseService, CandidateEvaluationCaseService>();
         services.AddScoped<CandidateImportService>();
         services.AddScoped<ICandidatePreScreeningService, CandidatePreScreeningService>();
+        services.AddScoped<IPositionBenchmarkService, PositionBenchmarkService>();
         services.AddScoped<HrDecisionSupport.Application.SemanticMatching.Orchestration.ICandidateSemanticMatchingService, HrDecisionSupport.Application.SemanticMatching.Orchestration.CandidateSemanticMatchingService>();
         services.AddScoped<HrDecisionSupport.Application.SemanticMatching.Reranking.ICandidateJobFitRankingService, HrDecisionSupport.Application.SemanticMatching.Reranking.CandidateJobFitRankingService>();
         services.AddScoped<HrDecisionSupport.Application.SemanticMatching.Documents.CandidateDocumentBuilder>();
