@@ -45,9 +45,11 @@ public sealed class PositionBenchmarkService : IPositionBenchmarkService
                 && assignment.EndDate == null
                 && assignment.Employee.EmploymentStatus == EmploymentStatus.Active
                 && assignment.Employee.TerminationDate == null)
-            .Select(assignment => new PopulationIdentity(
+            .Select(assignment => new
+            {
                 assignment.EmployeeId,
-                assignment.Employee.PersonId))
+                assignment.Employee.PersonId
+            })
             .Distinct()
             .OrderBy(item => item.EmployeeId)
             .ToListAsync(cancellationToken);
@@ -444,8 +446,6 @@ public sealed class PositionBenchmarkService : IPositionBenchmarkService
         Guid EmployeeId,
         Guid PersonId,
         int? RelevantExperienceMonths);
-
-    private sealed record PopulationIdentity(Guid EmployeeId, Guid PersonId);
 
     private sealed record SnapshotRecord(
         Guid Id,

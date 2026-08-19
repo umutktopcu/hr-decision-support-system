@@ -105,6 +105,241 @@ function degreeLevelLabel(val) {
     return map[val] || val;
 }
 
+function languageProficiencyLabel(val) {
+    const map = { 1:'A1', 2:'A2', 3:'B1', 4:'B2', 5:'C1', 6:'C2', 7:'Ana dil' };
+    return map[val] || val;
+}
+
+function benchmarkPercentage(decimal) {
+    if (decimal == null) return '—';
+    return `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(decimal * 100)}%`;
+}
+
+function benchmarkMedianProficiencyLabel(rank) {
+    if (rank == null) return 'Yeterlilik bilgisi yok';
+    if (Number.isInteger(rank)) return languageProficiencyLabel(rank);
+
+    const lower = Math.floor(rank);
+    const upper = Math.ceil(rank);
+    return `${languageProficiencyLabel(lower)}–${languageProficiencyLabel(upper)} arası`;
+}
+
+// ──────────────────────────────────────────────
+// Position benchmark display (Create page only)
+// ──────────────────────────────────────────────
+
+function initPositionBenchmark(cfg) {
+    const { positionSelectEl, analyzeButtonEl, buttonTextEl, spinnerEl, containerEl } = cfg;
+    let requestVersion = 0;
+    let abortController = null;
+
+    function invalidateBenchmark() {
+        requestVersion += 1;
+        if (abortController) {
+            abortController.abort();
+            abortController = null;
+        }
+
+        containerEl.innerHTML = '';
+        containerEl.classList.add('d-none');
+        analyzeButtonEl.disabled = !positionSelectEl.value;
+        buttonTextEl.textContent = 'Pozisyonu Analiz Et';
+        spinnerEl.classList.add('d-none');
+    }
+
+    async function analyzeBenchmark() {
+        const requestedPositionId = positionSelectEl.value;
+        if (!requestedPositionId || analyzeButtonEl.disabled) return;
+
+        const version = ++requestVersion;
+        abortController = new AbortController();
+        analyzeButtonEl.disabled = true;
+        buttonTextEl.textContent = 'Analiz Ediliyor...';
+        spinnerEl.classList.remove('d-none');
+        containerEl.innerHTML = '';
+        containerEl.classList.add('d-none');
+
+        try {
+            const response = await fetch(`/api/position-benchmarks/${encodeURIComponent(requestedPositionId)}`, {
+                signal: abortController.signal
+            });
+            if (!response.ok) throw new Error('benchmark_request_failed');
+
+            const benchmark = await response.json();
+            if (version !== requestVersion || positionSelectEl.value !== requestedPositionId) return;
+
+            containerEl.innerHTML = renderPositionBenchmark(benchmark);
+            containerEl.classList.remove('d-none');
+        } catch (error) {
+            if (error.name === 'AbortError' || version !== requestVersion) return;
+
+            containerEl.innerHTML = `
+                <div class="alert alert-danger mb-0" role="alert">
+                    Pozisyon benchmarkı alınamadı. Lütfen tekrar deneyin.
+                </div>`;
+            containerEl.classList.remove('d-none');
+        } finally {
+            if (version === requestVersion) {
+                abortController = null;
+                analyzeButtonEl.disabled = !positionSelectEl.value;
+                buttonTextEl.textContent = 'Pozisyonu Analiz Et';
+                spinnerEl.classList.add('d-none');
+            }
+        }
+    }
+
+    positionSelectEl.addEventListener('change', invalidateBenchmark);
+    analyzeButtonEl.addEventListener('click', analyzeBenchmark);
+    invalidateBenchmark();
+}
+
+function renderPositionBenchmark(result) {
+    const total = result.totalEmployees;
+    const status = result.sampleSizeStatus;
+    const statusHtml = status === 1
+        ? '<div class="alert alert-secondary py-2">Bu pozisyonda analiz edilebilecek aktif çalışan bulunamadı.</div>'
+        : status === 2
+            ? `<div class="alert alert-warning py-2">Sınırlı veri: yalnızca ${total} aktif çalışan üzerinden benchmark hesaplandı. Örneklem büyüklüğü nedeniyle gereksinim önerisi üretilmedi.</div>`
+            : '<div class="alert alert-success py-2">Yeterli örneklem üzerinden benchmark hesaplandı.</div>';
+
+    if (status === 1) {
+        return benchmarkCardHeader(result, statusHtml);
+    }
+
+    const benchmark = result.benchmark;
+    const suggestions = status === 3 ? renderBenchmarkSuggestions(result.suggestions) : '';
+
+    return `
+        <div class="card border-primary-subtle bg-light shadow-sm">
+            <div class="card-body">
+                ${benchmarkHeaderContent(result, statusHtml)}
+                <div class="row g-3">
+                    <div class="col-lg-6">${renderSkillBenchmark(benchmark.skills)}</div>
+                    <div class="col-lg-6">${renderExperienceBenchmark(benchmark.experience)}</div>
+                    <div class="col-lg-6">${renderEducationBenchmark(benchmark.education)}</div>
+                    <div class="col-lg-6">${renderLanguageBenchmark(benchmark.languages)}</div>
+                </div>
+                ${suggestions}
+            </div>
+        </div>`;
+}
+
+function benchmarkCardHeader(result, statusHtml) {
+    return `
+        <div class="card border-primary-subtle bg-light shadow-sm">
+            <div class="card-body">
+                ${benchmarkHeaderContent(result, statusHtml)}
+            </div>
+        </div>`;
+}
+
+function benchmarkHeaderContent(result, statusHtml) {
+    return `
+        <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
+            <div>
+                <h5 class="card-title mb-1">Pozisyon Benchmarkı</h5>
+                <div class="text-muted small">${escHtml(result.positionName)} (${escHtml(result.positionCode)})</div>
+            </div>
+            <span class="badge bg-primary">Analiz edilen çalışan: ${result.totalEmployees}</span>
+        </div>
+        ${statusHtml}`;
+}
+
+function renderCoverage(label, coverage) {
+    return `<div class="text-muted small mb-2">${label}: <strong>${coverage.knownProfiles} / ${coverage.totalEmployees}</strong></div>`;
+}
+
+function renderSkillBenchmark(skills) {
+    const rows = skills.items.length === 0
+        ? '<div class="text-muted small">Kayıtlı beceri bulunamadı.</div>'
+        : `<div class="table-responsive"><table class="table table-sm mb-0">
+            <thead><tr><th>Beceri</th><th>Çalışan</th><th>Oran</th></tr></thead>
+            <tbody>${skills.items.map(item => `
+                <tr>
+                    <td>${escHtml(item.competencyName)}</td>
+                    <td>${item.employeeCount} / ${item.knownProfileCount}</td>
+                    <td>${benchmarkPercentage(item.percentage)}</td>
+                </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    return `<section><h6 class="fw-bold">Beceriler</h6>${renderCoverage('Skill profili bulunan', skills.coverage)}${rows}</section>`;
+}
+
+function renderExperienceBenchmark(experience) {
+    if (!experience.isSupported) {
+        return `<section><h6 class="fw-bold">İlgili Deneyim</h6>
+            ${renderCoverage('Verisi bulunan', experience.coverage)}
+            <div class="text-muted small">Bu pozisyon için yapılandırılmış ilgili deneyim benchmarkı mevcut değil.</div>
+        </section>`;
+    }
+
+    const median = experience.medianMonths == null
+        ? 'Medyan hesaplamak için kayıtlı deneyim verisi yok.'
+        : `Medyan: <strong>${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(experience.medianMonths)} ay</strong>`;
+    return `<section><h6 class="fw-bold">İlgili Deneyim</h6>
+        ${renderCoverage('Verisi bulunan', experience.coverage)}
+        <div class="small">${median}</div>
+    </section>`;
+}
+
+function renderEducationBenchmark(education) {
+    const rows = education.distribution.length === 0
+        ? '<div class="text-muted small">Kayıtlı eğitim bilgisi bulunamadı.</div>'
+        : `<ul class="list-unstyled small mb-0">${education.distribution.map(item => `
+            <li class="d-flex justify-content-between gap-2">
+                <span>${escHtml(degreeLevelLabel(item.degreeLevel))}</span>
+                <span>${item.employeeCount} / ${item.knownProfileCount} (${benchmarkPercentage(item.percentage)})</span>
+            </li>`).join('')}</ul>`;
+    return `<section><h6 class="fw-bold">Eğitim</h6>${renderCoverage('Eğitim profili bulunan', education.coverage)}${rows}</section>`;
+}
+
+function renderLanguageBenchmark(languages) {
+    const rows = languages.items.length === 0
+        ? '<div class="text-muted small">Kayıtlı dil bilgisi bulunamadı.</div>'
+        : `<ul class="list-group list-group-flush small">${languages.items.map(item => `
+            <li class="list-group-item bg-transparent px-0 py-1">
+                <div class="d-flex justify-content-between gap-2">
+                    <strong>${escHtml(item.languageName)}</strong>
+                    <span>${item.employeeCount} / ${item.knownProfileCount} (${benchmarkPercentage(item.percentage)})</span>
+                </div>
+                <div class="text-muted">Medyan yeterlilik: ${escHtml(benchmarkMedianProficiencyLabel(item.medianProficiencyRank))}
+                    · Yeterlilik verisi: ${item.knownProficiencyCount} / ${item.employeeCount}
+                    ${item.nativeSpeakerCount > 0 ? ` · Ana dil: ${item.nativeSpeakerCount}` : ''}
+                </div>
+            </li>`).join('')}</ul>`;
+    return `<section><h6 class="fw-bold">Diller</h6>${renderCoverage('Dil profili bulunan', languages.coverage)}${rows}</section>`;
+}
+
+function renderBenchmarkSuggestions(suggestions) {
+    const skills = suggestions.preferredCompetencies.length === 0
+        ? '<li>Beceri önerisi yok</li>'
+        : suggestions.preferredCompetencies.map(item => `<li>${escHtml(item.competencyName)} <span class="text-muted">(Tercih edilen)</span></li>`).join('');
+    const experience = suggestions.minimumRelevantExperienceMonths == null
+        ? 'Öneri yok'
+        : `${suggestions.minimumRelevantExperienceMonths} ay`;
+    const education = suggestions.minimumEducationLevel == null
+        ? 'Öneri yok'
+        : escHtml(degreeLevelLabel(suggestions.minimumEducationLevel));
+    const languages = suggestions.languages.length === 0
+        ? '<li>Dil önerisi yok</li>'
+        : suggestions.languages.map(item => `
+            <li>${escHtml(item.languageName)} ${escHtml(languageProficiencyLabel(item.minimumProficiency))}
+                <span class="badge bg-secondary">Yumuşak</span>
+            </li>`).join('');
+
+    return `
+        <section class="border-top mt-3 pt-3" data-benchmark-suggestions>
+            <h6 class="fw-bold">Önerilen Gereksinimler</h6>
+            <div class="text-muted small mb-2">Bilgilendirme amaçlıdır; forma otomatik uygulanmaz.</div>
+            <div class="row g-2 small">
+                <div class="col-md-6"><strong>Tercih Edilen Beceriler</strong><ul class="mb-0">${skills}</ul></div>
+                <div class="col-md-3"><strong>Minimum İlgili Deneyim</strong><div>${experience}</div></div>
+                <div class="col-md-3"><strong>Minimum Eğitim</strong><div>${education}</div></div>
+                <div class="col-12"><strong>Diller</strong><ul class="mb-0">${languages}</ul></div>
+            </div>
+        </section>`;
+}
+
 /**
  * Convert threshold decimal (0.50) to display percentage (50).
  * Returns '' if null.

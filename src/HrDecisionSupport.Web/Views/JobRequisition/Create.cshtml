@@ -43,10 +43,19 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label text-muted small">Pozisyon *</label>
-                    <select id="positionId" class="form-select" required>
-                        <option value="">— Pozisyon Seçin —</option>
-                    </select>
+                    <div class="input-group">
+                        <select id="positionId" class="form-select" required>
+                            <option value="">— Pozisyon Seçin —</option>
+                        </select>
+                        <button type="button" id="analyzePositionBtn" class="btn btn-outline-primary" disabled>
+                            <span id="analyzePositionBtnText">Pozisyonu Analiz Et</span>
+                            <span id="analyzePositionSpinner" class="spinner-border spinner-border-sm ms-1 d-none" role="status"></span>
+                        </button>
+                    </div>
                     <div class="invalid-feedback">Pozisyon zorunludur.</div>
+                </div>
+                <div class="col-12">
+                    <div id="positionBenchmarkContainer" class="d-none" aria-live="polite"></div>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label text-muted small">Açık Pozisyon Sayısı *</label>
@@ -232,6 +241,14 @@
             populateSelect('departmentId', opts.departments, 'id', 'name', '— Departman Seçin —');
             populateSelect('positionId', opts.positions, 'id', 'name', '— Pozisyon Seçin —');
             populateSelect('workModeId', opts.workModes, 'id', 'name', '— Seçiniz (isteğe bağlı) —');
+
+            initPositionBenchmark({
+                positionSelectEl: document.getElementById('positionId'),
+                analyzeButtonEl:  document.getElementById('analyzePositionBtn'),
+                buttonTextEl:     document.getElementById('analyzePositionBtnText'),
+                spinnerEl:        document.getElementById('analyzePositionSpinner'),
+                containerEl:      document.getElementById('positionBenchmarkContainer')
+            });
 
             // DegreeLevel
             const eduSel = document.getElementById('minimumEducationLevel');
